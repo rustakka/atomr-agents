@@ -87,10 +87,23 @@ jobs:
           fi
           last_tag=$(git tag --sort=-creatordate | head -n1 || true)
           if [ -z "$last_tag" ]; then
-            range="HEAD"
-          else
-            range="${last_tag}..HEAD"
+            # No prior tag — refuse to auto-bump. The first release must be
+            # explicit via `workflow_dispatch` with `release_as=x.y.z` (or a
+            # `Release-As: x.y.z` footer in the most recent commit). Without
+            # this guard, the initial `feat:` commit would silently bump
+            # 0.1.0 → 0.2.0.
+            head_msg=$(git log -1 --pretty=format:%B || true)
+            release_as_footer=$(printf '%s\n' "$head_msg" | grep -E '^Release-As: ' | tail -n1 | awk '{print $2}' || true)
+            if [ -n "$release_as_footer" ]; then
+              echo "kind=set:$release_as_footer" >> "$GITHUB_OUTPUT"
+              echo "First-release override via Release-As footer: $release_as_footer"
+              exit 0
+            fi
+            echo "kind=skip" >> "$GITHUB_OUTPUT"
+            echo "First-release safety: no prior tag and no Release-As footer; skipping."
+            exit 0
           fi
+          range="${last_tag}..HEAD"
           subjects=$(git log --no-merges --pretty=format:%s%n%b "$range" || true)
 
           # Honor explicit `Release-As: x.y.z` footer.
