@@ -306,27 +306,18 @@ jobs:
                 echo "::warning::$crate already on crates.io at this version; skipping"
                 break
               fi
-              # 429 from crates.io: parse the retry-after timestamp out
-              # of the body and sleep until then (plus 10s slack).
+              # 429 from crates.io. The new-crate rate limit is ~1
+              # per 10 minutes for fresh accounts/orgs after the burst
+              # window — so wait at least 10 min, regardless of what
+              # the response says (the timestamp parsed out of the
+              # body has been observed to be too optimistic).
               if printf '%s' "$out" | grep -q '429 Too Many Requests'; then
-                if [ "$attempt" -ge 6 ]; then
+                if [ "$attempt" -ge 12 ]; then
                   echo "::error::rate-limited too many times on $crate"
                   exit 1
                 fi
-                ts=$(printf '%s' "$out" | grep -oE 'try again after [^.]+\.' | sed 's/try again after //; s/\.$//')
-                if [ -n "$ts" ]; then
-                  retry_epoch=$(date -d "$ts" +%s 2>/dev/null || true)
-                else
-                  retry_epoch=""
-                fi
-                if [ -n "$retry_epoch" ]; then
-                  now=$(date +%s)
-                  wait=$(( retry_epoch - now + 10 ))
-                  if [ "$wait" -lt 30 ]; then wait=30; fi
-                else
-                  wait=120
-                fi
-                echo "rate-limited; sleeping ${wait}s before retrying $crate"
+                wait=620   # 10 min + 20s slack
+                echo "rate-limited; sleeping ${wait}s before retrying $crate (attempt $attempt/12)"
                 sleep "$wait"
                 continue
               fi
