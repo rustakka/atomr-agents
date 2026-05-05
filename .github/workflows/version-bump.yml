@@ -169,8 +169,14 @@ jobs:
           set -euo pipefail
           git config user.name "atomr-agents-release-bot"
           git config user.email "release-bot@users.noreply.github.com"
-          git add Cargo.toml Cargo.lock 2>/dev/null || true
-          git commit -m "chore(release): v${NEW_VERSION}"
+          # cargo set-version --workspace touches every member's
+          # Cargo.toml, not just the root — including xtask. Stage all.
+          git add -A
+          if git diff --cached --quiet; then
+            echo "no diff to commit; tagging current HEAD as v${NEW_VERSION}"
+          else
+            git commit -m "chore(release): v${NEW_VERSION}"
+          fi
           git tag -a "v${NEW_VERSION}" -m "atomr-agents v${NEW_VERSION}"
           git push origin HEAD --follow-tags
 
