@@ -4,6 +4,11 @@ Cargo.lock
 .DS_Store
 *.swp
 
+# Editor / agentic-tool local state
+.claude/
+.vscode/
+.idea/
+
 # Python
 __pycache__/
 *.py[cod]
