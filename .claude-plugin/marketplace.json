@@ -1,0 +1,21 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "atomr-agents",
+  "description": "Skills and plugins for working on projects that depend on atomr-agents, the composable agentic framework on atomr actors and atomr-infer.",
+  "owner": {
+    "name": "rustakka",
+    "url": "https://github.com/rustakka"
+  },
+  "plugins": [
+    {
+      "name": "atomr-agents-ai-skills",
+      "description": "Skills for AI coding assistants working on projects that depend on atomr-agents — quickstart, Pipeline + LCEL decorators, channelled state with checkpointing, dynamic HITL interrupts, retriever zoo + ingestion, tools + RichTool, agent middleware, multi-agent topologies, eval suites, run-tree observability, troubleshooting, and LangGraph/LangChain migration.",
+      "author": {
+        "name": "rustakka"
+      },
+      "category": "development",
+      "source": "./ai-skills",
+      "homepage": "https://github.com/rustakka/atomr-agents/tree/main/ai-skills"
+    }
+  ]
+}
