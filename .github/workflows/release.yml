@@ -205,7 +205,7 @@ jobs:
           mkdir -p release
           find artifacts -type f \( -name 'atomr-agents-*' -o -name '*.whl' -o -name '*.tar.gz' \) -exec cp {} release/ \;
           ls -la release
-      - name: Create GitHub Release
+      - name: Create or update GitHub Release
         env:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ github.event.inputs.tag || github.ref_name }}
@@ -215,10 +215,17 @@ jobs:
           if [ -z "$notes" ]; then
             notes="Release ${TAG}. See CHANGELOG.md for details."
           fi
-          gh release create "$TAG" \
-            --title "$TAG" \
-            --notes "$notes" \
-            release/*
+          # Idempotent: create on first run; on retry, upload assets
+          # to the existing release with --clobber to overwrite.
+          if gh release view "$TAG" --json tagName >/dev/null 2>&1; then
+            echo "release $TAG already exists; uploading assets with --clobber"
+            gh release upload "$TAG" --clobber release/*
+          else
+            gh release create "$TAG" \
+              --title "$TAG" \
+              --notes "$notes" \
+              release/*
+          fi
 
   publish-crates:
     name: publish crates.io
