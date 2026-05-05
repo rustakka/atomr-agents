@@ -38,5 +38,3 @@ futures                    = { workspace = true }
 chrono                     = { workspace = true }
 parking_lot                = { workspace = true }
 
-[dev-dependencies]
-atomr-infer-testkit = { workspace = true }

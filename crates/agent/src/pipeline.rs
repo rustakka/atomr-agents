@@ -285,9 +285,62 @@ mod tests {
     use atomr_agents_persona::StaticPersonaStrategy;
     use atomr_agents_skill::StaticSkillStrategy;
     use atomr_agents_tool::{DynTool, Provider, StaticToolStrategy, Tool, ToolDescriptor, ToolSchema};
-    use atomr_infer_testkit::{MockRunner, MockScript};
 
     use crate::inference::LocalRunnerClient;
+
+    /// Inline mock runner for the simple-text test — equivalent to
+    /// `atomr_infer_testkit::MockRunner` but vendored so the agent
+    /// crate doesn't depend on the unpublished testkit.
+    struct InlineTextMock {
+        chunks: Vec<String>,
+    }
+    impl InlineTextMock {
+        fn from_text<I: IntoIterator<Item = impl Into<String>>>(chunks: I) -> Self {
+            Self { chunks: chunks.into_iter().map(Into::into).collect() }
+        }
+    }
+    #[async_trait]
+    impl atomr_infer_core::runner::ModelRunner for InlineTextMock {
+        async fn execute(
+            &mut self,
+            batch: atomr_infer_core::batch::ExecuteBatch,
+        ) -> atomr_infer_core::error::InferenceResult<atomr_infer_core::runner::RunHandle> {
+            use atomr_infer_core::tokens::{FinishReason, TokenChunk, TokenUsage};
+            use futures::stream::{self, BoxStream, StreamExt};
+            let chunks = self.chunks.clone();
+            let request_id = batch.request_id.clone();
+            let total = chunks.len();
+            let stream: BoxStream<'static, atomr_infer_core::error::InferenceResult<TokenChunk>> =
+                stream::iter(chunks.into_iter().enumerate().map(move |(i, c)| {
+                    let last = i == total.saturating_sub(1);
+                    Ok::<_, atomr_infer_core::error::InferenceError>(TokenChunk {
+                        request_id: request_id.clone(),
+                        text_delta: c,
+                        tool_call_delta: None,
+                        usage: last.then(|| TokenUsage {
+                            input_tokens: 1,
+                            output_tokens: total as u32,
+                            ..Default::default()
+                        }),
+                        finish_reason: last.then_some(FinishReason::Stop),
+                    })
+                }))
+                .boxed();
+            Ok(atomr_infer_core::runner::RunHandle::streaming(stream))
+        }
+        async fn rebuild_session(
+            &mut self,
+            _: atomr_infer_core::runner::SessionRebuildCause,
+        ) -> atomr_infer_core::error::InferenceResult<()> {
+            Ok(())
+        }
+        fn runtime_kind(&self) -> atomr_infer_core::runtime::RuntimeKind {
+            atomr_infer_core::runtime::RuntimeKind::Custom("inline-mock".into())
+        }
+        fn transport_kind(&self) -> atomr_infer_core::runtime::TransportKind {
+            atomr_infer_core::runtime::TransportKind::LocalGpu
+        }
+    }
 
     struct CalculatorTool {
         d: ToolDescriptor,
@@ -317,7 +370,7 @@ mod tests {
     }
 
     fn build_agent(
-        runner: MockRunner,
+        runner: InlineTextMock,
     ) -> Agent<
         ComposedInstructionStrategy<StaticPersonaStrategy, StaticTaskStrategy, StaticBehaviorStrategy>,
         StaticToolStrategy,
@@ -350,7 +403,7 @@ mod tests {
 
     #[tokio::test]
     async fn agent_runs_simple_text_turn() {
-        let runner = MockRunner::new(MockScript::from_text(["the answer is ", "42"]));
+        let runner = InlineTextMock::from_text(["the answer is ", "42"]);
         let agent = build_agent(runner);
         let r = agent
             .run_turn(

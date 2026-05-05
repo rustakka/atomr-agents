@@ -101,10 +101,10 @@ atomr-coordination     = { path = "../atomr/crates/atomr-coordination",     vers
 atomr-discovery        = { path = "../atomr/crates/atomr-discovery",        version = "0.1.0" }
 
 # Sibling atomr-infer workspace --------------------------------------------
+# Only the published crates from atomr-infer are wired here; atomr-infer
+# (umbrella) and atomr-infer-testkit aren't on crates.io yet.
 atomr-infer-core    = { path = "../atomr-infer/crates/inference-core",    version = "0.4.0" }
 atomr-infer-runtime = { path = "../atomr-infer/crates/inference-runtime", version = "0.4.0" }
-atomr-infer-testkit = { path = "../atomr-infer/crates/inference-testkit", version = "0.4.0" }
-atomr-infer         = { path = "../atomr-infer/crates/inference",         version = "0.4.0" }
 
 # Sibling atomr-accel workspace --------------------------------------------
 atomr-accel        = { path = "../atomr-accel/crates/atomr-accel",        version = "0.1.0" }

@@ -21,7 +21,6 @@ atomr-agents-memory   = { workspace = true }
 atomr-agents-agent    = { workspace = true }
 atomr-agents-harness  = { workspace = true }
 atomr-testkit         = { workspace = true }
-atomr-infer-testkit   = { workspace = true }
 async-trait           = { workspace = true }
 serde_json            = { workspace = true }
 tokio                 = { workspace = true }
