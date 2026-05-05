@@ -224,7 +224,6 @@ jobs:
     name: publish crates.io
     needs: github-release
     runs-on: ubuntu-latest
-    environment: crates-io
     steps:
       - name: Checkout sibling atomr
         uses: actions/checkout@v4
@@ -284,13 +283,29 @@ jobs:
           else
             list=("${default_order[@]}")
           fi
+          if [ -z "${CARGO_REGISTRY_TOKEN:-}" ]; then
+            echo "::error::CARGO_REGISTRY_TOKEN secret is empty"
+            exit 1
+          fi
           for crate in "${list[@]}"; do
             echo "==> publishing $crate"
-            cargo publish -p "$crate" --token "$CARGO_REGISTRY_TOKEN" || {
-              echo "::warning::cargo publish failed for $crate (may already be published at this version); continuing"
-            }
-            # crates.io needs a moment to propagate before the next dependent crate publishes.
-            sleep 12
+            # `cargo publish` honors CARGO_REGISTRY_TOKEN from the
+            # environment; passing --token is deprecated.
+            if ! out=$(cargo publish -p "$crate" 2>&1); then
+              echo "$out"
+              # Tolerate "crate version already exists" — that means a
+              # prior re-run got past this point and we shouldn't fail.
+              # Anything else is a real error and stops the pipeline.
+              if printf '%s' "$out" | grep -qE 'crate version .* is already uploaded|already exists'; then
+                echo "::warning::$crate v0.1.0 already on crates.io; skipping"
+              else
+                echo "::error::cargo publish failed for $crate"
+                exit 1
+              fi
+            fi
+            # crates.io needs a moment to propagate the new index entry
+            # before the next dependent crate's publish can resolve it.
+            sleep 30
           done
 
   publish-pypi:
