@@ -1,0 +1,142 @@
+# PR + push gate.
+#
+# atomr-agents path-depends on the sibling atomr, atomr-infer, and
+# atomr-accel workspaces. CI checks all four out side-by-side under
+# the runner's work directory so the path-deps in Cargo.toml resolve.
+
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  fmt:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout sibling atomr
+        uses: actions/checkout@v4
+        with: { repository: rustakka/atomr, path: atomr }
+      - name: Checkout sibling atomr-infer
+        uses: actions/checkout@v4
+        with: { repository: rustakka/atomr-infer, path: atomr-infer }
+      - name: Checkout sibling atomr-accel
+        uses: actions/checkout@v4
+        with: { repository: rustakka/atomr-accel, path: atomr-accel }
+      - name: Checkout atomr-agents
+        uses: actions/checkout@v4
+        with: { path: atomr-agents }
+      - uses: dtolnay/rust-toolchain@stable
+        with: { components: rustfmt }
+      - run: cargo fmt --all -- --check
+        working-directory: atomr-agents
+
+  clippy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout sibling atomr
+        uses: actions/checkout@v4
+        with: { repository: rustakka/atomr, path: atomr }
+      - name: Checkout sibling atomr-infer
+        uses: actions/checkout@v4
+        with: { repository: rustakka/atomr-infer, path: atomr-infer }
+      - name: Checkout sibling atomr-accel
+        uses: actions/checkout@v4
+        with: { repository: rustakka/atomr-accel, path: atomr-accel }
+      - name: Checkout atomr-agents
+        uses: actions/checkout@v4
+        with: { path: atomr-agents }
+      - uses: dtolnay/rust-toolchain@stable
+        with: { components: clippy }
+      - uses: Swatinem/rust-cache@v2
+        with: { workspaces: atomr-agents }
+      - run: cargo clippy --workspace --all-targets -- -D warnings
+        working-directory: atomr-agents
+
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout sibling atomr
+        uses: actions/checkout@v4
+        with: { repository: rustakka/atomr, path: atomr }
+      - name: Checkout sibling atomr-infer
+        uses: actions/checkout@v4
+        with: { repository: rustakka/atomr-infer, path: atomr-infer }
+      - name: Checkout sibling atomr-accel
+        uses: actions/checkout@v4
+        with: { repository: rustakka/atomr-accel, path: atomr-accel }
+      - name: Checkout atomr-agents
+        uses: actions/checkout@v4
+        with: { path: atomr-agents }
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with: { workspaces: atomr-agents }
+      - run: cargo test --workspace
+        working-directory: atomr-agents
+
+  feature-flags:
+    name: feature-flag matrix
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout sibling atomr
+        uses: actions/checkout@v4
+        with: { repository: rustakka/atomr, path: atomr }
+      - name: Checkout sibling atomr-infer
+        uses: actions/checkout@v4
+        with: { repository: rustakka/atomr-infer, path: atomr-infer }
+      - name: Checkout sibling atomr-accel
+        uses: actions/checkout@v4
+        with: { repository: rustakka/atomr-accel, path: atomr-accel }
+      - name: Checkout atomr-agents
+        uses: actions/checkout@v4
+        with: { path: atomr-agents }
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with: { workspaces: atomr-agents }
+      - name: Umbrella default
+        working-directory: atomr-agents
+        run: cargo build -p atomr-agents
+      - name: Umbrella no-default-features
+        working-directory: atomr-agents
+        run: cargo build -p atomr-agents --no-default-features
+      - name: Umbrella all-features
+        working-directory: atomr-agents
+        run: cargo build -p atomr-agents --all-features
+      - name: Backend stubs (state)
+        working-directory: atomr-agents
+        run: cargo check -p atomr-agents-state --features sqlite,postgres
+      - name: Backend stubs (memory)
+        working-directory: atomr-agents
+        run: cargo check -p atomr-agents-memory --features pgvector,qdrant,chroma
+      - name: Backend stubs (cache)
+        working-directory: atomr-agents
+        run: cargo check -p atomr-agents-cache --features sqlite,redis
+
+  rustdoc:
+    name: rustdoc (broken-link gate)
+    runs-on: ubuntu-latest
+    env:
+      RUSTDOCFLAGS: "-D warnings -D rustdoc::broken-intra-doc-links --cfg docsrs"
+    steps:
+      - name: Checkout sibling atomr
+        uses: actions/checkout@v4
+        with: { repository: rustakka/atomr, path: atomr }
+      - name: Checkout sibling atomr-infer
+        uses: actions/checkout@v4
+        with: { repository: rustakka/atomr-infer, path: atomr-infer }
+      - name: Checkout sibling atomr-accel
+        uses: actions/checkout@v4
+        with: { repository: rustakka/atomr-accel, path: atomr-accel }
+      - name: Checkout atomr-agents
+        uses: actions/checkout@v4
+        with: { path: atomr-agents }
+      - uses: dtolnay/rust-toolchain@nightly
+      - uses: Swatinem/rust-cache@v2
+        with: { workspaces: atomr-agents }
+      - name: cargo doc --workspace --no-deps
+        working-directory: atomr-agents
+        run: cargo doc --workspace --no-deps

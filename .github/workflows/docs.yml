@@ -1,0 +1,65 @@
+# Build rustdoc and deploy to GitHub Pages.
+
+name: Docs
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout sibling atomr
+        uses: actions/checkout@v4
+        with: { repository: rustakka/atomr, path: atomr }
+      - name: Checkout sibling atomr-infer
+        uses: actions/checkout@v4
+        with: { repository: rustakka/atomr-infer, path: atomr-infer }
+      - name: Checkout sibling atomr-accel
+        uses: actions/checkout@v4
+        with: { repository: rustakka/atomr-accel, path: atomr-accel }
+      - name: Checkout atomr-agents
+        uses: actions/checkout@v4
+        with: { path: atomr-agents }
+      - uses: dtolnay/rust-toolchain@nightly
+      - uses: Swatinem/rust-cache@v2
+        with: { workspaces: atomr-agents }
+      - name: cargo doc --workspace --no-deps
+        working-directory: atomr-agents
+        env:
+          RUSTDOCFLAGS: "--cfg docsrs"
+        run: cargo doc --workspace --no-deps
+      - name: Stage docs
+        run: |
+          mkdir -p _site
+          cp -r atomr-agents/target/doc/* _site/
+          # Redirect /index.html to the umbrella crate.
+          cat > _site/index.html <<'HTML'
+          <!doctype html>
+          <meta http-equiv="refresh" content="0; url=atomr_agents/index.html">
+          <link rel="canonical" href="atomr_agents/index.html">
+          HTML
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with: { path: _site }
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

@@ -1,0 +1,167 @@
+name: Version bump + tag
+
+# When commits land on `main`, decide a SemVer bump from
+# Conventional-Commit subjects and (optionally) push a `vX.Y.Z` tag
+# that fires the `release.yml` pipeline.
+#
+# Bump rules:
+#   * `BREAKING CHANGE` / `!:` in any commit since the last tag → major
+#   * `feat:`                                                  → minor
+#   * `fix:` / `perf:` / `revert:`                             → patch
+#   * `chore:` / `docs:` / `ci:` / `test:` / `refactor:` /
+#     `style:` / `build:` only                                 → skip
+#
+# Override: a commit footer `Release-As: X.Y.Z` (in any commit since
+# the last tag) forces an exact version. `workflow_dispatch` accepts
+# `release_as` to do the same on demand.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Print the bump decision but skip commit + tag"
+        required: false
+        default: "false"
+      release_as:
+        description: "Pin to an exact version (e.g. 0.1.0). Overrides Conventional-Commit decision."
+        required: false
+        default: ""
+      force:
+        description: "Force a bump kind (patch|minor|major) even when commits are skip-only"
+        required: false
+        default: ""
+
+concurrency:
+  group: version-bump
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  decide-and-bump:
+    name: Decide bump + tag
+    runs-on: ubuntu-latest
+    # Skip when the head commit is the bot's own bump commit so we
+    # don't loop.
+    if: github.event_name == 'workflow_dispatch' || !startsWith(github.event.head_commit.message, 'chore(release):')
+    steps:
+      - name: Checkout sibling atomr
+        uses: actions/checkout@v4
+        with: { repository: rustakka/atomr, path: atomr }
+      - name: Checkout sibling atomr-infer
+        uses: actions/checkout@v4
+        with: { repository: rustakka/atomr-infer, path: atomr-infer }
+      - name: Checkout sibling atomr-accel
+        uses: actions/checkout@v4
+        with: { repository: rustakka/atomr-accel, path: atomr-accel }
+      - name: Checkout atomr-agents
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          path: atomr-agents
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with: { workspaces: atomr-agents }
+
+      - name: Decide bump kind from Conventional Commits
+        id: decide
+        working-directory: atomr-agents
+        env:
+          DRY_RUN: ${{ github.event.inputs.dry_run }}
+          RELEASE_AS: ${{ github.event.inputs.release_as }}
+          FORCE: ${{ github.event.inputs.force }}
+        run: |
+          set -euo pipefail
+          if [ -n "${RELEASE_AS:-}" ]; then
+            echo "kind=set:$RELEASE_AS" >> "$GITHUB_OUTPUT"
+            echo "Override via workflow_dispatch release_as: $RELEASE_AS"
+            exit 0
+          fi
+          if [ -n "${FORCE:-}" ]; then
+            echo "kind=$FORCE" >> "$GITHUB_OUTPUT"
+            echo "Forced bump: $FORCE"
+            exit 0
+          fi
+          last_tag=$(git tag --sort=-creatordate | head -n1 || true)
+          if [ -z "$last_tag" ]; then
+            range="HEAD"
+          else
+            range="${last_tag}..HEAD"
+          fi
+          subjects=$(git log --no-merges --pretty=format:%s%n%b "$range" || true)
+
+          # Honor explicit `Release-As: x.y.z` footer.
+          release_as_footer=$(printf '%s\n' "$subjects" | grep -E '^Release-As: ' | tail -n1 | awk '{print $2}' || true)
+          if [ -n "$release_as_footer" ]; then
+            echo "kind=set:$release_as_footer" >> "$GITHUB_OUTPUT"
+            echo "Override via Release-As footer: $release_as_footer"
+            exit 0
+          fi
+
+          if printf '%s' "$subjects" | grep -qE 'BREAKING CHANGE|^[a-z]+(\([^)]+\))?!:'; then
+            echo "kind=major" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          if printf '%s' "$subjects" | grep -qE '^feat(\([^)]+\))?:'; then
+            echo "kind=minor" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          if printf '%s' "$subjects" | grep -qE '^(fix|perf|revert)(\([^)]+\))?:'; then
+            echo "kind=patch" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          # Only chore/docs/ci/test/refactor/style/build → skip.
+          echo "kind=skip" >> "$GITHUB_OUTPUT"
+
+      - name: Install cargo-edit
+        if: steps.decide.outputs.kind != 'skip'
+        run: cargo install cargo-edit --locked
+
+      - name: Bump version + refresh Cargo.lock
+        if: steps.decide.outputs.kind != 'skip'
+        id: bump
+        working-directory: atomr-agents
+        run: |
+          set -euo pipefail
+          kind="${{ steps.decide.outputs.kind }}"
+          if [[ "$kind" == set:* ]]; then
+            ver="${kind#set:}"
+            cargo set-version --workspace "$ver"
+          else
+            cargo set-version --workspace --bump "$kind"
+          fi
+          new_ver=$(awk '
+            /^\[workspace\.package\]/ { f=1; next }
+            f && /^\[/ { exit }
+            f && /^version[[:space:]]*=/ {
+              match($0, /"[^"]+"/)
+              print substr($0, RSTART+1, RLENGTH-2)
+              exit
+            }' Cargo.toml)
+          if [ -z "$new_ver" ]; then
+            echo "::error::failed to extract bumped version from Cargo.toml"
+            exit 1
+          fi
+          echo "version=$new_ver" >> "$GITHUB_OUTPUT"
+
+      - name: Commit + tag
+        if: steps.decide.outputs.kind != 'skip' && github.event.inputs.dry_run != 'true'
+        working-directory: atomr-agents
+        env:
+          NEW_VERSION: ${{ steps.bump.outputs.version }}
+        run: |
+          set -euo pipefail
+          git config user.name "atomr-agents-release-bot"
+          git config user.email "release-bot@users.noreply.github.com"
+          git add Cargo.toml Cargo.lock 2>/dev/null || true
+          git commit -m "chore(release): v${NEW_VERSION}"
+          git tag -a "v${NEW_VERSION}" -m "atomr-agents v${NEW_VERSION}"
+          git push origin HEAD --follow-tags
+
+      - name: Summary
+        run: |
+          echo "kind=${{ steps.decide.outputs.kind }}"
+          echo "version=${{ steps.bump.outputs.version || 'unchanged' }}"

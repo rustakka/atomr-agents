@@ -1,0 +1,309 @@
+name: Release
+
+# Releases are tagged from `main`. Push a tag matching `v*` (e.g.
+# `v0.1.0`, `v1.0.0-rc.1`) to fire this pipeline. The bump-and-tag
+# step is automated by `.github/workflows/version-bump.yml`.
+#
+# This workflow:
+#   1. Verifies the workspace builds + tests cleanly.
+#   2. Builds release binaries (`atomr-agents` from `atomr-agents-cli`)
+#      for Linux x86_64 + aarch64, macOS x86_64 + aarch64, Windows x86_64.
+#   3. Builds Python wheels + sdist via maturin.
+#   4. Packages `ai-skills.tar.gz` for the Claude Code marketplace.
+#   5. Creates the GitHub Release with the artifacts attached.
+#   6. Publishes every allowlisted Rust crate to crates.io in
+#      dependency order.
+#   7. Publishes wheels + sdist to PyPI via OIDC trusted publishing.
+#
+# atomr-agents path-depends on the sibling atomr, atomr-infer, and
+# atomr-accel workspaces. Every job that touches Cargo.toml checks
+# all four out side-by-side under the runner's work directory.
+#
+# Allowlist:
+#   The publish step honors a repo variable
+#   `ATOMR_AGENTS_PUBLISH_ALLOWLIST` (space-separated crate names).
+#   Default = the full 26-crate workspace in the order documented
+#   in RELEASING.md. Set to the empty string to skip publish.
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Existing tag to (re)release (e.g. v0.1.0)"
+        required: true
+
+permissions:
+  contents: write
+  id-token: write
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  verify:
+    name: verify (build + test gate)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout sibling atomr
+        uses: actions/checkout@v4
+        with: { repository: rustakka/atomr, path: atomr }
+      - name: Checkout sibling atomr-infer
+        uses: actions/checkout@v4
+        with: { repository: rustakka/atomr-infer, path: atomr-infer }
+      - name: Checkout sibling atomr-accel
+        uses: actions/checkout@v4
+        with: { repository: rustakka/atomr-accel, path: atomr-accel }
+      - name: Checkout atomr-agents
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.tag || github.ref }}
+          path: atomr-agents
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with: { workspaces: atomr-agents }
+      - run: cargo check --workspace --all-features
+        working-directory: atomr-agents
+      - run: cargo test --workspace
+        working-directory: atomr-agents
+
+  build-binaries:
+    name: build-binaries (${{ matrix.target }})
+    needs: verify
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { target: x86_64-unknown-linux-gnu, runner: ubuntu-latest, ext: "" }
+          - { target: aarch64-unknown-linux-gnu, runner: ubuntu-latest, ext: "", cross: true }
+          - { target: x86_64-apple-darwin, runner: macos-latest, ext: "" }
+          - { target: aarch64-apple-darwin, runner: macos-latest, ext: "" }
+          - { target: x86_64-pc-windows-msvc, runner: windows-latest, ext: ".exe" }
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - name: Checkout sibling atomr
+        uses: actions/checkout@v4
+        with: { repository: rustakka/atomr, path: atomr }
+      - name: Checkout sibling atomr-infer
+        uses: actions/checkout@v4
+        with: { repository: rustakka/atomr-infer, path: atomr-infer }
+      - name: Checkout sibling atomr-accel
+        uses: actions/checkout@v4
+        with: { repository: rustakka/atomr-accel, path: atomr-accel }
+      - name: Checkout atomr-agents
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.tag || github.ref }}
+          path: atomr-agents
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+      - name: Install cross-compile toolchain
+        if: matrix.cross
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc-aarch64-linux-gnu
+          mkdir -p ~/.cargo
+          cat >> ~/.cargo/config.toml <<'EOF'
+          [target.aarch64-unknown-linux-gnu]
+          linker = "aarch64-linux-gnu-gcc"
+          EOF
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: atomr-agents
+          key: ${{ matrix.target }}
+      - name: Build atomr-agents binary
+        working-directory: atomr-agents
+        run: cargo build --release -p atomr-agents-cli --target ${{ matrix.target }}
+      - name: Stage artifact
+        shell: bash
+        working-directory: atomr-agents
+        run: |
+          set -euo pipefail
+          name="atomr-agents-${{ matrix.target }}"
+          mkdir -p "../dist"
+          cp "target/${{ matrix.target }}/release/atomr-agents${{ matrix.ext }}" "../dist/${name}${{ matrix.ext }}"
+          ls -la ../dist
+      - uses: actions/upload-artifact@v4
+        with:
+          name: bin-${{ matrix.target }}
+          path: dist/*
+
+  build-wheels:
+    name: build-wheels (${{ matrix.runner }})
+    needs: verify
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { runner: ubuntu-latest,  args: "--release --out dist --find-interpreter" }
+          - { runner: macos-latest,   args: "--release --out dist --find-interpreter" }
+          - { runner: windows-latest, args: "--release --out dist --find-interpreter" }
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - name: Checkout sibling atomr
+        uses: actions/checkout@v4
+        with: { repository: rustakka/atomr, path: atomr }
+      - name: Checkout sibling atomr-infer
+        uses: actions/checkout@v4
+        with: { repository: rustakka/atomr-infer, path: atomr-infer }
+      - name: Checkout sibling atomr-accel
+        uses: actions/checkout@v4
+        with: { repository: rustakka/atomr-accel, path: atomr-accel }
+      - name: Checkout atomr-agents
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.tag || github.ref }}
+          path: atomr-agents
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11" }
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Install maturin
+        run: pip install maturin
+      - name: Build wheels
+        working-directory: atomr-agents
+        run: maturin build --manifest-path crates/py-bindings/Cargo.toml ${{ matrix.args }}
+      - name: Build sdist
+        if: matrix.runner == 'ubuntu-latest'
+        working-directory: atomr-agents
+        run: maturin sdist --manifest-path crates/py-bindings/Cargo.toml --out dist
+      - uses: actions/upload-artifact@v4
+        with:
+          name: wheels-${{ matrix.runner }}
+          path: atomr-agents/dist/*
+
+  package-skills:
+    name: package ai-skills.tar.gz
+    needs: verify
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.tag || github.ref }}
+      - name: Tar ai-skills/
+        run: tar -czf ai-skills.tar.gz ai-skills/
+      - uses: actions/upload-artifact@v4
+        with: { name: ai-skills, path: ai-skills.tar.gz }
+
+  github-release:
+    name: GitHub Release
+    needs: [build-binaries, build-wheels, package-skills]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.tag || github.ref }}
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+      - name: Flatten + list artifacts
+        run: |
+          mkdir -p release
+          find artifacts -type f \( -name 'atomr-agents-*' -o -name '*.whl' -o -name '*.tar.gz' \) -exec cp {} release/ \;
+          ls -la release
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.event.inputs.tag || github.ref_name }}
+        run: |
+          set -euo pipefail
+          notes=$(awk "/^## \[Unreleased\]/{flag=1; next} flag && /^## /{exit} flag" CHANGELOG.md || true)
+          if [ -z "$notes" ]; then
+            notes="Release ${TAG}. See CHANGELOG.md for details."
+          fi
+          gh release create "$TAG" \
+            --title "$TAG" \
+            --notes "$notes" \
+            release/*
+
+  publish-crates:
+    name: publish crates.io
+    needs: github-release
+    runs-on: ubuntu-latest
+    environment: crates-io
+    steps:
+      - name: Checkout sibling atomr
+        uses: actions/checkout@v4
+        with: { repository: rustakka/atomr, path: atomr }
+      - name: Checkout sibling atomr-infer
+        uses: actions/checkout@v4
+        with: { repository: rustakka/atomr-infer, path: atomr-infer }
+      - name: Checkout sibling atomr-accel
+        uses: actions/checkout@v4
+        with: { repository: rustakka/atomr-accel, path: atomr-accel }
+      - name: Checkout atomr-agents
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.tag || github.ref }}
+          path: atomr-agents
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with: { workspaces: atomr-agents }
+      - name: Publish each crate in dep order
+        working-directory: atomr-agents
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+          ALLOWLIST: ${{ vars.ATOMR_AGENTS_PUBLISH_ALLOWLIST }}
+        run: |
+          set -euo pipefail
+          # Default = full 26-crate workspace, in dep order.
+          default_order=(
+            atomr-agents-core
+            atomr-agents-callable
+            atomr-agents-strategy
+            atomr-agents-context
+            atomr-agents-state
+            atomr-agents-observability
+            atomr-agents-tool
+            atomr-agents-skill
+            atomr-agents-memory
+            atomr-agents-embed
+            atomr-agents-retriever
+            atomr-agents-ingest
+            atomr-agents-persona
+            atomr-agents-instruction
+            atomr-agents-cache
+            atomr-agents-parser
+            atomr-agents-agent
+            atomr-agents-workflow
+            atomr-agents-harness
+            atomr-agents-org
+            atomr-agents-registry
+            atomr-agents-eval
+            atomr-agents-testkit
+            atomr-agents-py-bindings
+            atomr-agents-cli
+            atomr-agents
+          )
+          if [ -n "${ALLOWLIST:-}" ]; then
+            read -r -a list <<< "$ALLOWLIST"
+          else
+            list=("${default_order[@]}")
+          fi
+          for crate in "${list[@]}"; do
+            echo "==> publishing $crate"
+            cargo publish -p "$crate" --token "$CARGO_REGISTRY_TOKEN" || {
+              echo "::warning::cargo publish failed for $crate (may already be published at this version); continuing"
+            }
+            # crates.io needs a moment to propagate before the next dependent crate publishes.
+            sleep 12
+          done
+
+  publish-pypi:
+    name: publish PyPI
+    needs: github-release
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/p/atomr-agents
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          pattern: wheels-*
+          merge-multiple: true
+      - name: List wheels
+        run: ls -la artifacts
+      - uses: pypa/gh-action-pypi-publish@release/v1
+        with: { packages-dir: artifacts }
