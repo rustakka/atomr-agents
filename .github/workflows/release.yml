@@ -245,7 +245,9 @@ jobs:
       - name: Publish each crate in dep order
         working-directory: atomr-agents
         env:
-          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+          # Repo secret name is CRATES_IO_TOKEN (per gh secret list); cargo
+          # itself reads CARGO_REGISTRY_TOKEN, so map it through.
+          CARGO_REGISTRY_TOKEN: ${{ secrets.CRATES_IO_TOKEN }}
           ALLOWLIST: ${{ vars.ATOMR_AGENTS_PUBLISH_ALLOWLIST }}
         run: |
           set -euo pipefail
