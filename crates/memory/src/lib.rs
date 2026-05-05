@@ -15,9 +15,9 @@ pub use summarizing::SummarizingMemoryStrategy;
 
 pub use atomr_agents_strategy::{ChainedMemoryStrategy, MemoryStrategy};
 
+#[cfg(feature = "chroma")]
+pub use backends::chroma::ChromaStore;
 #[cfg(feature = "pgvector")]
 pub use backends::pgvector::PgvectorStore;
 #[cfg(feature = "qdrant")]
 pub use backends::qdrant::QdrantStore;
-#[cfg(feature = "chroma")]
-pub use backends::chroma::ChromaStore;

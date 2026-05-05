@@ -17,7 +17,11 @@ pub struct EnsembleRetriever {
 impl EnsembleRetriever {
     /// Default `k = 60` matches the canonical RRF paper.
     pub fn with_rrf(members: Vec<Arc<dyn Retriever>>, top_k: usize) -> Self {
-        Self { members, k: 60.0, top_k }
+        Self {
+            members,
+            k: 60.0,
+            top_k,
+        }
     }
 }
 
@@ -75,7 +79,10 @@ mod tests {
         b.add(Document::new("d2", "python"));
         b.add(Document::new("d1", "rust"));
         let e = EnsembleRetriever::with_rrf(
-            vec![Arc::new(a) as Arc<dyn Retriever>, Arc::new(b) as Arc<dyn Retriever>],
+            vec![
+                Arc::new(a) as Arc<dyn Retriever>,
+                Arc::new(b) as Arc<dyn Retriever>,
+            ],
             5,
         );
         let hits = e.retrieve("rust", &ctx()).await.unwrap();

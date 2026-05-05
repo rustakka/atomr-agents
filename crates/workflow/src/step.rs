@@ -53,10 +53,7 @@ pub enum Step {
         if_false: StepId,
     },
     /// Run several steps in parallel; aggregate via `JoinStrategy`.
-    Parallel {
-        steps: Vec<StepId>,
-        join: JoinStrategy,
-    },
+    Parallel { steps: Vec<StepId>, join: JoinStrategy },
     /// Loop a step while the predicate evaluates true.
     Loop {
         body: StepId,
@@ -64,24 +61,23 @@ pub enum Step {
     },
     /// Apply `body` once per element of an input array, with
     /// bounded concurrency.
-    Map {
-        body: StepId,
-        concurrency: Concurrency,
-    },
+    Map { body: StepId, concurrency: Concurrency },
     /// Pause the workflow until a human approves. Persists the
     /// pending approval so a process restart resumes correctly.
-    Human {
-        approval: HumanApproval,
-    },
+    Human { approval: HumanApproval },
 }
 
 impl Step {
     pub fn invoke(callable: CallableHandle) -> Self {
-        Self::Invoke { callable, mapping: InputMapping::default() }
+        Self::Invoke {
+            callable,
+            mapping: InputMapping::default(),
+        }
     }
 }
 
 // Convenience: a closure-based predicate.
+#[allow(dead_code)]
 pub struct FnPredicate<F: Fn(&Value) -> bool + Send + Sync + 'static>(pub F);
 
 impl<F: Fn(&Value) -> bool + Send + Sync + 'static> BranchPredicate for FnPredicate<F> {

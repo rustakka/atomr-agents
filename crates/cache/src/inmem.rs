@@ -5,7 +5,7 @@ use async_trait::async_trait;
 use atomr_agents_core::Result;
 use parking_lot::RwLock;
 
-use crate::{CachedTurn, CacheKey, LlmCache};
+use crate::{CacheKey, CachedTurn, LlmCache};
 
 #[derive(Default, Clone)]
 pub struct InMemoryLlmCache {

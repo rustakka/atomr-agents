@@ -11,7 +11,7 @@ use atomr_agents_core::Result;
 use atomr_agents_embed::Embedder;
 use parking_lot::RwLock;
 
-use crate::{CachedTurn, CacheKey, LlmCache};
+use crate::{CacheKey, CachedTurn, LlmCache};
 
 struct Entry {
     embedding: Vec<f32>,
@@ -30,7 +30,11 @@ pub struct SemanticLlmCache {
 
 impl SemanticLlmCache {
     pub fn new(embedder: Arc<dyn Embedder>, threshold: f32) -> Self {
-        Self { embedder, threshold, inner: Arc::new(RwLock::new(Vec::new())) }
+        Self {
+            embedder,
+            threshold,
+            inner: Arc::new(RwLock::new(Vec::new())),
+        }
     }
 
     pub fn len(&self) -> usize {
@@ -55,12 +59,20 @@ impl SemanticLlmCache {
         Ok(best.map(|(_, v)| v))
     }
 
-    pub async fn put_with_text(&self, text: impl Into<String>, key: CacheKey, value: CachedTurn) -> Result<()> {
+    pub async fn put_with_text(
+        &self,
+        text: impl Into<String>,
+        key: CacheKey,
+        value: CachedTurn,
+    ) -> Result<()> {
         let text = text.into();
         let v = self.embedder.embed(&text).await?;
-        self.inner
-            .write()
-            .push(Entry { embedding: v, value, key, text });
+        self.inner.write().push(Entry {
+            embedding: v,
+            value,
+            key,
+            text,
+        });
         Ok(())
     }
 }
@@ -69,7 +81,13 @@ impl SemanticLlmCache {
 impl LlmCache for SemanticLlmCache {
     async fn get(&self, key: &CacheKey) -> Result<Option<CachedTurn>> {
         // Exact-key first.
-        if let Some(v) = self.inner.read().iter().find(|e| &e.key == key).map(|e| e.value.clone()) {
+        if let Some(v) = self
+            .inner
+            .read()
+            .iter()
+            .find(|e| &e.key == key)
+            .map(|e| e.value.clone())
+        {
             return Ok(Some(v));
         }
         // No prompt text available without re-deriving from the key
@@ -92,7 +110,11 @@ fn cosine(a: &[f32], b: &[f32]) -> f32 {
     let dot: f32 = a.iter().zip(b).map(|(x, y)| x * y).sum();
     let na: f32 = a.iter().map(|x| x * x).sum::<f32>().sqrt();
     let nb: f32 = b.iter().map(|x| x * x).sum::<f32>().sqrt();
-    if na == 0.0 || nb == 0.0 { 0.0 } else { dot / (na * nb) }
+    if na == 0.0 || nb == 0.0 {
+        0.0
+    } else {
+        dot / (na * nb)
+    }
 }
 
 #[allow(dead_code)]

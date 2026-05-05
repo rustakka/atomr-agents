@@ -5,10 +5,10 @@
 
 use std::sync::Arc;
 
-use atomr_agents_callable::{Callable, CallableHandle};
-use atomr_agents_core::{
-    CallCtx, IterationBudget, MoneyBudget, Result, TimeBudget, TokenBudget, Value,
-};
+#[allow(unused_imports)]
+use atomr_agents_callable::Callable;
+use atomr_agents_callable::CallableHandle;
+use atomr_agents_core::{CallCtx, IterationBudget, MoneyBudget, Result, TimeBudget, TokenBudget, Value};
 
 /// Identifies the agent the next turn should target. Multi-agent
 /// patterns set this in shared state; routers consult it to dispatch.
@@ -51,9 +51,9 @@ pub async fn swarm_loop(
     let mut current = initial_input;
     for _ in 0..max_iters {
         let key = active.get();
-        let handle = agents.get(&key).ok_or_else(|| {
-            atomr_agents_core::AgentError::Workflow(format!("unknown agent: {key}"))
-        })?;
+        let handle = agents
+            .get(&key)
+            .ok_or_else(|| atomr_agents_core::AgentError::Workflow(format!("unknown agent: {key}")))?;
         current = handle.call(current, default_ctx()).await?;
         if current.get("done").and_then(|v| v.as_bool()).unwrap_or(false) {
             return Ok(current);
@@ -65,7 +65,7 @@ pub async fn swarm_loop(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::routing::{CapabilityMatchRouter, OrgRoutingStrategy, RoundRobinRouter};
+    use crate::routing::{CapabilityMatchRouter, RoundRobinRouter};
     use crate::team::{Department, Org, OrgUnit, Team};
     use atomr_agents_callable::FnCallable;
     use atomr_agents_core::{DepartmentId, OrgId, TeamId};
@@ -132,7 +132,9 @@ mod tests {
                 }
             })),
         );
-        let r = swarm_loop(&agents, &active, serde_json::json!({}), 10).await.unwrap();
+        let r = swarm_loop(&agents, &active, serde_json::json!({}), 10)
+            .await
+            .unwrap();
         assert_eq!(r["phase"], "exec");
         assert_eq!(r["done"], true);
     }
@@ -165,29 +167,28 @@ mod tests {
         agents.insert("a".into(), make_agent("a", "b", false));
         agents.insert("b".into(), make_agent("b", "a", false));
         // Loop ends after a → b → a (3 iters): we'll mark a-second-time as done.
-        agents.insert(
-            "a".into(),
-            {
+        agents.insert("a".into(), {
+            let calls = calls.clone();
+            let active = active.clone();
+            Arc::new(FnCallable::labeled("a", move |_v: Value, _ctx| {
                 let calls = calls.clone();
                 let active = active.clone();
-                Arc::new(FnCallable::labeled("a", move |_v: Value, _ctx| {
-                    let calls = calls.clone();
-                    let active = active.clone();
-                    async move {
-                        let mut c = calls.lock();
-                        c.push("a");
-                        let n = c.len();
-                        drop(c);
-                        if n >= 3 {
-                            return Ok(serde_json::json!({"done": true}));
-                        }
-                        active.set("b");
-                        Ok(serde_json::json!({}))
+                async move {
+                    let mut c = calls.lock();
+                    c.push("a");
+                    let n = c.len();
+                    drop(c);
+                    if n >= 3 {
+                        return Ok(serde_json::json!({"done": true}));
                     }
-                }))
-            },
-        );
-        let _ = swarm_loop(&agents, &active, serde_json::json!({}), 10).await.unwrap();
+                    active.set("b");
+                    Ok(serde_json::json!({}))
+                }
+            }))
+        });
+        let _ = swarm_loop(&agents, &active, serde_json::json!({}), 10)
+            .await
+            .unwrap();
         let trace = calls.lock().clone();
         assert!(trace.iter().filter(|x| **x == "a").count() >= 2);
     }

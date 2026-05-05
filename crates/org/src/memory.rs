@@ -1,9 +1,7 @@
 use std::sync::Arc;
 
 use async_trait::async_trait;
-use atomr_agents_core::{
-    AgentError, AgentId, MemoryItem, MemoryNamespace, OrgId, Result, TeamId,
-};
+use atomr_agents_core::{AgentError, AgentId, MemoryItem, MemoryNamespace, OrgId, Result, TeamId};
 use atomr_agents_memory::{InMemoryStore, MemoryStore};
 
 /// Memory namespaced by the org/team/agent triple. Reads cascade
@@ -47,13 +45,9 @@ pub struct OrgMemoryView<'a>(&'a NamespacedMemory);
 impl MemoryStore for NamespacedMemory {
     async fn put(&self, item: MemoryItem) -> Result<()> {
         match &item.namespace {
-            MemoryNamespace::Agent(id) if id.as_str() == self.agent.as_str() => {
-                self.backing.put(item).await
-            }
+            MemoryNamespace::Agent(id) if id.as_str() == self.agent.as_str() => self.backing.put(item).await,
             MemoryNamespace::Team(id) => {
-                if !self.allow_team_write
-                    || self.team.as_ref().map(|t| t.as_str()) != Some(id.as_str())
-                {
+                if !self.allow_team_write || self.team.as_ref().map(|t| t.as_str()) != Some(id.as_str()) {
                     return Err(AgentError::PolicyDenied(format!(
                         "write to team namespace {} denied",
                         id.as_str()
@@ -72,11 +66,7 @@ impl MemoryStore for NamespacedMemory {
         }
     }
 
-    async fn list(
-        &self,
-        namespace: &MemoryNamespace,
-        limit: usize,
-    ) -> Result<Vec<MemoryItem>> {
+    async fn list(&self, namespace: &MemoryNamespace, limit: usize) -> Result<Vec<MemoryItem>> {
         // Reads cascade — caller may ask for any of {agent, team, org}.
         // We delegate to the backing store; the in-memory store only
         // returns items it owns, so cascade requires multiple lookups.
@@ -96,7 +86,7 @@ impl MemoryStore for NamespacedMemory {
                 .list(&MemoryNamespace::Org(self.org.clone()), limit)
                 .await?;
             out.extend(org_items);
-            out.sort_by(|a, b| b.timestamp_ms.cmp(&a.timestamp_ms));
+            out.sort_by_key(|i| std::cmp::Reverse(i.timestamp_ms));
             out.truncate(limit);
         }
         Ok(out)
@@ -125,7 +115,9 @@ mod tests {
     #[tokio::test]
     async fn agent_cannot_write_to_org_memory() {
         let m = NamespacedMemory::new(OrgId::from("o-1"), AgentId::from("a-1"));
-        let r = m.put(item(MemoryNamespace::Org(OrgId::from("o-1")), "x", 1)).await;
+        let r = m
+            .put(item(MemoryNamespace::Org(OrgId::from("o-1")), "x", 1))
+            .await;
         assert!(r.is_err());
     }
 
@@ -134,7 +126,9 @@ mod tests {
         let m = NamespacedMemory::new(OrgId::from("o-1"), AgentId::from("a-1"))
             .with_team(TeamId::from("t-1"))
             .with_team_write(true);
-        let r = m.put(item(MemoryNamespace::Team(TeamId::from("t-1")), "x", 1)).await;
+        let r = m
+            .put(item(MemoryNamespace::Team(TeamId::from("t-1")), "x", 1))
+            .await;
         assert!(r.is_ok());
     }
 }

@@ -51,11 +51,7 @@ impl StaticToolStrategy {
 
 #[async_trait]
 impl ToolStrategy for StaticToolStrategy {
-    async fn select(
-        &self,
-        _ctx: &AgentContext,
-        _budget: &mut TokenBudget,
-    ) -> Result<Vec<ToolRef>> {
+    async fn select(&self, _ctx: &AgentContext, _budget: &mut TokenBudget) -> Result<Vec<ToolRef>> {
         Ok(self
             .tools
             .iter()
@@ -88,14 +84,12 @@ impl KeywordToolStrategy {
 
 #[async_trait]
 impl ToolStrategy for KeywordToolStrategy {
-    async fn select(
-        &self,
-        ctx: &AgentContext,
-        _budget: &mut TokenBudget,
-    ) -> Result<Vec<ToolRef>> {
+    async fn select(&self, ctx: &AgentContext, _budget: &mut TokenBudget) -> Result<Vec<ToolRef>> {
         let needle = ctx.turn.user.to_lowercase();
-        let words: Vec<&str> =
-            needle.split(|c: char| !c.is_alphanumeric()).filter(|w| !w.is_empty()).collect();
+        let words: Vec<&str> = needle
+            .split(|c: char| !c.is_alphanumeric())
+            .filter(|w| !w.is_empty())
+            .collect();
         let mut scored: Vec<(usize, &DynTool)> = self
             .tools
             .iter()
@@ -107,7 +101,7 @@ impl ToolStrategy for KeywordToolStrategy {
             })
             .filter(|(s, _)| *s > 0)
             .collect();
-        scored.sort_by(|a, b| b.0.cmp(&a.0));
+        scored.sort_by_key(|(score, _)| std::cmp::Reverse(*score));
         scored.truncate(self.max_tools);
         Ok(scored
             .into_iter()

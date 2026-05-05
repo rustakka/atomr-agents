@@ -12,9 +12,7 @@ use std::sync::Arc;
 
 use async_trait::async_trait;
 use atomr_agents_core::{AgentError, Result, RunId, Value, WorkflowId};
-use atomr_agents_state::{
-    Checkpointer, CheckpointKey, RunState, Snapshot, StateSchema,
-};
+use atomr_agents_state::{CheckpointKey, Checkpointer, RunState, Snapshot, StateSchema};
 
 use crate::dag::{Dag, StepId};
 
@@ -54,9 +52,11 @@ impl StatefulRunner {
             // Run the layer concurrently; collect all writes.
             let mut handles = Vec::new();
             for sid in layer {
-                let step = self.dag.steps.get(sid).ok_or_else(|| {
-                    AgentError::Workflow(format!("missing step {}", sid.as_str()))
-                })?;
+                let step = self
+                    .dag
+                    .steps
+                    .get(sid)
+                    .ok_or_else(|| AgentError::Workflow(format!("missing step {}", sid.as_str())))?;
                 let step = step.clone();
                 let st = state.clone();
                 handles.push(tokio::spawn(async move { step.run(&st).await }));
@@ -138,9 +138,7 @@ where
 mod tests {
     use super::*;
     use crate::dag::Dag;
-    use atomr_agents_state::{
-        AppendMessages, InMemoryCheckpointer, MergeMap, StateSchema,
-    };
+    use atomr_agents_state::{AppendMessages, InMemoryCheckpointer, MergeMap, StateSchema};
     use serde_json::json;
 
     fn schema() -> Arc<StateSchema> {
@@ -167,9 +165,7 @@ mod tests {
         let dag: Dag<Arc<dyn StatefulStep>> = Dag::builder("a")
             .step(
                 "a",
-                step_writing(|_| {
-                    vec![("messages".into(), json!([{"id": "m1", "text": "hi"}]))]
-                }),
+                step_writing(|_| vec![("messages".into(), json!([{"id": "m1", "text": "hi"}]))]),
             )
             .step(
                 "b",
@@ -204,9 +200,7 @@ mod tests {
         let dag1: Dag<Arc<dyn StatefulStep>> = Dag::builder("a")
             .step(
                 "a",
-                step_writing(|_| {
-                    vec![("messages".into(), json!([{"id": "m1"}]))]
-                }),
+                step_writing(|_| vec![("messages".into(), json!([{"id": "m1"}]))]),
             )
             .step("b", bad)
             .edge("a", "b")
@@ -219,7 +213,7 @@ mod tests {
             checkpointer: cpt.clone(),
         };
         let _ = r1.run().await; // expected to fail
-        // Layer 1 should be checkpointed.
+                                // Layer 1 should be checkpointed.
         let metas = cpt
             .list(&WorkflowId::from("wf"), &RunId::from("r"))
             .await

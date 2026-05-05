@@ -11,12 +11,9 @@ mod auto_repair;
 mod basic;
 mod streaming;
 
-pub use auto_repair::{
-    OutputFixingParser, RepairModel, RetryWithErrorParser,
-};
+pub use auto_repair::{OutputFixingParser, RepairModel, RetryWithErrorParser};
 pub use basic::{
-    CommaListParser, EnumParser, JsonParser, JsonSchemaParser, SchemaParser, XmlParser,
-    YamlParser,
+    CommaListParser, EnumParser, JsonParser, JsonSchemaParser, SchemaParser, XmlParser, YamlParser,
 };
 pub use streaming::StreamingPartialJsonParser;
 

@@ -89,13 +89,10 @@ impl Registry {
         Ok(self.publish(record))
     }
 
-    pub fn get(
-        &self,
-        kind: ArtifactKind,
-        id: &str,
-        version: &Version,
-    ) -> Option<Arc<ArtifactRecord>> {
-        self.inner.get(&(kind, id.to_string(), version.clone())).map(|r| r.value().clone())
+    pub fn get(&self, kind: ArtifactKind, id: &str, version: &Version) -> Option<Arc<ArtifactRecord>> {
+        self.inner
+            .get(&(kind, id.to_string(), version.clone()))
+            .map(|r| r.value().clone())
     }
 
     pub fn latest(&self, kind: ArtifactKind, id: &str) -> Option<Arc<ArtifactRecord>> {
@@ -138,7 +135,9 @@ mod tests {
         r.publish(record(ArtifactKind::ToolSet, "ts", (0, 2, 0)));
         let latest = r.latest(ArtifactKind::ToolSet, "ts").unwrap();
         assert_eq!(latest.version, Version::new(0, 2, 0));
-        let pinned = r.get(ArtifactKind::ToolSet, "ts", &Version::new(0, 1, 0)).unwrap();
+        let pinned = r
+            .get(ArtifactKind::ToolSet, "ts", &Version::new(0, 1, 0))
+            .unwrap();
         assert_eq!(pinned.version, Version::new(0, 1, 0));
     }
 

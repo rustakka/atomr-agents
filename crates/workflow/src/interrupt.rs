@@ -109,11 +109,7 @@ impl Default for InterruptCtrl {
 /// `StatefulStep` extension that gets the interrupt ctrl as well.
 #[async_trait::async_trait]
 pub trait InterruptibleStep: Send + Sync + 'static {
-    async fn run(
-        &self,
-        state: &RunState,
-        ctrl: &InterruptCtrl,
-    ) -> Result<Vec<(String, Value)>>;
+    async fn run(&self, state: &RunState, ctrl: &InterruptCtrl) -> Result<Vec<(String, Value)>>;
 }
 
 /// Adapter that turns any `StatefulStep` into an `InterruptibleStep`.
@@ -121,11 +117,7 @@ pub struct PlainStep(pub Arc<dyn StatefulStep>);
 
 #[async_trait::async_trait]
 impl InterruptibleStep for PlainStep {
-    async fn run(
-        &self,
-        state: &RunState,
-        _ctrl: &InterruptCtrl,
-    ) -> Result<Vec<(String, Value)>> {
+    async fn run(&self, state: &RunState, _ctrl: &InterruptCtrl) -> Result<Vec<(String, Value)>> {
         self.0.run(state).await
     }
 }
@@ -139,11 +131,7 @@ where
     F: Fn(&RunState, &InterruptCtrl) -> Fut + Send + Sync + 'static,
     Fut: std::future::Future<Output = Result<Vec<(String, Value)>>> + Send + 'static,
 {
-    async fn run(
-        &self,
-        state: &RunState,
-        ctrl: &InterruptCtrl,
-    ) -> Result<Vec<(String, Value)>> {
+    async fn run(&self, state: &RunState, ctrl: &InterruptCtrl) -> Result<Vec<(String, Value)>> {
         (self.0)(state, ctrl).await
     }
 }
@@ -175,22 +163,18 @@ impl Interruptible {
             .latest(&self.workflow_id, &self.run_id)
             .await?
             .ok_or_else(|| AgentError::Workflow("resume: no checkpoint".into()))?;
-        let (resume_value, edits, goto): (Option<Value>, Vec<(String, Value)>, Option<StepId>) =
-            match command {
-                Command::Continue => (None, Vec::new(), None),
-                Command::Resume(v) => (Some(v), Vec::new(), None),
-                Command::Update(es) => (None, es, None),
-                Command::Goto(s) => (None, Vec::new(), Some(s)),
-            };
+        let (resume_value, edits, goto): (Option<Value>, Vec<(String, Value)>, Option<StepId>) = match command
+        {
+            Command::Continue => (None, Vec::new(), None),
+            Command::Resume(v) => (Some(v), Vec::new(), None),
+            Command::Update(es) => (None, es, None),
+            Command::Goto(s) => (None, Vec::new(), Some(s)),
+        };
         let mut values = snap.values.clone();
         for (k, v) in &edits {
             values.insert(k.clone(), v.clone());
         }
-        let mut state = RunState::from_snapshot(
-            self.schema.clone(),
-            values,
-            snap.key.super_step,
-        );
+        let mut state = RunState::from_snapshot(self.schema.clone(), values, snap.key.super_step);
         // Resume always disables the next breakpoint hit so paused
         // breakpoints don't re-fire immediately. Dynamic interrupts
         // are similarly cleared by the snapshot label distinguishing
@@ -264,7 +248,9 @@ impl Interruptible {
                     self.persist_pause(
                         state,
                         super_step.saturating_sub(1),
-                        PauseReason::DynamicInterrupt { step_id: req.step_id.clone() },
+                        PauseReason::DynamicInterrupt {
+                            step_id: req.step_id.clone(),
+                        },
                         req.payload.clone(),
                     )
                     .await?;
@@ -410,9 +396,7 @@ mod tests {
                 "b",
                 Arc::new(FnInterruptStep(|state: &RunState, _ctrl: &InterruptCtrl| {
                     let approved = state.read("approved").as_bool().unwrap_or(false);
-                    async move {
-                        Ok(vec![("amount".into(), json!(if approved { 100 } else { 0 }))])
-                    }
+                    async move { Ok(vec![("amount".into(), json!(if approved { 100 } else { 0 }))]) }
                 })) as Arc<dyn InterruptibleStep>,
             )
             .edge("a", "b")

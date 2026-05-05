@@ -80,9 +80,10 @@ impl Reducer for AppendMessages {
             let new_id = m.get("id").and_then(|v| v.as_str()).map(|s| s.to_string());
             match new_id {
                 Some(id) => {
-                    if let Some(slot) = out.iter_mut().find(|x| {
-                        x.get("id").and_then(|v| v.as_str()) == Some(id.as_str())
-                    }) {
+                    if let Some(slot) = out
+                        .iter_mut()
+                        .find(|x| x.get("id").and_then(|v| v.as_str()) == Some(id.as_str()))
+                    {
                         *slot = m;
                     } else {
                         out.push(m);

@@ -1,9 +1,7 @@
 use std::sync::Arc;
 
 use async_trait::async_trait;
-use atomr_agents_core::{
-    AgentContext, MemoryChunk, MemoryItem, MemoryNamespace, Result, TokenBudget,
-};
+use atomr_agents_core::{AgentContext, MemoryChunk, MemoryItem, MemoryNamespace, Result, TokenBudget};
 use atomr_agents_strategy::MemoryStrategy;
 
 use crate::store::MemoryStore;
@@ -19,17 +17,17 @@ pub struct RecencyMemoryStrategy {
 
 impl RecencyMemoryStrategy {
     pub fn new(store: Arc<dyn MemoryStore>, limit: usize, tokens_per_item: u32) -> Self {
-        Self { store, limit, tokens_per_item }
+        Self {
+            store,
+            limit,
+            tokens_per_item,
+        }
     }
 }
 
 #[async_trait]
 impl MemoryStrategy for RecencyMemoryStrategy {
-    async fn retrieve(
-        &self,
-        ctx: &AgentContext,
-        budget: &mut TokenBudget,
-    ) -> Result<Vec<MemoryChunk>> {
+    async fn retrieve(&self, ctx: &AgentContext, budget: &mut TokenBudget) -> Result<Vec<MemoryChunk>> {
         let ns = MemoryNamespace::Agent(ctx.agent_id.clone());
         let items = self.store.list(&ns, self.limit).await?;
         let mut out = Vec::with_capacity(items.len());
@@ -87,7 +85,10 @@ mod tests {
         let mut b = TokenBudget::new(120);
         let ctx = AgentContext::for_agent(
             agent,
-            TurnInput { user: "what happened?".into(), history: vec![] },
+            TurnInput {
+                user: "what happened?".into(),
+                history: vec![],
+            },
         );
         let chunks = strat.retrieve(&ctx, &mut b).await.unwrap();
         // 120 / 50 = 2 chunks fit.

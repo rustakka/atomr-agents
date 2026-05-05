@@ -26,7 +26,9 @@ pub struct ToolCallable<T: Tool> {
 
 impl<T: Tool> ToolCallable<T> {
     pub fn new(inner: T) -> Self {
-        Self { inner: Arc::new(inner) }
+        Self {
+            inner: Arc::new(inner),
+        }
     }
 
     #[allow(dead_code)]

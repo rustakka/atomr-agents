@@ -3,35 +3,35 @@
 //! This umbrella crate re-exports each subsystem behind a feature
 //! flag, mirroring the convention used by the `atomr` umbrella.
 
-pub use atomr_agents_core as core;
 pub use atomr_agents_callable as callable;
-pub use atomr_agents_strategy as strategy;
 pub use atomr_agents_context as context;
+pub use atomr_agents_core as core;
 pub use atomr_agents_observability as observability;
+pub use atomr_agents_strategy as strategy;
 
-#[cfg(feature = "tool")]
-pub use atomr_agents_tool as tool;
-#[cfg(feature = "skill")]
-pub use atomr_agents_skill as skill;
-#[cfg(feature = "memory")]
-pub use atomr_agents_memory as memory;
-#[cfg(feature = "embed")]
-pub use atomr_agents_embed as embed;
-#[cfg(feature = "persona")]
-pub use atomr_agents_persona as persona;
-#[cfg(feature = "instruction")]
-pub use atomr_agents_instruction as instruction;
 #[cfg(feature = "agent")]
 pub use atomr_agents_agent as agent;
-#[cfg(feature = "workflow")]
-pub use atomr_agents_workflow as workflow;
-#[cfg(feature = "harness")]
-pub use atomr_agents_harness as harness;
-#[cfg(feature = "org")]
-pub use atomr_agents_org as org;
-#[cfg(feature = "registry")]
-pub use atomr_agents_registry as registry;
+#[cfg(feature = "embed")]
+pub use atomr_agents_embed as embed;
 #[cfg(feature = "eval")]
 pub use atomr_agents_eval as eval;
+#[cfg(feature = "harness")]
+pub use atomr_agents_harness as harness;
+#[cfg(feature = "instruction")]
+pub use atomr_agents_instruction as instruction;
+#[cfg(feature = "memory")]
+pub use atomr_agents_memory as memory;
+#[cfg(feature = "org")]
+pub use atomr_agents_org as org;
+#[cfg(feature = "persona")]
+pub use atomr_agents_persona as persona;
+#[cfg(feature = "registry")]
+pub use atomr_agents_registry as registry;
+#[cfg(feature = "skill")]
+pub use atomr_agents_skill as skill;
 #[cfg(feature = "testkit")]
 pub use atomr_agents_testkit as testkit;
+#[cfg(feature = "tool")]
+pub use atomr_agents_tool as tool;
+#[cfg(feature = "workflow")]
+pub use atomr_agents_workflow as workflow;

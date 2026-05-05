@@ -117,9 +117,7 @@ mod tests {
     use crate::dag::Dag;
     use crate::state_runner::FnStatefulStep;
     use atomr_agents_core::{IterationBudget, MoneyBudget, TimeBudget, TokenBudget};
-    use atomr_agents_state::{
-        AppendMessages, InMemoryCheckpointer, MergeMap, StateSchema,
-    };
+    use atomr_agents_state::{AppendMessages, InMemoryCheckpointer, MergeMap, StateSchema};
     use serde_json::json;
     use std::time::Duration;
 

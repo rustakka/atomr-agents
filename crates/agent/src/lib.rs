@@ -17,7 +17,7 @@ pub use middleware::{
     ToolErrorRecoveryMiddleware,
 };
 pub use pipeline::Agent;
-pub use spec::AgentSpec;
 pub use r#trait::AgentRef;
+pub use spec::AgentSpec;
 
 pub use atomr_agents_tool::Provider;

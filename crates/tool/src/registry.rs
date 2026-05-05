@@ -26,7 +26,9 @@ impl ToolSetRegistry {
     }
 
     pub fn get(&self, id: &ToolSetId, version: &Version) -> Option<Arc<ToolSet>> {
-        self.inner.get(&(id.clone(), version.clone())).map(|r| r.value().clone())
+        self.inner
+            .get(&(id.clone(), version.clone()))
+            .map(|r| r.value().clone())
     }
 
     /// Highest version of `id`, or `None` if none published.

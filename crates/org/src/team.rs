@@ -2,9 +2,7 @@ use std::sync::Arc;
 
 use async_trait::async_trait;
 use atomr_agents_callable::{Callable, CallableHandle};
-use atomr_agents_core::{
-    CallCtx, DepartmentId, OrgId, Result, TeamId, ToolSetId, Value,
-};
+use atomr_agents_core::{CallCtx, DepartmentId, OrgId, Result, TeamId, ToolSetId, Value};
 use atomr_agents_strategy::Policy;
 
 use crate::routing::OrgRoutingStrategy;
@@ -27,12 +25,7 @@ impl OrgUnit {
         }
     }
 
-    async fn route_and_call(
-        &self,
-        input: Value,
-        ctx: CallCtx,
-        request_label: &str,
-    ) -> Result<Value> {
+    async fn route_and_call(&self, input: Value, ctx: CallCtx, request_label: &str) -> Result<Value> {
         let child = self.routing.pick(&self.children, request_label).await?;
         child.call(input, ctx).await
     }
@@ -172,7 +165,10 @@ mod tests {
                 granted_toolsets: vec![],
             },
         };
-        let r = team.call(serde_json::json!({"route": "l2"}), ctx()).await.unwrap();
+        let r = team
+            .call(serde_json::json!({"route": "l2"}), ctx())
+            .await
+            .unwrap();
         assert_eq!(r, serde_json::json!("specialist"));
     }
 

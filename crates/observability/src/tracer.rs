@@ -61,10 +61,7 @@ impl Tracer for StdoutTracer {
 fn print_node(builder: &RunTreeBuilder, node: &RunNode, depth: usize) {
     let indent = "  ".repeat(depth);
     let elapsed = node.elapsed_ms().unwrap_or(0);
-    println!(
-        "{indent}- {} [{:?}] {} ms",
-        node.name, node.kind, elapsed
-    );
+    println!("{indent}- {} [{:?}] {} ms", node.name, node.kind, elapsed);
     for child_id in &node.children {
         if let Some(child) = builder.get(child_id) {
             print_node(builder, &child, depth + 1);
@@ -162,18 +159,15 @@ pub struct LangSmithTracer {
 }
 
 impl LangSmithTracer {
-    pub fn new(
-        builder: Arc<RunTreeBuilder>,
-        project: impl Into<String>,
-        sink: Arc<dyn TracerSink>,
-    ) -> Self {
-        Self { builder, project: project.into(), sink }
+    pub fn new(builder: Arc<RunTreeBuilder>, project: impl Into<String>, sink: Arc<dyn TracerSink>) -> Self {
+        Self {
+            builder,
+            project: project.into(),
+            sink,
+        }
     }
 
-    pub fn in_memory(
-        builder: Arc<RunTreeBuilder>,
-        project: impl Into<String>,
-    ) -> (Self, Arc<MemorySink>) {
+    pub fn in_memory(builder: Arc<RunTreeBuilder>, project: impl Into<String>) -> (Self, Arc<MemorySink>) {
         let sink = Arc::new(MemorySink::default());
         (Self::new(builder, project, sink.clone()), sink)
     }

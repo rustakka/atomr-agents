@@ -13,9 +13,5 @@ pub struct ToolRef {
 
 #[async_trait]
 pub trait ToolStrategy: Send + Sync + 'static {
-    async fn select(
-        &self,
-        ctx: &AgentContext,
-        budget: &mut TokenBudget,
-    ) -> Result<Vec<ToolRef>>;
+    async fn select(&self, ctx: &AgentContext, budget: &mut TokenBudget) -> Result<Vec<ToolRef>>;
 }

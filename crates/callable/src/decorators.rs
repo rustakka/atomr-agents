@@ -66,14 +66,12 @@ impl Callable for WithRetry {
                         break;
                     }
                     tokio::time::sleep(delay).await;
-                    let next_ms =
-                        (delay.as_millis() as f32 * self.policy.backoff_multiplier) as u64;
+                    let next_ms = (delay.as_millis() as f32 * self.policy.backoff_multiplier) as u64;
                     delay = Duration::from_millis(next_ms).min(self.policy.max_backoff);
                 }
             }
         }
-        Err(last_err
-            .unwrap_or_else(|| AgentError::Internal("retry exhausted with no error".into())))
+        Err(last_err.unwrap_or_else(|| AgentError::Internal("retry exhausted with no error".into())))
     }
 
     fn label(&self) -> &str {
@@ -94,23 +92,23 @@ pub struct WithFallbacks {
 impl WithFallbacks {
     pub fn new(primary: CallableHandle, alternates: Vec<CallableHandle>) -> Self {
         let label = format!("fallback({})", primary.label());
-        Self { primary, alternates, label }
+        Self {
+            primary,
+            alternates,
+            label,
+        }
     }
 }
 
-pub fn with_fallbacks(
-    primary: CallableHandle,
-    alternates: Vec<CallableHandle>,
-) -> CallableHandle {
+pub fn with_fallbacks(primary: CallableHandle, alternates: Vec<CallableHandle>) -> CallableHandle {
     Arc::new(WithFallbacks::new(primary, alternates))
 }
 
 #[async_trait]
 impl Callable for WithFallbacks {
     async fn call(&self, input: Value, ctx: CallCtx) -> Result<Value> {
-        match self.primary.call(input.clone(), ctx.clone()).await {
-            Ok(v) => return Ok(v),
-            Err(_) => {}
+        if let Ok(v) = self.primary.call(input.clone(), ctx.clone()).await {
+            return Ok(v);
         }
         let mut last_err = None;
         for alt in &self.alternates {
@@ -190,7 +188,11 @@ pub struct WithTimeout {
 impl WithTimeout {
     pub fn new(inner: CallableHandle, duration: Duration) -> Self {
         let label = format!("timeout({})", inner.label());
-        Self { inner, duration, label }
+        Self {
+            inner,
+            duration,
+            label,
+        }
     }
 }
 
@@ -232,7 +234,12 @@ impl Branch {
         F: Fn(&Value) -> bool + Send + Sync + 'static,
     {
         let label = format!("branch({} | {})", if_true.label(), if_false.label());
-        Self { predicate: Arc::new(predicate), if_true, if_false, label }
+        Self {
+            predicate: Arc::new(predicate),
+            if_true,
+            if_false,
+            label,
+        }
     }
 }
 
@@ -327,9 +334,7 @@ mod tests {
         let primary = Arc::new(FnCallable::labeled("p", |_v: Value, _ctx| async {
             Err::<Value, _>(AgentError::Inference("primary down".into()))
         }));
-        let alt = Arc::new(FnCallable::labeled("alt", |v: Value, _ctx| async move {
-            Ok(v)
-        }));
+        let alt = Arc::new(FnCallable::labeled("alt", |v: Value, _ctx| async move { Ok(v) }));
         let composed = with_fallbacks(primary, vec![alt]);
         let out = composed.call(Value::from(42), ctx()).await.unwrap();
         assert_eq!(out, Value::from(42));
@@ -348,9 +353,10 @@ mod tests {
 
     #[tokio::test]
     async fn config_pushes_run_name_and_tags_into_trace() {
-        let inner = Arc::new(FnCallable::labeled("inner", |_v: Value, ctx: CallCtx| async move {
-            Ok(Value::from(serde_json::json!({"trace": ctx.trace})))
-        }));
+        let inner = Arc::new(FnCallable::labeled(
+            "inner",
+            |_v: Value, ctx: CallCtx| async move { Ok(Value::from(serde_json::json!({"trace": ctx.trace}))) },
+        ));
         let configured = with_config(
             inner,
             RunConfig {
@@ -376,13 +382,7 @@ mod tests {
             Ok(Value::from("small"))
         }));
         let b = Branch::new(|v: &Value| v.as_i64().unwrap_or(0) > 10, big, small);
-        assert_eq!(
-            b.call(Value::from(42), ctx()).await.unwrap(),
-            Value::from("big")
-        );
-        assert_eq!(
-            b.call(Value::from(1), ctx()).await.unwrap(),
-            Value::from("small")
-        );
+        assert_eq!(b.call(Value::from(42), ctx()).await.unwrap(), Value::from("big"));
+        assert_eq!(b.call(Value::from(1), ctx()).await.unwrap(), Value::from("small"));
     }
 }

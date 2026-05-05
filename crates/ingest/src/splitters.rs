@@ -320,7 +320,11 @@ fn cosine(a: &[f32], b: &[f32]) -> f32 {
     let dot: f32 = a.iter().zip(b).map(|(x, y)| x * y).sum();
     let na: f32 = a.iter().map(|x| x * x).sum::<f32>().sqrt();
     let nb: f32 = b.iter().map(|x| x * x).sum::<f32>().sqrt();
-    if na == 0.0 || nb == 0.0 { 0.0 } else { dot / (na * nb) }
+    if na == 0.0 || nb == 0.0 {
+        0.0
+    } else {
+        dot / (na * nb)
+    }
 }
 
 // silence the unused-trait-method warning when only `split_async` is used.
@@ -359,10 +363,7 @@ mod tests {
     #[test]
     fn markdown_header_splitter_creates_per_section_chunks() {
         let s = MarkdownHeaderSplitter::default();
-        let d = Document::new(
-            "d",
-            "# Title\nintro\n## Sub one\nbody A\n## Sub two\nbody B\n",
-        );
+        let d = Document::new("d", "# Title\nintro\n## Sub one\nbody A\n## Sub two\nbody B\n");
         let chunks = s.split(&d);
         assert!(chunks.len() >= 2);
     }
@@ -370,17 +371,17 @@ mod tests {
     #[test]
     fn code_splitter_breaks_at_fn_boundaries() {
         let s = CodeSplitter { lang: CodeLang::Rust };
-        let d = Document::new(
-            "d",
-            "fn a() { }\nfn b() { }\n",
-        );
+        let d = Document::new("d", "fn a() { }\nfn b() { }\n");
         let chunks = s.split(&d);
         assert_eq!(chunks.len(), 2);
     }
 
     #[test]
     fn token_splitter_overlaps() {
-        let s = TokenSplitter { max_tokens: 5, overlap_tokens: 2 };
+        let s = TokenSplitter {
+            max_tokens: 5,
+            overlap_tokens: 2,
+        };
         let d = Document::new("d", "a b c d e f g h i j");
         let chunks = s.split(&d);
         assert!(chunks.len() >= 2);

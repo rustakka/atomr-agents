@@ -156,7 +156,7 @@ impl LongStore for InMemoryLongStore {
             }
             hits.sort_by(|a, b| b.score.partial_cmp(&a.score).unwrap_or(std::cmp::Ordering::Equal));
         } else {
-            hits.sort_by(|a, b| b.updated_at_ms.cmp(&a.updated_at_ms));
+            hits.sort_by_key(|i| std::cmp::Reverse(i.updated_at_ms));
         }
         hits.truncate(top_k);
         Ok(hits)
@@ -209,7 +209,9 @@ mod tests {
     async fn put_get_overwrite() {
         let s = InMemoryLongStore::new();
         let ns = Namespace::from_parts(["user", "alice", "facts"]);
-        s.put(&ns, "city", serde_json::json!("Boston"), None).await.unwrap();
+        s.put(&ns, "city", serde_json::json!("Boston"), None)
+            .await
+            .unwrap();
         s.put(&ns, "city", serde_json::json!("NYC"), None).await.unwrap();
         let v = s.get(&ns, "city").await.unwrap().unwrap();
         assert_eq!(v.value, serde_json::json!("NYC"));
@@ -220,8 +222,12 @@ mod tests {
     async fn search_ranks_by_cosine_when_embedding() {
         let s = InMemoryLongStore::new();
         let ns = Namespace::from_parts(["user", "alice"]);
-        s.put(&ns, "a", serde_json::json!("alpha"), Some(vec![1.0, 0.0])).await.unwrap();
-        s.put(&ns, "b", serde_json::json!("beta"), Some(vec![0.0, 1.0])).await.unwrap();
+        s.put(&ns, "a", serde_json::json!("alpha"), Some(vec![1.0, 0.0]))
+            .await
+            .unwrap();
+        s.put(&ns, "b", serde_json::json!("beta"), Some(vec![0.0, 1.0]))
+            .await
+            .unwrap();
         let hits = s.search(&ns, Some(&[1.0, 0.0]), 5).await.unwrap();
         assert_eq!(hits[0].key, "a");
         assert!((hits[0].score - 1.0).abs() < 1e-5);

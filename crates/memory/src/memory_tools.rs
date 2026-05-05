@@ -15,9 +15,7 @@ fn ns_from_value(v: &Value) -> Result<Namespace> {
         .as_array()
         .ok_or_else(|| AgentError::Tool("namespace must be an array of strings".into()))?;
     Ok(Namespace(
-        arr.iter()
-            .map(|x| x.as_str().unwrap_or("").to_string())
-            .collect(),
+        arr.iter().map(|x| x.as_str().unwrap_or("").to_string()).collect(),
     ))
 }
 
@@ -37,9 +35,8 @@ impl WriteMemoryTool {
             descriptor: ToolDescriptor {
                 id: ToolId::from("write_memory"),
                 name: "write_memory".into(),
-                description:
-                    "Persist a key/value pair to the agent's long-term memory under a namespace."
-                        .into(),
+                description: "Persist a key/value pair to the agent's long-term memory under a namespace."
+                    .into(),
                 schema: ToolSchema(serde_json::json!({
                     "type": "object",
                     "required": ["namespace", "key", "value"],
@@ -162,10 +159,7 @@ impl Tool for RecallMemoryTool {
     }
     async fn invoke(&self, args: Value, _ctx: &InvokeCtx) -> Result<Value> {
         let ns = ns_from_value(args.get("namespace").unwrap_or(&Value::Null))?;
-        let top_k = args
-            .get("top_k")
-            .and_then(|v| v.as_u64())
-            .unwrap_or(5) as usize;
+        let top_k = args.get("top_k").and_then(|v| v.as_u64()).unwrap_or(5) as usize;
         let hits = self.store.search(&ns, None, top_k).await?;
         let items: Vec<Value> = hits
             .into_iter()
@@ -179,9 +173,7 @@ impl Tool for RecallMemoryTool {
 mod tests {
     use super::*;
     use crate::long_term::InMemoryLongStore;
-    use atomr_agents_core::{
-        CallCtx, IterationBudget, MoneyBudget, TimeBudget, TokenBudget,
-    };
+    use atomr_agents_core::{CallCtx, IterationBudget, MoneyBudget, TimeBudget, TokenBudget};
     use std::time::Duration;
 
     fn ictx() -> InvokeCtx {

@@ -21,11 +21,7 @@ pub struct StaticExpander {
 #[async_trait]
 impl QueryExpander for StaticExpander {
     async fn expand(&self, query: &str, _n: usize) -> Result<Vec<String>> {
-        Ok(self
-            .variants
-            .iter()
-            .map(|v| format!("{} {}", query, v))
-            .collect())
+        Ok(self.variants.iter().map(|v| format!("{} {}", query, v)).collect())
     }
 }
 
@@ -36,12 +32,12 @@ pub struct MultiQueryRetriever {
 }
 
 impl MultiQueryRetriever {
-    pub fn new(
-        base: Arc<dyn Retriever>,
-        expander: Arc<dyn QueryExpander>,
-        n_variants: usize,
-    ) -> Self {
-        Self { base, expander, n_variants }
+    pub fn new(base: Arc<dyn Retriever>, expander: Arc<dyn QueryExpander>, n_variants: usize) -> Self {
+        Self {
+            base,
+            expander,
+            n_variants,
+        }
     }
 }
 

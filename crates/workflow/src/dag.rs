@@ -33,7 +33,11 @@ pub struct Dag<S> {
 
 impl<S> Dag<S> {
     pub fn builder(entry: impl Into<StepId>) -> DagBuilder<S> {
-        DagBuilder { steps: BTreeMap::new(), edges: HashMap::new(), entry: entry.into() }
+        DagBuilder {
+            steps: BTreeMap::new(),
+            edges: HashMap::new(),
+            entry: entry.into(),
+        }
     }
 
     /// Topological order of step ids. Errors on cycles.
@@ -92,6 +96,10 @@ impl<S> DagBuilder<S> {
     }
 
     pub fn build(self) -> Dag<S> {
-        Dag { steps: self.steps, edges: self.edges, entry: self.entry }
+        Dag {
+            steps: self.steps,
+            edges: self.edges,
+            entry: self.entry,
+        }
     }
 }

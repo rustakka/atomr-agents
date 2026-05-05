@@ -33,7 +33,9 @@ pub enum MessageTemplate {
     User(StringTemplate),
     Assistant(StringTemplate),
     /// Insert one or more messages from `vars[key]` (must be an array).
-    Placeholder { key: String },
+    Placeholder {
+        key: String,
+    },
 }
 
 /// MessagesPlaceholder analogue — same shape as the `Placeholder`
@@ -55,7 +57,10 @@ pub struct ChatPromptTemplate {
 
 impl ChatPromptTemplate {
     pub fn builder() -> ChatPromptTemplateBuilder {
-        ChatPromptTemplateBuilder { messages: Vec::new(), partial: HashMap::new() }
+        ChatPromptTemplateBuilder {
+            messages: Vec::new(),
+            partial: HashMap::new(),
+        }
     }
 
     pub fn partial(mut self, key: impl Into<String>, val: Value) -> Self {
@@ -87,9 +92,8 @@ impl ChatPromptTemplate {
                     let v = merged.get(key).cloned().unwrap_or(Value::Null);
                     let arr = v.as_array().cloned().unwrap_or_default();
                     for entry in arr {
-                        let role = role_from_str(
-                            entry.get("role").and_then(|x| x.as_str()).unwrap_or("user"),
-                        );
+                        let role =
+                            role_from_str(entry.get("role").and_then(|x| x.as_str()).unwrap_or("user"));
                         let content = entry
                             .get("content")
                             .and_then(|x| x.as_str())
@@ -120,19 +124,23 @@ pub struct ChatPromptTemplateBuilder {
 
 impl ChatPromptTemplateBuilder {
     pub fn system(mut self, text: impl Into<String>) -> Self {
-        self.messages.push(MessageTemplate::System(StringTemplate(text.into())));
+        self.messages
+            .push(MessageTemplate::System(StringTemplate(text.into())));
         self
     }
     pub fn user(mut self, text: impl Into<String>) -> Self {
-        self.messages.push(MessageTemplate::User(StringTemplate(text.into())));
+        self.messages
+            .push(MessageTemplate::User(StringTemplate(text.into())));
         self
     }
     pub fn assistant(mut self, text: impl Into<String>) -> Self {
-        self.messages.push(MessageTemplate::Assistant(StringTemplate(text.into())));
+        self.messages
+            .push(MessageTemplate::Assistant(StringTemplate(text.into())));
         self
     }
     pub fn placeholder(mut self, key: impl Into<String>) -> Self {
-        self.messages.push(MessageTemplate::Placeholder { key: key.into() });
+        self.messages
+            .push(MessageTemplate::Placeholder { key: key.into() });
         self
     }
     pub fn partial(mut self, key: impl Into<String>, val: Value) -> Self {
@@ -140,7 +148,10 @@ impl ChatPromptTemplateBuilder {
         self
     }
     pub fn build(self) -> ChatPromptTemplate {
-        ChatPromptTemplate { messages: self.messages, partial: self.partial }
+        ChatPromptTemplate {
+            messages: self.messages,
+            partial: self.partial,
+        }
     }
 }
 
@@ -223,7 +234,11 @@ fn cosine(a: &[f32], b: &[f32]) -> f32 {
     let dot: f32 = a.iter().zip(b).map(|(x, y)| x * y).sum();
     let na: f32 = a.iter().map(|x| x * x).sum::<f32>().sqrt();
     let nb: f32 = b.iter().map(|x| x * x).sum::<f32>().sqrt();
-    if na == 0.0 || nb == 0.0 { 0.0 } else { dot / (na * nb) }
+    if na == 0.0 || nb == 0.0 {
+        0.0
+    } else {
+        dot / (na * nb)
+    }
 }
 
 pub struct FewShotChatTemplate {
@@ -240,7 +255,11 @@ impl FewShotChatTemplate {
         selector: Arc<dyn ExampleSelector>,
         example_template: ChatPromptTemplate,
     ) -> Self {
-        Self { formatter, selector, example_template }
+        Self {
+            formatter,
+            selector,
+            example_template,
+        }
     }
 
     pub async fn render(&self, vars: &HashMap<String, Value>) -> Result<Vec<RenderedMessage>> {
@@ -261,10 +280,7 @@ mod tests {
     use atomr_agents_embed::MockEmbedder;
 
     fn vars(pairs: &[(&str, Value)]) -> HashMap<String, Value> {
-        pairs
-            .iter()
-            .map(|(k, v)| (k.to_string(), v.clone()))
-            .collect()
+        pairs.iter().map(|(k, v)| (k.to_string(), v.clone())).collect()
     }
 
     #[test]
@@ -309,9 +325,21 @@ mod tests {
     async fn length_based_selector_truncates_at_budget() {
         let s = LengthBasedSelector {
             examples: vec![
-                Example { vars: HashMap::new(), estimated_tokens: 50, query_text: "a".into() },
-                Example { vars: HashMap::new(), estimated_tokens: 40, query_text: "b".into() },
-                Example { vars: HashMap::new(), estimated_tokens: 30, query_text: "c".into() },
+                Example {
+                    vars: HashMap::new(),
+                    estimated_tokens: 50,
+                    query_text: "a".into(),
+                },
+                Example {
+                    vars: HashMap::new(),
+                    estimated_tokens: 40,
+                    query_text: "b".into(),
+                },
+                Example {
+                    vars: HashMap::new(),
+                    estimated_tokens: 30,
+                    query_text: "c".into(),
+                },
             ],
             max_tokens: 80,
         };
@@ -349,9 +377,7 @@ mod tests {
 
     #[tokio::test]
     async fn few_shot_renders_examples_then_formatter() {
-        let formatter = ChatPromptTemplate::builder()
-            .user("Now answer: {q}")
-            .build();
+        let formatter = ChatPromptTemplate::builder().user("Now answer: {q}").build();
         let example_tmpl = ChatPromptTemplate::builder()
             .user("Q: {q}")
             .assistant("A: {a}")

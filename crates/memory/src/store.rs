@@ -46,7 +46,7 @@ impl MemoryStore for InMemoryStore {
             .filter(|i| namespaces_match(&i.namespace, namespace))
             .cloned()
             .collect();
-        out.sort_by(|a, b| b.timestamp_ms.cmp(&a.timestamp_ms));
+        out.sort_by_key(|i| std::cmp::Reverse(i.timestamp_ms));
         out.truncate(limit);
         Ok(out)
     }

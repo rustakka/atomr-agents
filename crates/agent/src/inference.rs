@@ -41,7 +41,10 @@ pub struct LocalRunnerClient<R: ModelRunner> {
 
 impl<R: ModelRunner + 'static> LocalRunnerClient<R> {
     pub fn new(runner: R, provider: Provider) -> Self {
-        Self { runner: Arc::new(Mutex::new(runner)), provider }
+        Self {
+            runner: Arc::new(Mutex::new(runner)),
+            provider,
+        }
     }
 
     pub fn from_arc(runner: Arc<Mutex<R>>, provider: Provider) -> Self {
@@ -83,6 +86,11 @@ impl<R: ModelRunner + 'static> InferenceClient for LocalRunnerClient<R> {
             }
         }
         let tool_calls = parser.finish();
-        Ok(TurnResult { text, usage, finish_reason: finish, tool_calls })
+        Ok(TurnResult {
+            text,
+            usage,
+            finish_reason: finish,
+            tool_calls,
+        })
     }
 }

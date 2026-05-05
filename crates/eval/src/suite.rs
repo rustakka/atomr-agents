@@ -1,9 +1,7 @@
 use std::sync::Arc;
 
 use atomr_agents_callable::Callable;
-use atomr_agents_core::{
-    CallCtx, IterationBudget, MoneyBudget, Result, TimeBudget, TokenBudget, Value,
-};
+use atomr_agents_core::{CallCtx, IterationBudget, MoneyBudget, Result, TimeBudget, TokenBudget, Value};
 use serde::{Deserialize, Serialize};
 use std::time::Duration;
 

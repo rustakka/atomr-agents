@@ -48,7 +48,11 @@ impl CacheKey {
         let sampling = serde_json::to_string(&batch.sampling).unwrap_or_default();
         sampling.hash(&mut sh);
         let sampling_hash = sh.finish();
-        Self { model: batch.model.clone(), messages_hash, sampling_hash }
+        Self {
+            model: batch.model.clone(),
+            messages_hash,
+            sampling_hash,
+        }
     }
 }
 

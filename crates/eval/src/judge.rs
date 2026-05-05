@@ -43,11 +43,7 @@ fn include_str_template_default() -> String {
 }
 
 impl Scorer for LlmJudgeScorer {
-    fn score(
-        &self,
-        expected: &atomr_agents_core::Value,
-        actual: &atomr_agents_core::Value,
-    ) -> ScorerOutcome {
+    fn score(&self, expected: &atomr_agents_core::Value, actual: &atomr_agents_core::Value) -> ScorerOutcome {
         let prompt = self
             .prompt_template
             .replace("{expected}", &expected.to_string())
@@ -97,11 +93,7 @@ pub struct RubricScorer {
 }
 
 impl Scorer for RubricScorer {
-    fn score(
-        &self,
-        expected: &atomr_agents_core::Value,
-        actual: &atomr_agents_core::Value,
-    ) -> ScorerOutcome {
+    fn score(&self, expected: &atomr_agents_core::Value, actual: &atomr_agents_core::Value) -> ScorerOutcome {
         let mut total = 0.0;
         let mut total_w = 0.0;
         let mut notes = Vec::new();

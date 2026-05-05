@@ -35,7 +35,12 @@ impl EmbeddingToolStrategy {
             let v = embedder.embed(&text).await?;
             index.upsert(i as AnnId, v).await?;
         }
-        Ok(Self { embedder, index, tools: Arc::new(RwLock::new(tools)), top_k })
+        Ok(Self {
+            embedder,
+            index,
+            tools: Arc::new(RwLock::new(tools)),
+            top_k,
+        })
     }
 
     fn tool_to_handle(t: DynTool) -> Arc<dyn Callable> {
@@ -73,20 +78,16 @@ impl EmbeddingToolStrategy {
 
 #[async_trait]
 impl ToolStrategy for EmbeddingToolStrategy {
-    async fn select(
-        &self,
-        ctx: &AgentContext,
-        _budget: &mut TokenBudget,
-    ) -> Result<Vec<ToolRef>> {
+    async fn select(&self, ctx: &AgentContext, _budget: &mut TokenBudget) -> Result<Vec<ToolRef>> {
         let q = self.embedder.embed(&ctx.turn.user).await?;
         let hits = self.index.search(&q, self.top_k).await?;
         let tools = self.tools.read();
         let mut out = Vec::with_capacity(hits.len());
         for (id, _score) in hits {
             let i = id as usize;
-            let t = tools.get(i).ok_or_else(|| {
-                AgentError::Internal(format!("ann hit {i} out of range"))
-            })?;
+            let t = tools
+                .get(i)
+                .ok_or_else(|| AgentError::Internal(format!("ann hit {i} out of range")))?;
             let d = t.descriptor();
             out.push(ToolRef {
                 id: d.id.clone(),
@@ -138,10 +139,15 @@ mod tests {
             stub("search", "search the web for documents"),
             stub("crm", "look up customer records"),
         ];
-        let strat = EmbeddingToolStrategy::build(embedder, idx, tools, 2).await.unwrap();
+        let strat = EmbeddingToolStrategy::build(embedder, idx, tools, 2)
+            .await
+            .unwrap();
         let ctx = AgentContext::for_agent(
             AgentId::from("a-1"),
-            TurnInput { user: "search the web for documents".into(), history: vec![] },
+            TurnInput {
+                user: "search the web for documents".into(),
+                history: vec![],
+            },
         );
         let mut b = TokenBudget::new(1000);
         let out = strat.select(&ctx, &mut b).await.unwrap();

@@ -61,8 +61,7 @@ impl PyEvent {
     }
 
     fn to_dict(&self, py: Python<'_>) -> PyResult<PyObject> {
-        let v = serde_json::to_value(&self.inner)
-            .map_err(|e| PyRuntimeError::new_err(e.to_string()))?;
+        let v = serde_json::to_value(&self.inner).map_err(|e| PyRuntimeError::new_err(e.to_string()))?;
         json_to_py(py, &v)
     }
 }
@@ -76,7 +75,9 @@ struct PyEventBus {
 impl PyEventBus {
     #[new]
     fn new() -> Self {
-        Self { inner: EventBus::new() }
+        Self {
+            inner: EventBus::new(),
+        }
     }
 
     /// Register a Python callable that receives every emitted event
@@ -87,9 +88,7 @@ impl PyEventBus {
             let cb = cb.clone();
             let env = env.clone();
             Python::with_gil(|py| {
-                if let Ok(pyev) =
-                    Py::new(py, PyEvent { inner: env }).and_then(|e| Ok(e.into_py(py)))
-                {
+                if let Ok(pyev) = Py::new(py, PyEvent { inner: env }).and_then(|e| Ok(e.into_py(py))) {
                     let _ = cb.call1(py, (pyev,));
                 }
             });
@@ -98,13 +97,7 @@ impl PyEventBus {
     }
 
     /// Emit a tool-invoked event from Python (handy for testing).
-    fn emit_tool_invoked(
-        &self,
-        tool_id: String,
-        args_hash: u64,
-        elapsed_ms: u64,
-        ok: bool,
-    ) -> PyResult<()> {
+    fn emit_tool_invoked(&self, tool_id: String, args_hash: u64, elapsed_ms: u64, ok: bool) -> PyResult<()> {
         self.inner.emit(Event::ToolInvoked {
             tool_id: ToolId::from(tool_id),
             args_hash,
@@ -159,18 +152,14 @@ struct PyRegistry {
 impl PyRegistry {
     #[new]
     fn new() -> Self {
-        Self { inner: Registry::new() }
+        Self {
+            inner: Registry::new(),
+        }
     }
 
     /// Publish an artifact unconditionally. `payload` is any
     /// JSON-serializable Python value.
-    fn publish(
-        &self,
-        kind: &str,
-        id: String,
-        version: &str,
-        payload: &Bound<PyAny>,
-    ) -> PyResult<()> {
+    fn publish(&self, kind: &str, id: String, version: &str, payload: &Bound<PyAny>) -> PyResult<()> {
         let kind = parse_kind(kind)?;
         let version = parse_version(version)?;
         let payload_v = py_to_json(payload.py(), payload)?;
@@ -202,7 +191,9 @@ impl PyRegistry {
         let version = parse_version(version)?;
         let payload_v = py_to_json(payload.py(), payload)?;
         let baseline = baseline_pass_rate.map(|p| EvalSummary { pass_rate: p });
-        let current = EvalSummary { pass_rate: current_pass_rate };
+        let current = EvalSummary {
+            pass_rate: current_pass_rate,
+        };
         self.inner
             .publish_gated(
                 ArtifactRecord {

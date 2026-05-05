@@ -2,9 +2,7 @@ use async_trait::async_trait;
 use atomr_agents_core::{AgentContext, Result, TokenBudget};
 use std::collections::HashMap;
 
-use crate::r#trait::{
-    Persona, PersonaMetadata, PersonaStrategy, RenderedPersona, StyleSpec, TraitFragment,
-};
+use crate::r#trait::{Persona, PersonaMetadata, PersonaStrategy, RenderedPersona, StyleSpec, TraitFragment};
 
 /// Naive token estimator: ~4 chars per token.
 fn est_tokens(s: &str) -> u32 {
@@ -24,7 +22,9 @@ impl StaticPersonaStrategy {
         Self {
             template: template.into(),
             variables: HashMap::new(),
-            metadata: PersonaMetadata { framework: Some("static".into()) },
+            metadata: PersonaMetadata {
+                framework: Some("static".into()),
+            },
         }
     }
 
@@ -44,11 +44,7 @@ impl StaticPersonaStrategy {
 
 #[async_trait]
 impl PersonaStrategy for StaticPersonaStrategy {
-    async fn resolve(
-        &self,
-        _ctx: &AgentContext,
-        budget: &mut TokenBudget,
-    ) -> Result<RenderedPersona> {
+    async fn resolve(&self, _ctx: &AgentContext, budget: &mut TokenBudget) -> Result<RenderedPersona> {
         let identity = self.rendered_identity();
         let tokens = est_tokens(&identity);
         budget.consume(tokens.min(budget.remaining))?;
@@ -84,7 +80,11 @@ impl TraitRenderer for DefaultBigFiveRenderer {
         let mut traits = Vec::new();
         let pairs = [
             ("openness", s.openness, "open to new ideas"),
-            ("conscientiousness", s.conscientiousness, "diligent and methodical"),
+            (
+                "conscientiousness",
+                s.conscientiousness,
+                "diligent and methodical",
+            ),
             ("extraversion", s.extraversion, "outgoing and energetic"),
             ("agreeableness", s.agreeableness, "warm and cooperative"),
             ("neuroticism", s.neuroticism, "emotionally reactive"),
@@ -111,26 +111,26 @@ pub struct BigFivePersonaStrategy {
 
 impl BigFivePersonaStrategy {
     pub fn new(scores: BigFiveScores) -> Self {
-        Self { scores, rendering: Box::new(DefaultBigFiveRenderer) }
+        Self {
+            scores,
+            rendering: Box::new(DefaultBigFiveRenderer),
+        }
     }
 }
 
 #[async_trait]
 impl PersonaStrategy for BigFivePersonaStrategy {
-    async fn resolve(
-        &self,
-        _ctx: &AgentContext,
-        budget: &mut TokenBudget,
-    ) -> Result<RenderedPersona> {
+    async fn resolve(&self, _ctx: &AgentContext, budget: &mut TokenBudget) -> Result<RenderedPersona> {
         let (identity, traits) = self.rendering.render(self.scores);
-        let tokens = est_tokens(&identity)
-            + traits.iter().map(|t| est_tokens(&t.description)).sum::<u32>();
+        let tokens = est_tokens(&identity) + traits.iter().map(|t| est_tokens(&t.description)).sum::<u32>();
         budget.consume(tokens.min(budget.remaining))?;
         Ok(RenderedPersona {
             identity,
             salient_traits: traits,
             style: StyleSpec::default(),
-            metadata: PersonaMetadata { framework: Some("big-five".into()) },
+            metadata: PersonaMetadata {
+                framework: Some("big-five".into()),
+            },
             estimated_tokens: tokens,
         })
     }
@@ -141,14 +141,35 @@ impl PersonaStrategy for BigFivePersonaStrategy {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[allow(non_camel_case_types, clippy::upper_case_acronyms)]
 pub enum MbtiType {
-    INTJ, INTP, ENTJ, ENTP, INFJ, INFP, ENFJ, ENFP,
-    ISTJ, ISFJ, ESTJ, ESFJ, ISTP, ISFP, ESTP, ESFP,
+    INTJ,
+    INTP,
+    ENTJ,
+    ENTP,
+    INFJ,
+    INFP,
+    ENFJ,
+    ENFP,
+    ISTJ,
+    ISFJ,
+    ESTJ,
+    ESFJ,
+    ISTP,
+    ISFP,
+    ESTP,
+    ESFP,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[allow(non_camel_case_types, clippy::upper_case_acronyms)]
 pub enum CognitiveFunction {
-    Ni, Ne, Si, Se, Ti, Te, Fi, Fe,
+    Ni,
+    Ne,
+    Si,
+    Se,
+    Ti,
+    Te,
+    Fi,
+    Fe,
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -173,17 +194,17 @@ pub struct MbtiPersonaStrategy {
 
 impl MbtiPersonaStrategy {
     pub fn new(t: MbtiType, stack: CognitiveStack, expression: ExpressionLevel) -> Self {
-        Self { mbti_type: t, cognitive_stack: stack, expression }
+        Self {
+            mbti_type: t,
+            cognitive_stack: stack,
+            expression,
+        }
     }
 }
 
 #[async_trait]
 impl PersonaStrategy for MbtiPersonaStrategy {
-    async fn resolve(
-        &self,
-        _ctx: &AgentContext,
-        budget: &mut TokenBudget,
-    ) -> Result<RenderedPersona> {
+    async fn resolve(&self, _ctx: &AgentContext, budget: &mut TokenBudget) -> Result<RenderedPersona> {
         let identity = format!(
             "MBTI {:?} (dom={:?}, aux={:?}, tert={:?}, inf={:?}, expr={:?})",
             self.mbti_type,
@@ -199,7 +220,9 @@ impl PersonaStrategy for MbtiPersonaStrategy {
             identity,
             salient_traits: vec![],
             style: StyleSpec::default(),
-            metadata: PersonaMetadata { framework: Some("mbti".into()) },
+            metadata: PersonaMetadata {
+                framework: Some("mbti".into()),
+            },
             estimated_tokens: tokens,
         })
     }
@@ -209,8 +232,18 @@ impl PersonaStrategy for MbtiPersonaStrategy {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Archetype {
-    Sage, Caregiver, Explorer, Hero, Magician, Outlaw,
-    Lover, Jester, Everyman, Innocent, Ruler, Creator,
+    Sage,
+    Caregiver,
+    Explorer,
+    Hero,
+    Magician,
+    Outlaw,
+    Lover,
+    Jester,
+    Everyman,
+    Innocent,
+    Ruler,
+    Creator,
 }
 
 pub enum ArchetypeExpression {
@@ -243,13 +276,11 @@ impl JungianArchetypeStrategy {
 
 #[async_trait]
 impl PersonaStrategy for JungianArchetypeStrategy {
-    async fn resolve(
-        &self,
-        _ctx: &AgentContext,
-        budget: &mut TokenBudget,
-    ) -> Result<RenderedPersona> {
-        let shadow_str =
-            self.shadow.map(|s| format!(" with {s:?} shadow")).unwrap_or_default();
+    async fn resolve(&self, _ctx: &AgentContext, budget: &mut TokenBudget) -> Result<RenderedPersona> {
+        let shadow_str = self
+            .shadow
+            .map(|s| format!(" with {s:?} shadow"))
+            .unwrap_or_default();
         let identity = format!(
             "Archetype: {:?}{} (individuation={:.2})",
             self.primary, shadow_str, self.individuation
@@ -260,7 +291,9 @@ impl PersonaStrategy for JungianArchetypeStrategy {
             identity,
             salient_traits: vec![],
             style: StyleSpec::default(),
-            metadata: PersonaMetadata { framework: Some("jungian".into()) },
+            metadata: PersonaMetadata {
+                framework: Some("jungian".into()),
+            },
             estimated_tokens: tokens,
         })
     }
@@ -283,7 +316,9 @@ impl PersonaReconciler for WeightedAverageReconciler {
         // Concatenate identities weighted, keep all salient traits.
         let mut identity_parts = Vec::new();
         let mut traits = Vec::new();
-        let mut metadata = PersonaMetadata { framework: Some("composite".into()) };
+        let mut metadata = PersonaMetadata {
+            framework: Some("composite".into()),
+        };
         for (p, w) in &layers {
             identity_parts.push(format!("[{:.0}%] {}", (w / total) * 100.0, p.identity));
             for t in &p.salient_traits {
@@ -314,25 +349,21 @@ pub struct CompositePersonaStrategy {
 }
 
 impl CompositePersonaStrategy {
-    pub fn new(
-        layers: Vec<(Box<dyn PersonaStrategy>, f32)>,
-        reconciler: Box<dyn PersonaReconciler>,
-    ) -> Self {
+    pub fn new(layers: Vec<(Box<dyn PersonaStrategy>, f32)>, reconciler: Box<dyn PersonaReconciler>) -> Self {
         Self { layers, reconciler }
     }
 
     pub fn weighted_average(layers: Vec<(Box<dyn PersonaStrategy>, f32)>) -> Self {
-        Self { layers, reconciler: Box::new(WeightedAverageReconciler) }
+        Self {
+            layers,
+            reconciler: Box::new(WeightedAverageReconciler),
+        }
     }
 }
 
 #[async_trait]
 impl PersonaStrategy for CompositePersonaStrategy {
-    async fn resolve(
-        &self,
-        ctx: &AgentContext,
-        budget: &mut TokenBudget,
-    ) -> Result<RenderedPersona> {
+    async fn resolve(&self, ctx: &AgentContext, budget: &mut TokenBudget) -> Result<RenderedPersona> {
         // Each layer gets a slice of the budget proportional to its
         // weight. (Simplification: we equal-split for now.)
         let n = self.layers.len() as u32;
@@ -352,7 +383,11 @@ impl PersonaStrategy for CompositePersonaStrategy {
         budget.consume(consumed_total.min(budget.remaining)).ok();
         let merged = self.reconciler.reconcile(rendered);
         let tokens = est_tokens(&merged.identity)
-            + merged.salient_traits.iter().map(|t| est_tokens(&t.description)).sum::<u32>();
+            + merged
+                .salient_traits
+                .iter()
+                .map(|t| est_tokens(&t.description))
+                .sum::<u32>();
         Ok(RenderedPersona {
             identity: merged.identity,
             salient_traits: merged.salient_traits,
@@ -371,7 +406,10 @@ mod tests {
     fn ctx() -> AgentContext {
         AgentContext::for_agent(
             AgentId::from("a-1"),
-            TurnInput { user: "hi".into(), history: vec![] },
+            TurnInput {
+                user: "hi".into(),
+                history: vec![],
+            },
         )
     }
 
@@ -408,8 +446,7 @@ mod tests {
             neuroticism: 0.3,
         }));
         let arch = Box::new(JungianArchetypeStrategy::new(Archetype::Sage));
-        let composite =
-            CompositePersonaStrategy::weighted_average(vec![(big, 0.6), (arch, 0.4)]);
+        let composite = CompositePersonaStrategy::weighted_average(vec![(big, 0.6), (arch, 0.4)]);
         let mut b = TokenBudget::new(2000);
         let r = composite.resolve(&ctx(), &mut b).await.unwrap();
         assert!(r.identity.contains("Archetype"));

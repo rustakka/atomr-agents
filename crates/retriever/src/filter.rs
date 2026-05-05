@@ -17,7 +17,11 @@ pub struct EmbeddingsFilter {
 
 impl EmbeddingsFilter {
     pub fn new(base: Arc<dyn Retriever>, embedder: Arc<dyn Embedder>, threshold: f32) -> Self {
-        Self { base, embedder, threshold }
+        Self {
+            base,
+            embedder,
+            threshold,
+        }
     }
 }
 
@@ -28,7 +32,11 @@ fn cosine(a: &[f32], b: &[f32]) -> f32 {
     let dot: f32 = a.iter().zip(b).map(|(x, y)| x * y).sum();
     let na: f32 = a.iter().map(|x| x * x).sum::<f32>().sqrt();
     let nb: f32 = b.iter().map(|x| x * x).sum::<f32>().sqrt();
-    if na == 0.0 || nb == 0.0 { 0.0 } else { dot / (na * nb) }
+    if na == 0.0 || nb == 0.0 {
+        0.0
+    } else {
+        dot / (na * nb)
+    }
 }
 
 #[async_trait]

@@ -13,17 +13,16 @@ pub struct SummarizingMemoryStrategy<I: MemoryStrategy> {
 
 impl<I: MemoryStrategy> SummarizingMemoryStrategy<I> {
     pub fn new(inner: I, max_summary_tokens: u32) -> Self {
-        Self { inner, max_summary_tokens }
+        Self {
+            inner,
+            max_summary_tokens,
+        }
     }
 }
 
 #[async_trait]
 impl<I: MemoryStrategy> MemoryStrategy for SummarizingMemoryStrategy<I> {
-    async fn retrieve(
-        &self,
-        ctx: &AgentContext,
-        budget: &mut TokenBudget,
-    ) -> Result<Vec<MemoryChunk>> {
+    async fn retrieve(&self, ctx: &AgentContext, budget: &mut TokenBudget) -> Result<Vec<MemoryChunk>> {
         let chunks = self.inner.retrieve(ctx, budget).await?;
         if chunks.is_empty() {
             return Ok(chunks);

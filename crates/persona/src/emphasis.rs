@@ -17,7 +17,10 @@ pub trait PersonaEmphasisStrategy: Send + Sync + 'static {
 
 fn estimated_tokens(p: &Persona) -> u32 {
     let chars = p.identity.chars().count()
-        + p.salient_traits.iter().map(|t| t.description.chars().count()).sum::<usize>();
+        + p.salient_traits
+            .iter()
+            .map(|t| t.description.chars().count())
+            .sum::<usize>();
     ((chars + 3) / 4) as u32
 }
 
@@ -66,7 +69,9 @@ impl PersonaEmphasisStrategy for AudienceAdaptive {
         } else {
             // Newcomers hear the warmest traits foregrounded.
             p.salient_traits.sort_by(|a, b| {
-                b.weight.partial_cmp(&a.weight).unwrap_or(std::cmp::Ordering::Equal)
+                b.weight
+                    .partial_cmp(&a.weight)
+                    .unwrap_or(std::cmp::Ordering::Equal)
             });
             p.salient_traits.truncate(3);
         }
@@ -177,7 +182,10 @@ mod tests {
             .collect();
         AgentContext::for_agent(
             AgentId::from("a"),
-            TurnInput { user: q.into(), history },
+            TurnInput {
+                user: q.into(),
+                history,
+            },
         )
     }
 
@@ -185,8 +193,16 @@ mod tests {
         Persona {
             identity: "engineer".into(),
             salient_traits: vec![
-                TraitFragment { label: "warmth".into(), weight: 0.8, description: "warm".into() },
-                TraitFragment { label: "rigor".into(), weight: 0.6, description: "rigorous".into() },
+                TraitFragment {
+                    label: "warmth".into(),
+                    weight: 0.8,
+                    description: "warm".into(),
+                },
+                TraitFragment {
+                    label: "rigor".into(),
+                    weight: 0.6,
+                    description: "rigorous".into(),
+                },
                 TraitFragment {
                     label: "playfulness".into(),
                     weight: 0.3,
@@ -207,7 +223,10 @@ mod tests {
     async fn audience_adaptive_drops_low_weight_for_experts() {
         let p = persona();
         let mut b = TokenBudget::new(1000);
-        let r = AudienceAdaptive.emphasize(&p, &ctx_with_history(5, "x"), &mut b).await.unwrap();
+        let r = AudienceAdaptive
+            .emphasize(&p, &ctx_with_history(5, "x"), &mut b)
+            .await
+            .unwrap();
         assert!(r.salient_traits.iter().all(|t| t.weight >= 0.5));
     }
 
@@ -215,7 +234,10 @@ mod tests {
     async fn task_adaptive_picks_mode_from_keywords() {
         let p = persona();
         let mut b = TokenBudget::new(1000);
-        let r = TaskAdaptive.emphasize(&p, &ctx_with_history(0, "debug this please"), &mut b).await.unwrap();
+        let r = TaskAdaptive
+            .emphasize(&p, &ctx_with_history(0, "debug this please"), &mut b)
+            .await
+            .unwrap();
         assert!(r.identity.contains("analytical"));
     }
 }

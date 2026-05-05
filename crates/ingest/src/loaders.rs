@@ -21,7 +21,9 @@ pub struct TextLoader {
 
 impl TextLoader {
     pub fn new(paths: impl IntoIterator<Item = impl Into<PathBuf>>) -> Self {
-        Self { paths: paths.into_iter().map(Into::into).collect() }
+        Self {
+            paths: paths.into_iter().map(Into::into).collect(),
+        }
     }
 }
 
@@ -71,7 +73,9 @@ pub struct JsonLoader {
 
 impl JsonLoader {
     pub fn new(paths: impl IntoIterator<Item = impl Into<PathBuf>>) -> Self {
-        Self { paths: paths.into_iter().map(Into::into).collect() }
+        Self {
+            paths: paths.into_iter().map(Into::into).collect(),
+        }
     }
 }
 
@@ -89,11 +93,7 @@ impl Loader for JsonLoader {
                 .as_array()
                 .ok_or_else(|| AgentError::Internal(format!("{}: not a JSON array", p.display())))?;
             for entry in arr {
-                let id = entry
-                    .get("id")
-                    .and_then(|x| x.as_str())
-                    .unwrap_or("")
-                    .to_string();
+                let id = entry.get("id").and_then(|x| x.as_str()).unwrap_or("").to_string();
                 let text = entry
                     .get("text")
                     .and_then(|x| x.as_str())

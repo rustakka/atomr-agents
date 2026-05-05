@@ -17,11 +17,19 @@ pub struct RunState {
 impl RunState {
     pub fn new(schema: Arc<StateSchema>) -> Self {
         let values = schema.defaults();
-        Self { schema, values, super_step: 0 }
+        Self {
+            schema,
+            values,
+            super_step: 0,
+        }
     }
 
     pub fn from_snapshot(schema: Arc<StateSchema>, values: HashMap<String, Value>, super_step: u64) -> Self {
-        Self { schema, values, super_step }
+        Self {
+            schema,
+            values,
+            super_step,
+        }
     }
 
     pub fn super_step(&self) -> u64 {
@@ -82,16 +90,10 @@ mod tests {
     #[test]
     fn writes_route_to_correct_reducers() {
         let mut s = RunState::new(schema());
-        s.write(
-            "messages",
-            json!([{"id": "m1", "role": "user", "text": "hi"}]),
-        )
-        .unwrap();
-        s.write(
-            "messages",
-            json!([{"id": "m1", "role": "user", "text": "edit"}]),
-        )
-        .unwrap();
+        s.write("messages", json!([{"id": "m1", "role": "user", "text": "hi"}]))
+            .unwrap();
+        s.write("messages", json!([{"id": "m1", "role": "user", "text": "edit"}]))
+            .unwrap();
         s.write("config", json!({"a": 1})).unwrap();
         s.write("config", json!({"b": 2})).unwrap();
         assert_eq!(s.read("messages")[0]["text"], "edit");

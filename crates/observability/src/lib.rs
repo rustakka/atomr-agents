@@ -22,13 +22,19 @@ pub struct EventBus {
     inner: Arc<Inner>,
 }
 
+type SinkFn = Box<dyn Fn(&EventEnvelope) + Send + Sync>;
+
 struct Inner {
-    sinks: Mutex<Vec<Box<dyn Fn(&EventEnvelope) + Send + Sync>>>,
+    sinks: Mutex<Vec<SinkFn>>,
 }
 
 impl EventBus {
     pub fn new() -> Self {
-        Self { inner: Arc::new(Inner { sinks: Mutex::new(Vec::new()) }) }
+        Self {
+            inner: Arc::new(Inner {
+                sinks: Mutex::new(Vec::new()),
+            }),
+        }
     }
 
     pub fn subscribe<F>(&self, f: F)

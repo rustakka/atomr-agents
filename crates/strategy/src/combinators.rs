@@ -17,11 +17,7 @@ impl ChainedMemoryStrategy {
 
 #[async_trait]
 impl MemoryStrategy for ChainedMemoryStrategy {
-    async fn retrieve(
-        &self,
-        ctx: &AgentContext,
-        budget: &mut TokenBudget,
-    ) -> Result<Vec<MemoryChunk>> {
+    async fn retrieve(&self, ctx: &AgentContext, budget: &mut TokenBudget) -> Result<Vec<MemoryChunk>> {
         let mut out = Vec::new();
         for m in &self.members {
             let chunks = m.retrieve(ctx, budget).await?;

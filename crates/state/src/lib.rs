@@ -14,17 +14,14 @@ mod reducer;
 mod schema;
 mod state;
 
-pub use checkpointer::{
-    CheckpointKey, CheckpointMeta, Checkpointer, InMemoryCheckpointer, Snapshot,
-};
+pub use checkpointer::{CheckpointKey, CheckpointMeta, Checkpointer, InMemoryCheckpointer, Snapshot};
 pub use reducer::{
-    AppendList, AppendMessages, DynReducer, LastWriteWins, MaxByTimestamp, MergeMap, Reducer,
-    reducer_box,
+    reducer_box, AppendList, AppendMessages, DynReducer, LastWriteWins, MaxByTimestamp, MergeMap, Reducer,
 };
 pub use schema::{Channel, StateSchema, StateSchemaBuilder};
 pub use state::RunState;
 
-#[cfg(feature = "sqlite")]
-pub use backends::sqlite::SqliteCheckpointer;
 #[cfg(feature = "postgres")]
 pub use backends::postgres::PostgresCheckpointer;
+#[cfg(feature = "sqlite")]
+pub use backends::sqlite::SqliteCheckpointer;

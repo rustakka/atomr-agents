@@ -39,12 +39,14 @@ impl Policy {
             (Some(v), None) | (None, Some(v)) => Some(v),
             (None, None) => None,
         };
-        let max_money_micro_usd_per_call =
-            match (parent.max_money_micro_usd_per_call, child.max_money_micro_usd_per_call) {
-                (Some(p), Some(c)) => Some(p.min(c)),
-                (Some(v), None) | (None, Some(v)) => Some(v),
-                (None, None) => None,
-            };
+        let max_money_micro_usd_per_call = match (
+            parent.max_money_micro_usd_per_call,
+            child.max_money_micro_usd_per_call,
+        ) {
+            (Some(p), Some(c)) => Some(p.min(c)),
+            (Some(v), None) | (None, Some(v)) => Some(v),
+            (None, None) => None,
+        };
         Policy {
             allowed_toolsets,
             allowed_models,

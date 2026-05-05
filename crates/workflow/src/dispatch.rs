@@ -72,23 +72,22 @@ mod tests {
 
     #[tokio::test]
     async fn fan_out_preserves_order_and_calls_per_input() {
-        let producer: CallableHandle = Arc::new(FnCallable::labeled(
-            "producer",
-            |_v: Value, _ctx| async move { Ok(serde_json::json!([1, 2, 3, 4, 5])) },
-        ));
+        let producer: CallableHandle =
+            Arc::new(FnCallable::labeled("producer", |_v: Value, _ctx| async move {
+                Ok(serde_json::json!([1, 2, 3, 4, 5]))
+            }));
         let calls = Arc::new(AtomicUsize::new(0));
         let calls2 = calls.clone();
-        let target: CallableHandle = Arc::new(FnCallable::labeled(
-            "target",
-            move |v: Value, _ctx| {
-                let calls = calls2.clone();
-                async move {
-                    calls.fetch_add(1, Ordering::SeqCst);
-                    Ok(serde_json::json!(v.as_i64().unwrap() * 10))
-                }
-            },
-        ));
-        let out = dispatch_fan_out(producer, target, 2, Value::Null, ctx()).await.unwrap();
+        let target: CallableHandle = Arc::new(FnCallable::labeled("target", move |v: Value, _ctx| {
+            let calls = calls2.clone();
+            async move {
+                calls.fetch_add(1, Ordering::SeqCst);
+                Ok(serde_json::json!(v.as_i64().unwrap() * 10))
+            }
+        }));
+        let out = dispatch_fan_out(producer, target, 2, Value::Null, ctx())
+            .await
+            .unwrap();
         assert_eq!(out.len(), 5);
         assert_eq!(out[0], serde_json::json!(10));
         assert_eq!(out[4], serde_json::json!(50));
@@ -97,36 +96,33 @@ mod tests {
 
     #[tokio::test]
     async fn fan_out_respects_concurrency() {
-        let producer: CallableHandle = Arc::new(FnCallable::labeled(
-            "p",
-            |_v: Value, _ctx| async move { Ok(serde_json::json!([1, 2, 3, 4, 5, 6, 7, 8])) },
-        ));
+        let producer: CallableHandle = Arc::new(FnCallable::labeled("p", |_v: Value, _ctx| async move {
+            Ok(serde_json::json!([1, 2, 3, 4, 5, 6, 7, 8]))
+        }));
         let active = Arc::new(AtomicU32::new(0));
         let max_seen = Arc::new(AtomicU32::new(0));
         let active2 = active.clone();
         let max2 = max_seen.clone();
-        let target: CallableHandle = Arc::new(FnCallable::labeled(
-            "t",
-            move |v: Value, _ctx| {
-                let active = active2.clone();
-                let max_seen = max2.clone();
-                async move {
-                    let now = active.fetch_add(1, Ordering::SeqCst) + 1;
-                    let mut m = max_seen.load(Ordering::SeqCst);
-                    while now > m {
-                        match max_seen.compare_exchange(m, now, Ordering::SeqCst, Ordering::SeqCst)
-                        {
-                            Ok(_) => break,
-                            Err(actual) => m = actual,
-                        }
+        let target: CallableHandle = Arc::new(FnCallable::labeled("t", move |v: Value, _ctx| {
+            let active = active2.clone();
+            let max_seen = max2.clone();
+            async move {
+                let now = active.fetch_add(1, Ordering::SeqCst) + 1;
+                let mut m = max_seen.load(Ordering::SeqCst);
+                while now > m {
+                    match max_seen.compare_exchange(m, now, Ordering::SeqCst, Ordering::SeqCst) {
+                        Ok(_) => break,
+                        Err(actual) => m = actual,
                     }
-                    tokio::time::sleep(Duration::from_millis(10)).await;
-                    active.fetch_sub(1, Ordering::SeqCst);
-                    Ok(v)
                 }
-            },
-        ));
-        let _ = dispatch_fan_out(producer, target, 3, Value::Null, ctx()).await.unwrap();
+                tokio::time::sleep(Duration::from_millis(10)).await;
+                active.fetch_sub(1, Ordering::SeqCst);
+                Ok(v)
+            }
+        }));
+        let _ = dispatch_fan_out(producer, target, 3, Value::Null, ctx())
+            .await
+            .unwrap();
         assert!(max_seen.load(Ordering::SeqCst) <= 3);
     }
 }

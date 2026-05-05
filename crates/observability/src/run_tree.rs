@@ -80,7 +80,7 @@ impl RunTreeBuilder {
         }
         node.events.push(env.clone());
         // Heuristic: if event reports completion, set ended_at.
-        if let Some(ms) = end_timestamp_for(&env) {
+        if let Some(ms) = end_timestamp_for(env) {
             node.ended_at_ms = Some(ms);
         }
         if !env.tags.is_empty() {
@@ -159,7 +159,11 @@ fn name_of(e: &Event) -> String {
         Event::AgentTurn { agent_id, .. } => format!("agent:{}", agent_id.as_str()),
         Event::ToolInvoked { tool_id, .. } => format!("tool:{}", tool_id.as_str()),
         Event::WorkflowStep { step_id, .. } => format!("step:{step_id}"),
-        Event::HarnessIteration { harness_id, iteration, .. } => {
+        Event::HarnessIteration {
+            harness_id,
+            iteration,
+            ..
+        } => {
             format!("harness:{}#{iteration}", harness_id.as_str())
         }
         Event::StrategyResolved { strategy, .. } => format!("strategy:{strategy}"),

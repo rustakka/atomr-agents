@@ -110,11 +110,7 @@ impl MiddlewareStack {
         Ok(())
     }
 
-    pub async fn run_dynamic_prompt(
-        &self,
-        agent_id: &AgentId,
-        user: &str,
-    ) -> Result<Option<String>> {
+    pub async fn run_dynamic_prompt(&self, agent_id: &AgentId, user: &str) -> Result<Option<String>> {
         // Last `Some` wins (later middlewares override earlier).
         let mut out: Option<String> = None;
         for m in self.iter() {
@@ -148,11 +144,15 @@ impl LoggingMiddleware {
 #[async_trait]
 impl AgentMiddleware for LoggingMiddleware {
     async fn before_agent(&self, agent_id: &AgentId, user: &str) -> Result<()> {
-        self.log.lock().push(format!("before_agent {} '{}'", agent_id.as_str(), user));
+        self.log
+            .lock()
+            .push(format!("before_agent {} '{}'", agent_id.as_str(), user));
         Ok(())
     }
     async fn before_model_call(&self, batch: &mut ExecuteBatch) -> Result<()> {
-        self.log.lock().push(format!("before_model_call model={}", batch.model));
+        self.log
+            .lock()
+            .push(format!("before_model_call model={}", batch.model));
         Ok(())
     }
     async fn after_model_call(&self, result: &mut TurnResult) -> Result<()> {
@@ -197,7 +197,10 @@ impl RateLimitMiddleware {
         Self {
             capacity,
             refill_per_sec,
-            state: Mutex::new(BucketState { tokens: capacity as f32, last: Instant::now() }),
+            state: Mutex::new(BucketState {
+                tokens: capacity as f32,
+                last: Instant::now(),
+            }),
         }
     }
 
@@ -244,7 +247,10 @@ pub struct RedactionMiddleware {
 
 impl RedactionMiddleware {
     pub fn new(patterns: Vec<String>, replacement: impl Into<String>) -> Self {
-        Self { patterns, replacement: replacement.into() }
+        Self {
+            patterns,
+            replacement: replacement.into(),
+        }
     }
 }
 
@@ -273,8 +279,7 @@ pub struct ToolErrorRecoveryMiddleware;
 impl AgentMiddleware for ToolErrorRecoveryMiddleware {
     async fn after_tool_call(&self, name: &str, result: &mut Result<Value>) -> Result<()> {
         if let Err(e) = result {
-            let payload =
-                serde_json::json!({ "tool_error": true, "tool": name, "message": e.to_string() });
+            let payload = serde_json::json!({ "tool_error": true, "tool": name, "message": e.to_string() });
             *result = Ok(payload);
         }
         Ok(())
@@ -307,8 +312,7 @@ mod tests {
         stack.run_before_agent(&AgentId::from("a"), "hi").await.unwrap();
         let mut b = batch("mock", "hi");
         stack.run_before_model_call(&mut b).await.unwrap();
-        let m_dc: &LoggingMiddleware =
-            unsafe { &*(Arc::as_ptr(&m) as *const LoggingMiddleware) };
+        let m_dc: &LoggingMiddleware = unsafe { &*(Arc::as_ptr(&m) as *const LoggingMiddleware) };
         assert!(m_dc.lines().iter().any(|l| l.starts_with("before_agent")));
         assert!(m_dc.lines().iter().any(|l| l.starts_with("before_model_call")));
     }

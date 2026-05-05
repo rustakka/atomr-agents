@@ -38,7 +38,11 @@ impl Pipeline {
     pub fn from(c: CallableHandle) -> Self {
         let label = c.label().to_string();
         Self {
-            stages: vec![Stage { kind: StageKind::Sequential, key: None, callable: c }],
+            stages: vec![Stage {
+                kind: StageKind::Sequential,
+                key: None,
+                callable: c,
+            }],
             label,
         }
     }
@@ -46,7 +50,11 @@ impl Pipeline {
     /// `prompt | model` — chain another stage.
     pub fn then(mut self, c: CallableHandle) -> Self {
         self.label = format!("{} | {}", self.label, c.label());
-        self.stages.push(Stage { kind: StageKind::Sequential, key: None, callable: c });
+        self.stages.push(Stage {
+            kind: StageKind::Sequential,
+            key: None,
+            callable: c,
+        });
         self
     }
 
@@ -68,7 +76,11 @@ impl Pipeline {
     pub fn assign(mut self, key: impl Into<String>, c: CallableHandle) -> Self {
         let key = key.into();
         self.label = format!("{}.assign({})", self.label, key);
-        self.stages.push(Stage { kind: StageKind::Assign, key: Some(key), callable: c });
+        self.stages.push(Stage {
+            kind: StageKind::Assign,
+            key: Some(key),
+            callable: c,
+        });
         self
     }
 
@@ -81,13 +93,19 @@ impl Pipeline {
         let stage_callable = FanOutCallable::new(branches);
         let handle: CallableHandle = Arc::new(stage_callable);
         self.label = label;
-        self.stages
-            .push(Stage { kind: StageKind::Sequential, key: None, callable: handle });
+        self.stages.push(Stage {
+            kind: StageKind::Sequential,
+            key: None,
+            callable: handle,
+        });
         self
     }
 
     pub fn build(self) -> CallableHandle {
-        Arc::new(BuiltPipeline { stages: self.stages, label: self.label })
+        Arc::new(BuiltPipeline {
+            stages: self.stages,
+            label: self.label,
+        })
     }
 }
 
@@ -147,9 +165,16 @@ impl FanOutCallable {
     fn new(branches: Vec<(String, CallableHandle)>) -> Self {
         let label = format!(
             "fan_out({})",
-            branches.iter().map(|(k, _)| k.as_str()).collect::<Vec<_>>().join(",")
+            branches
+                .iter()
+                .map(|(k, _)| k.as_str())
+                .collect::<Vec<_>>()
+                .join(",")
         );
-        Self { branches: branches.into_iter().collect(), label }
+        Self {
+            branches: branches.into_iter().collect(),
+            label,
+        }
     }
 }
 
@@ -239,10 +264,7 @@ mod tests {
             Ok(Value::from(n))
         }));
         let p = Pipeline::from(echo("seed")).assign("size", derive).build();
-        let out = p
-            .call(serde_json::json!({"a": 1, "b": 2}), ctx())
-            .await
-            .unwrap();
+        let out = p.call(serde_json::json!({"a": 1, "b": 2}), ctx()).await.unwrap();
         assert_eq!(out["a"], Value::from(1));
         assert_eq!(out["size"], Value::from(2));
     }

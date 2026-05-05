@@ -23,19 +23,19 @@ impl VectorRetriever {
         namespace: Namespace,
         top_k: usize,
     ) -> Self {
-        Self { store, embedder, namespace, top_k }
+        Self {
+            store,
+            embedder,
+            namespace,
+            top_k,
+        }
     }
 
     /// Convenience: embed and put a document under the configured namespace.
     pub async fn upsert_doc(&self, key: &str, text: &str) -> Result<()> {
         let v = self.embedder.embed(text).await?;
         self.store
-            .put(
-                &self.namespace,
-                key,
-                serde_json::json!({"text": text}),
-                Some(v),
-            )
+            .put(&self.namespace, key, serde_json::json!({"text": text}), Some(v))
             .await
     }
 }

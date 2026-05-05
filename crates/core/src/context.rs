@@ -43,7 +43,12 @@ pub struct AgentContext {
 
 impl AgentContext {
     pub fn for_agent(agent_id: AgentId, turn: TurnInput) -> Self {
-        Self { agent_id, team_id: None, org_id: None, turn }
+        Self {
+            agent_id,
+            team_id: None,
+            org_id: None,
+            turn,
+        }
     }
 }
 

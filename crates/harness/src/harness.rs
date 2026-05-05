@@ -1,8 +1,6 @@
 use async_trait::async_trait;
 use atomr_agents_callable::Callable;
-use atomr_agents_core::{
-    AgentError, CallCtx, Event, HarnessId, Result, TokenBudget, Value,
-};
+use atomr_agents_core::{AgentError, CallCtx, Event, HarnessId, Result, TokenBudget, Value};
 use atomr_agents_observability::EventBus;
 use semver::Version;
 
@@ -50,7 +48,10 @@ where
             state.iteration += 1;
             let outcome = self.loop_strategy.step(&mut state).await?;
             match outcome {
-                StepOutcome::Continue { working_memory, label } => {
+                StepOutcome::Continue {
+                    working_memory,
+                    label,
+                } => {
                     state.working_memory = working_memory;
                     state.history.push(StepEvent {
                         iteration: state.iteration,
@@ -120,7 +121,10 @@ mod tests {
         async fn step(&self, _state: &mut HarnessState) -> Result<StepOutcome> {
             let v = self.counter.fetch_add(1, Ordering::SeqCst) + 1;
             if v >= 3 {
-                Ok(StepOutcome::Done { output: serde_json::json!(v), label: "reached".into() })
+                Ok(StepOutcome::Done {
+                    output: serde_json::json!(v),
+                    label: "reached".into(),
+                })
             } else {
                 Ok(StepOutcome::Continue {
                     working_memory: serde_json::json!(v),
@@ -140,7 +144,9 @@ mod tests {
                 eval_suite_id: None,
                 initial_budget: TokenBudget::new(1000),
             },
-            loop_strategy: CountToThree { counter: counter.clone() },
+            loop_strategy: CountToThree {
+                counter: counter.clone(),
+            },
             termination: IterationCapTermination { cap: 100 },
             bus: EventBus::new(),
         };

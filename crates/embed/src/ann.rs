@@ -10,6 +10,7 @@ pub type AnnId = u64;
 /// scan; a CUDA / external-service implementation slots in behind
 /// the same trait without changing call sites.
 #[async_trait]
+#[allow(clippy::len_without_is_empty)]
 pub trait AnnIndex: Send + Sync + 'static {
     async fn upsert(&self, id: AnnId, vec: Vec<f32>) -> Result<()>;
     async fn search(&self, query: &[f32], top_k: usize) -> Result<Vec<(AnnId, f32)>>;
@@ -26,7 +27,10 @@ pub struct InMemoryAnnIndex {
 
 impl InMemoryAnnIndex {
     pub fn new(dim: usize) -> Self {
-        Self { dim, inner: Arc::new(RwLock::new(Vec::new())) }
+        Self {
+            dim,
+            inner: Arc::new(RwLock::new(Vec::new())),
+        }
     }
 
     fn cosine(a: &[f32], b: &[f32]) -> f32 {
@@ -69,8 +73,7 @@ impl AnnIndex for InMemoryAnnIndex {
             )));
         }
         let g = self.inner.read();
-        let mut scored: Vec<(AnnId, f32)> =
-            g.iter().map(|(id, v)| (*id, Self::cosine(v, query))).collect();
+        let mut scored: Vec<(AnnId, f32)> = g.iter().map(|(id, v)| (*id, Self::cosine(v, query))).collect();
         scored.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal));
         scored.truncate(top_k);
         Ok(scored)

@@ -46,7 +46,12 @@ mod tests {
     use super::*;
 
     fn run_with(passed: u32, failed: u32) -> EvalRun {
-        EvalRun { passed, failed, avg_score: 0.0, results: vec![] }
+        EvalRun {
+            passed,
+            failed,
+            avg_score: 0.0,
+            results: vec![],
+        }
     }
 
     #[test]

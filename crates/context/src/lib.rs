@@ -46,8 +46,7 @@ impl ContextAssembler {
     ) -> Result<RenderedContext> {
         // Stable indexed sort: keep original positions for tie-break,
         // but evict lowest priority first when over budget.
-        let mut indexed: Vec<(usize, ContextFragment)> =
-            fragments.drain(..).enumerate().collect();
+        let mut indexed: Vec<(usize, ContextFragment)> = fragments.drain(..).enumerate().collect();
 
         let total: u64 = indexed.iter().map(|(_, f)| f.estimated_tokens as u64).sum();
         if total <= budget.remaining as u64 {
@@ -55,16 +54,15 @@ impl ContextAssembler {
             let mut out: Vec<ContextFragment> = indexed.into_iter().map(|(_, f)| f).collect();
             let total_tokens = out.iter().map(|f| f.estimated_tokens).sum();
             budget.consume(total_tokens)?;
-            return Ok(RenderedContext { fragments: std::mem::take(&mut out), total_tokens });
+            return Ok(RenderedContext {
+                fragments: std::mem::take(&mut out),
+                total_tokens,
+            });
         }
 
         // Otherwise, evict lowest-priority fragments until we fit.
         // Priority: higher number = more important.
-        indexed.sort_by(|a, b| {
-            b.1.priority
-                .cmp(&a.1.priority)
-                .then_with(|| a.0.cmp(&b.0))
-        });
+        indexed.sort_by(|a, b| b.1.priority.cmp(&a.1.priority).then_with(|| a.0.cmp(&b.0)));
         let mut kept: Vec<(usize, ContextFragment)> = Vec::new();
         let mut acc: u64 = 0;
         for entry in indexed {
@@ -78,7 +76,10 @@ impl ContextAssembler {
         let out: Vec<ContextFragment> = kept.into_iter().map(|(_, f)| f).collect();
         let total_tokens = out.iter().map(|f| f.estimated_tokens).sum();
         budget.consume(total_tokens)?;
-        Ok(RenderedContext { fragments: out, total_tokens })
+        Ok(RenderedContext {
+            fragments: out,
+            total_tokens,
+        })
     }
 }
 
@@ -98,11 +99,9 @@ mod tests {
     #[test]
     fn assemble_fits_under_budget() {
         let mut b = TokenBudget::new(100);
-        let r = ContextAssembler::assemble(
-            vec![frag("a", 5, 30), frag("b", 5, 30), frag("c", 5, 30)],
-            &mut b,
-        )
-        .unwrap();
+        let r =
+            ContextAssembler::assemble(vec![frag("a", 5, 30), frag("b", 5, 30), frag("c", 5, 30)], &mut b)
+                .unwrap();
         assert_eq!(r.fragments.len(), 3);
         assert_eq!(r.total_tokens, 90);
         assert_eq!(b.remaining, 10);

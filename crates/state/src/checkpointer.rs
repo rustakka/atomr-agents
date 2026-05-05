@@ -42,23 +42,11 @@ pub trait Checkpointer: Send + Sync + 'static {
     async fn save(&self, snapshot: Snapshot) -> Result<()>;
     async fn load(&self, key: &CheckpointKey) -> Result<Option<Snapshot>>;
     /// Returns the latest snapshot for a `(workflow, run)` pair.
-    async fn latest(
-        &self,
-        workflow_id: &WorkflowId,
-        run_id: &RunId,
-    ) -> Result<Option<Snapshot>>;
-    async fn list(
-        &self,
-        workflow_id: &WorkflowId,
-        run_id: &RunId,
-    ) -> Result<Vec<CheckpointMeta>>;
+    async fn latest(&self, workflow_id: &WorkflowId, run_id: &RunId) -> Result<Option<Snapshot>>;
+    async fn list(&self, workflow_id: &WorkflowId, run_id: &RunId) -> Result<Vec<CheckpointMeta>>;
     /// Create a new run that diverges from an existing checkpoint
     /// with an optional set of state edits applied at the fork point.
-    async fn fork(
-        &self,
-        from: &CheckpointKey,
-        edits: Vec<(String, Value)>,
-    ) -> Result<RunId>;
+    async fn fork(&self, from: &CheckpointKey, edits: Vec<(String, Value)>) -> Result<RunId>;
 }
 
 #[derive(Default, Clone)]
@@ -100,33 +88,23 @@ impl Checkpointer for InMemoryCheckpointer {
             .cloned())
     }
 
-    async fn latest(
-        &self,
-        workflow_id: &WorkflowId,
-        run_id: &RunId,
-    ) -> Result<Option<Snapshot>> {
+    async fn latest(&self, workflow_id: &WorkflowId, run_id: &RunId) -> Result<Option<Snapshot>> {
         let g = self.inner.read();
         Ok(g.iter()
             .filter(|s| {
-                s.key.workflow_id.as_str() == workflow_id.as_str()
-                    && s.key.run_id.as_str() == run_id.as_str()
+                s.key.workflow_id.as_str() == workflow_id.as_str() && s.key.run_id.as_str() == run_id.as_str()
             })
             .max_by_key(|s| s.key.super_step)
             .cloned())
     }
 
-    async fn list(
-        &self,
-        workflow_id: &WorkflowId,
-        run_id: &RunId,
-    ) -> Result<Vec<CheckpointMeta>> {
+    async fn list(&self, workflow_id: &WorkflowId, run_id: &RunId) -> Result<Vec<CheckpointMeta>> {
         Ok(self
             .inner
             .read()
             .iter()
             .filter(|s| {
-                s.key.workflow_id.as_str() == workflow_id.as_str()
-                    && s.key.run_id.as_str() == run_id.as_str()
+                s.key.workflow_id.as_str() == workflow_id.as_str() && s.key.run_id.as_str() == run_id.as_str()
             })
             .map(|s| CheckpointMeta {
                 workflow_id: s.key.workflow_id.clone(),
@@ -137,11 +115,7 @@ impl Checkpointer for InMemoryCheckpointer {
             .collect())
     }
 
-    async fn fork(
-        &self,
-        from: &CheckpointKey,
-        edits: Vec<(String, Value)>,
-    ) -> Result<RunId> {
+    async fn fork(&self, from: &CheckpointKey, edits: Vec<(String, Value)>) -> Result<RunId> {
         let snap = self.load(from).await?.ok_or_else(|| {
             atomr_agents_core::AgentError::Internal(format!(
                 "fork: source checkpoint {}#{} not found",

@@ -36,7 +36,10 @@ impl SelfQueryParser for KeyValueParser {
                 q_parts.push(tok);
             }
         }
-        Ok(ParsedSelfQuery { query: q_parts.join(" "), filter })
+        Ok(ParsedSelfQuery {
+            query: q_parts.join(" "),
+            filter,
+        })
     }
 }
 
@@ -62,9 +65,10 @@ impl Retriever for SelfQueryRetriever {
         Ok(hits
             .into_iter()
             .filter(|d| {
-                parsed.filter.iter().all(|(k, v)| {
-                    d.metadata.get(k).map(|m| m == v).unwrap_or(false)
-                })
+                parsed
+                    .filter
+                    .iter()
+                    .all(|(k, v)| d.metadata.get(k).map(|m| m == v).unwrap_or(false))
             })
             .collect())
     }

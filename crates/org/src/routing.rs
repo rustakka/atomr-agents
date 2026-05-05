@@ -24,7 +24,9 @@ pub struct RoundRobinRouter {
 
 impl RoundRobinRouter {
     pub fn new() -> Self {
-        Self { cursor: Arc::new(AtomicUsize::new(0)) }
+        Self {
+            cursor: Arc::new(AtomicUsize::new(0)),
+        }
     }
 }
 
@@ -36,11 +38,7 @@ impl Default for RoundRobinRouter {
 
 #[async_trait]
 impl OrgRoutingStrategy for RoundRobinRouter {
-    async fn pick(
-        &self,
-        children: &[(String, CallableHandle)],
-        _label: &str,
-    ) -> Result<CallableHandle> {
+    async fn pick(&self, children: &[(String, CallableHandle)], _label: &str) -> Result<CallableHandle> {
         if children.is_empty() {
             return Err(AgentError::Internal("round-robin: no children".into()));
         }
@@ -60,17 +58,15 @@ pub struct LoadAwareRouter {
 
 impl LoadAwareRouter {
     pub fn for_size(n: usize) -> Self {
-        Self { inflight: Arc::new(parking_lot::Mutex::new(vec![0; n])) }
+        Self {
+            inflight: Arc::new(parking_lot::Mutex::new(vec![0; n])),
+        }
     }
 }
 
 #[async_trait]
 impl OrgRoutingStrategy for LoadAwareRouter {
-    async fn pick(
-        &self,
-        children: &[(String, CallableHandle)],
-        _label: &str,
-    ) -> Result<CallableHandle> {
+    async fn pick(&self, children: &[(String, CallableHandle)], _label: &str) -> Result<CallableHandle> {
         if children.is_empty() {
             return Err(AgentError::Internal("load-aware: no children".into()));
         }
@@ -78,11 +74,7 @@ impl OrgRoutingStrategy for LoadAwareRouter {
         if g.len() != children.len() {
             g.resize(children.len(), 0);
         }
-        let (idx, _) = g
-            .iter()
-            .enumerate()
-            .min_by_key(|(_, c)| **c)
-            .unwrap();
+        let (idx, _) = g.iter().enumerate().min_by_key(|(_, c)| **c).unwrap();
         g[idx] += 1;
         Ok(children[idx].1.clone())
     }

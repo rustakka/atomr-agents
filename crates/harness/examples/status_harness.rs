@@ -15,9 +15,7 @@ use std::sync::Arc;
 
 use async_trait::async_trait;
 use atomr_agents_core::{Result, TokenBudget, Value};
-use atomr_agents_harness::{
-    Harness, HarnessSpec, IterationCapTermination, LoopStrategy, StepOutcome,
-};
+use atomr_agents_harness::{Harness, HarnessSpec, IterationCapTermination, LoopStrategy, StepOutcome};
 use atomr_agents_observability::EventBus;
 use parking_lot::Mutex;
 use semver::Version;
@@ -47,10 +45,7 @@ struct StatusLoop {
 
 #[async_trait]
 impl LoopStrategy for StatusLoop {
-    async fn step(
-        &self,
-        state: &mut atomr_agents_harness::HarnessState,
-    ) -> Result<StepOutcome> {
+    async fn step(&self, state: &mut atomr_agents_harness::HarnessState) -> Result<StepOutcome> {
         let now = self.signals.snapshot();
         let prev = self.last.lock().clone();
         let mut diffs = Vec::new();

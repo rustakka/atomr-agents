@@ -19,7 +19,11 @@ pub struct ParentDocumentRetriever {
 
 impl ParentDocumentRetriever {
     pub fn new(child_retriever: Arc<dyn Retriever>) -> Self {
-        Self { child_retriever, parents: HashMap::new(), child_to_parent: HashMap::new() }
+        Self {
+            child_retriever,
+            parents: HashMap::new(),
+            child_to_parent: HashMap::new(),
+        }
     }
 
     pub fn add(&mut self, parent: Document, child_ids: Vec<String>) {

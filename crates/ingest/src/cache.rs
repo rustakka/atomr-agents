@@ -52,7 +52,11 @@ pub struct CachedEmbedder {
 
 impl CachedEmbedder {
     pub fn new(inner: Arc<dyn Embedder>, cache: Arc<dyn KvCache>, model_id: impl Into<String>) -> Self {
-        Self { inner, cache, model_id: model_id.into() }
+        Self {
+            inner,
+            cache,
+            model_id: model_id.into(),
+        }
     }
 
     fn key(&self, text: &str) -> String {

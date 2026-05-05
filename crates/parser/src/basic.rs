@@ -94,7 +94,10 @@ pub struct SchemaParser<T> {
 
 impl<T> SchemaParser<T> {
     pub fn new(instructions: impl Into<String>) -> Self {
-        Self { instructions: instructions.into(), _marker: PhantomData }
+        Self {
+            instructions: instructions.into(),
+            _marker: PhantomData,
+        }
     }
 }
 
@@ -119,7 +122,9 @@ pub struct EnumParser {
 
 impl EnumParser {
     pub fn new<I: IntoIterator<Item = impl Into<String>>>(variants: I) -> Self {
-        Self { variants: variants.into_iter().map(Into::into).collect() }
+        Self {
+            variants: variants.into_iter().map(Into::into).collect(),
+        }
     }
 }
 
@@ -290,10 +295,7 @@ mod tests {
     #[tokio::test]
     async fn schema_parser_round_trips_typed_struct() {
         let p: SchemaParser<Plan> = SchemaParser::new("...");
-        let v = p
-            .parse(r#"{"title":"x","steps":["a","b"]}"#)
-            .await
-            .unwrap();
+        let v = p.parse(r#"{"title":"x","steps":["a","b"]}"#).await.unwrap();
         assert_eq!(v.title, "x");
         assert_eq!(v.steps.len(), 2);
     }

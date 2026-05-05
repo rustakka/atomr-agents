@@ -6,7 +6,7 @@ use std::sync::Arc;
 
 use atomr_agents_core::Value;
 
-use crate::reducer::{DynReducer, LastWriteWins, Reducer, reducer_box};
+use crate::reducer::{reducer_box, DynReducer, LastWriteWins, Reducer};
 
 #[derive(Clone)]
 pub struct Channel {
@@ -17,7 +17,9 @@ pub struct Channel {
 
 impl std::fmt::Debug for Channel {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("Channel").field("key", &self.key).finish_non_exhaustive()
+        f.debug_struct("Channel")
+            .field("key", &self.key)
+            .finish_non_exhaustive()
     }
 }
 
@@ -28,7 +30,9 @@ pub struct StateSchema {
 
 impl StateSchema {
     pub fn builder() -> StateSchemaBuilder {
-        StateSchemaBuilder { channels: HashMap::new() }
+        StateSchemaBuilder {
+            channels: HashMap::new(),
+        }
     }
 
     pub fn channel(&self, key: &str) -> Option<&Channel> {
@@ -57,7 +61,11 @@ impl StateSchemaBuilder {
         let key = key.into();
         self.channels.insert(
             key.clone(),
-            Channel { key, reducer: reducer_box(reducer), default: Value::Null },
+            Channel {
+                key,
+                reducer: reducer_box(reducer),
+                default: Value::Null,
+            },
         );
         self
     }
@@ -70,8 +78,14 @@ impl StateSchemaBuilder {
         default: Value,
     ) -> Self {
         let key = key.into();
-        self.channels
-            .insert(key.clone(), Channel { key, reducer: reducer_box(reducer), default });
+        self.channels.insert(
+            key.clone(),
+            Channel {
+                key,
+                reducer: reducer_box(reducer),
+                default,
+            },
+        );
         self
     }
 
@@ -80,13 +94,19 @@ impl StateSchemaBuilder {
         let key = key.into();
         self.channels.insert(
             key.clone(),
-            Channel { key, reducer: Arc::new(|_, n| n) as DynReducer, default: Value::Null },
+            Channel {
+                key,
+                reducer: Arc::new(|_, n| n) as DynReducer,
+                default: Value::Null,
+            },
         );
         self
     }
 
     pub fn build(self) -> StateSchema {
-        StateSchema { channels: self.channels }
+        StateSchema {
+            channels: self.channels,
+        }
     }
 }
 

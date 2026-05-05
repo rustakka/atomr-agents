@@ -14,7 +14,10 @@ pub struct TokenBudget {
 
 impl TokenBudget {
     pub fn new(total: u32) -> Self {
-        Self { remaining: total, reserved: 0 }
+        Self {
+            remaining: total,
+            reserved: 0,
+        }
     }
 
     pub fn consume(&mut self, n: u32) -> Result<()> {
@@ -61,7 +64,9 @@ pub struct TimeBudget {
 
 impl TimeBudget {
     pub fn new(d: Duration) -> Self {
-        Self { remaining_ms: d.as_millis().min(u64::MAX as u128) as u64 }
+        Self {
+            remaining_ms: d.as_millis().min(u64::MAX as u128) as u64,
+        }
     }
 
     pub fn consume(&mut self, d: Duration) -> Result<()> {
@@ -82,7 +87,9 @@ pub struct MoneyBudget {
 
 impl MoneyBudget {
     pub fn from_usd(usd: f64) -> Self {
-        Self { remaining_micro_usd: (usd * 1_000_000.0) as u64 }
+        Self {
+            remaining_micro_usd: (usd * 1_000_000.0) as u64,
+        }
     }
 
     pub fn consume_micro(&mut self, micro: u64) -> Result<()> {

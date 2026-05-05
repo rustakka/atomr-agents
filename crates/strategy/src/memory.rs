@@ -3,11 +3,7 @@ use atomr_agents_core::{AgentContext, MemoryChunk, MemoryItem, Result, TokenBudg
 
 #[async_trait]
 pub trait MemoryStrategy: Send + Sync + 'static {
-    async fn retrieve(
-        &self,
-        ctx: &AgentContext,
-        budget: &mut TokenBudget,
-    ) -> Result<Vec<MemoryChunk>>;
+    async fn retrieve(&self, ctx: &AgentContext, budget: &mut TokenBudget) -> Result<Vec<MemoryChunk>>;
 
     async fn store(&self, item: MemoryItem) -> Result<()>;
 }

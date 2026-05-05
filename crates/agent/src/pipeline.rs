@@ -6,9 +6,8 @@ use std::time::Instant;
 use async_trait::async_trait;
 use atomr_agents_context::{ContextAssembler, ContextFragment};
 use atomr_agents_core::{
-    AgentContext, AgentError, AgentId, CallCtx, Event, IterationBudget, Json,
-    MemoryItem, MemoryKind, MemoryNamespace, MoneyBudget, Result, TimeBudget, TokenBudget,
-    ToolId, TurnInput,
+    AgentContext, AgentError, AgentId, CallCtx, Event, IterationBudget, Json, MemoryItem, MemoryKind,
+    MemoryNamespace, MoneyBudget, Result, TimeBudget, TokenBudget, ToolId, TurnInput,
 };
 use atomr_agents_instruction::InstructionStrategy;
 use atomr_agents_observability::EventBus;
@@ -49,15 +48,14 @@ where
     /// One full agent turn. Drives the per-turn pipeline (memory +
     /// skill + tool resolution → instruction render → context
     /// assembly → inference → tool-call loop → memory store).
-    pub async fn run_turn(
-        &self,
-        user: String,
-        budgets: AgentBudgets,
-    ) -> Result<TurnResult> {
+    pub async fn run_turn(&self, user: String, budgets: AgentBudgets) -> Result<TurnResult> {
         let start = Instant::now();
         let agent_ctx = AgentContext::for_agent(
             self.id.clone(),
-            TurnInput { user: user.clone(), history: vec![] },
+            TurnInput {
+                user: user.clone(),
+                history: vec![],
+            },
         );
         let AgentBudgets {
             mut tokens,
@@ -88,7 +86,9 @@ where
         // 2. Render instructions.
         let mut instr_budget = tokens.split(2).remove(0);
         let r_instr = self.instructions.render(&agent_ctx, &mut instr_budget).await?;
-        tokens.consume(r_instr.estimated_tokens.min(tokens.remaining)).ok();
+        tokens
+            .consume(r_instr.estimated_tokens.min(tokens.remaining))
+            .ok();
 
         // 3. Assemble final context (system prompt + recalled memory).
         let mut frags = vec![ContextFragment {
@@ -180,8 +180,7 @@ where
                     ))
                 }));
             }
-            let mut results: Vec<(usize, String, Json::Value, u64, u64)> =
-                Vec::with_capacity(handles.len());
+            let mut results: Vec<(usize, String, Json::Value, u64, u64)> = Vec::with_capacity(handles.len());
             for h in handles {
                 let pair = h.await.map_err(|e| AgentError::Internal(e.to_string()))??;
                 results.push(pair);
@@ -196,9 +195,7 @@ where
                 });
                 messages.push(InferMsg {
                     role: Role::Tool,
-                    content: MessageContent::Text(
-                        serde_json::to_string(&result).unwrap_or_default(),
-                    ),
+                    content: MessageContent::Text(serde_json::to_string(&result).unwrap_or_default()),
                 });
             }
         }
@@ -283,15 +280,11 @@ mod tests {
 
     use async_trait::async_trait;
     use atomr_agents_core::{InvokeCtx, Value};
-    use atomr_agents_instruction::{
-        ComposedInstructionStrategy, StaticBehaviorStrategy, StaticTaskStrategy,
-    };
+    use atomr_agents_instruction::{ComposedInstructionStrategy, StaticBehaviorStrategy, StaticTaskStrategy};
     use atomr_agents_memory::{InMemoryStore, RecencyMemoryStrategy};
     use atomr_agents_persona::StaticPersonaStrategy;
     use atomr_agents_skill::StaticSkillStrategy;
-    use atomr_agents_tool::{
-        DynTool, Provider, StaticToolStrategy, Tool, ToolDescriptor, ToolSchema,
-    };
+    use atomr_agents_tool::{DynTool, Provider, StaticToolStrategy, Tool, ToolDescriptor, ToolSchema};
     use atomr_infer_testkit::{MockRunner, MockScript};
 
     use crate::inference::LocalRunnerClient;
@@ -341,8 +334,7 @@ mod tests {
             StaticBehaviorStrategy("Reply tersely.".into()),
         );
         let skill_strat = StaticSkillStrategy::new(vec![]);
-        let inference: Arc<dyn InferenceClient> =
-            Arc::new(LocalRunnerClient::new(runner, Provider::OpenAi));
+        let inference: Arc<dyn InferenceClient> = Arc::new(LocalRunnerClient::new(runner, Provider::OpenAi));
         Agent {
             id: AgentId::from("a-1"),
             model: "mock".into(),
@@ -394,7 +386,9 @@ mod tests {
     }
     impl ToolLoopMock {
         fn new() -> Self {
-            Self { step: StdMutex::new(0) }
+            Self {
+                step: StdMutex::new(0),
+            }
         }
     }
     #[async_trait]
@@ -415,7 +409,11 @@ mod tests {
                             "function": {"name": "calculator", "arguments": "{\"a\":2,\"b\":3}"}
                         }]
                     })),
-                    usage: Some(IUsage { input_tokens: 5, output_tokens: 0, ..Default::default() }),
+                    usage: Some(IUsage {
+                        input_tokens: 5,
+                        output_tokens: 0,
+                        ..Default::default()
+                    }),
                     finish_reason: Some(FinishReason::ToolCalls),
                 }]
             } else {
@@ -423,7 +421,11 @@ mod tests {
                     request_id: request_id.clone(),
                     text_delta: "answer: 5".into(),
                     tool_call_delta: None,
-                    usage: Some(IUsage { input_tokens: 5, output_tokens: 3, ..Default::default() }),
+                    usage: Some(IUsage {
+                        input_tokens: 5,
+                        output_tokens: 3,
+                        ..Default::default()
+                    }),
                     finish_reason: Some(FinishReason::Stop),
                 }]
             };

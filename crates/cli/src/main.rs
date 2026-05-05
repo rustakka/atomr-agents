@@ -89,21 +89,19 @@ fn main() -> Result<()> {
                     "  (stub — integrates `atomr_agents_eval::EvalSuite` when registry-backed harnesses land)"
                 );
             }
-            EvalCmd::Gate { baseline_path, current_path, tolerance } => {
-                println!(
-                    "eval gate baseline={baseline_path} current={current_path} tol={tolerance}"
-                );
-                println!(
-                    "  (stub — call `RegressionGate::check` after deserializing the EvalRun JSONs)"
-                );
+            EvalCmd::Gate {
+                baseline_path,
+                current_path,
+                tolerance,
+            } => {
+                println!("eval gate baseline={baseline_path} current={current_path} tol={tolerance}");
+                println!("  (stub — call `RegressionGate::check` after deserializing the EvalRun JSONs)");
             }
         },
         Cmd::Registry { op } => match op {
             RegistryCmd::List { kind } => {
                 println!("registry list {kind}");
-                println!(
-                    "  (stub — backing store wiring lands when persistence-backed registry plugs in)"
-                );
+                println!("  (stub — backing store wiring lands when persistence-backed registry plugs in)");
             }
             RegistryCmd::Get { kind, id, version } => {
                 println!("registry get {kind} {id} {version}");

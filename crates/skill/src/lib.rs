@@ -2,9 +2,7 @@
 //! sub-agents + optional memory namespace.
 
 use async_trait::async_trait;
-use atomr_agents_core::{
-    AgentContext, MemoryNamespace, Result, SkillId, ToolId, TokenBudget,
-};
+use atomr_agents_core::{AgentContext, MemoryNamespace, Result, SkillId, TokenBudget, ToolId};
 use atomr_agents_strategy::{SkillRef, SkillStrategy};
 use semver::Version;
 use serde::{Deserialize, Serialize};
@@ -38,7 +36,11 @@ pub struct SkillSet {
 
 impl SkillSet {
     pub fn new(id: impl Into<String>, version: Version, skills: Vec<Skill>) -> Self {
-        Self { id: id.into(), version, skills }
+        Self {
+            id: id.into(),
+            version,
+            skills,
+        }
     }
 }
 
@@ -55,15 +57,15 @@ impl StaticSkillStrategy {
 
 #[async_trait]
 impl SkillStrategy for StaticSkillStrategy {
-    async fn applicable(
-        &self,
-        _ctx: &AgentContext,
-        _budget: &mut TokenBudget,
-    ) -> Result<Vec<SkillRef>> {
+    async fn applicable(&self, _ctx: &AgentContext, _budget: &mut TokenBudget) -> Result<Vec<SkillRef>> {
         Ok(self
             .skills
             .iter()
-            .map(|s| SkillRef { id: s.id.clone(), name: s.name.clone(), priority: s.priority })
+            .map(|s| SkillRef {
+                id: s.id.clone(),
+                name: s.name.clone(),
+                priority: s.priority,
+            })
             .collect())
     }
 }
@@ -81,19 +83,19 @@ impl KeywordSkillStrategy {
 
 #[async_trait]
 impl SkillStrategy for KeywordSkillStrategy {
-    async fn applicable(
-        &self,
-        ctx: &AgentContext,
-        _budget: &mut TokenBudget,
-    ) -> Result<Vec<SkillRef>> {
+    async fn applicable(&self, ctx: &AgentContext, _budget: &mut TokenBudget) -> Result<Vec<SkillRef>> {
         let needle = ctx.turn.user.to_lowercase();
         let mut out: Vec<SkillRef> = self
             .skills
             .iter()
             .filter(|s| s.keywords.iter().any(|k| needle.contains(&k.to_lowercase())))
-            .map(|s| SkillRef { id: s.id.clone(), name: s.name.clone(), priority: s.priority })
+            .map(|s| SkillRef {
+                id: s.id.clone(),
+                name: s.name.clone(),
+                priority: s.priority,
+            })
             .collect();
-        out.sort_by(|a, b| b.priority.cmp(&a.priority));
+        out.sort_by_key(|s| std::cmp::Reverse(s.priority));
         Ok(out)
     }
 }
@@ -106,7 +108,10 @@ mod tests {
     fn ctx(text: &str) -> AgentContext {
         AgentContext::for_agent(
             AgentId::from("a-1"),
-            TurnInput { user: text.into(), history: vec![] },
+            TurnInput {
+                user: text.into(),
+                history: vec![],
+            },
         )
     }
 
@@ -132,7 +137,10 @@ mod tests {
         };
         let strat = KeywordSkillStrategy::new(vec![s1, s2]);
         let mut b = TokenBudget::new(1000);
-        let out = strat.applicable(&ctx("please search for x"), &mut b).await.unwrap();
+        let out = strat
+            .applicable(&ctx("please search for x"), &mut b)
+            .await
+            .unwrap();
         assert_eq!(out.len(), 1);
         assert_eq!(out[0].name, "RAG");
     }

@@ -4,10 +4,10 @@ mod decorators;
 mod pipeline;
 
 pub use decorators::{
-    Branch, Lambda, WithConfig, WithFallbacks, WithRetry, WithTimeout, with_config, with_fallbacks,
-    with_retry, with_timeout,
+    with_config, with_fallbacks, with_retry, with_timeout, Branch, Lambda, WithConfig, WithFallbacks,
+    WithRetry, WithTimeout,
 };
-pub use pipeline::{Pipeline, fan_out};
+pub use pipeline::{fan_out, Pipeline};
 
 use std::sync::Arc;
 
@@ -44,7 +44,10 @@ pub struct FnCallable<F> {
 
 impl<F> FnCallable<F> {
     pub fn new(f: F) -> Self {
-        Self { inner: f, label: "fn" }
+        Self {
+            inner: f,
+            label: "fn",
+        }
     }
 
     pub fn labeled(label: &'static str, f: F) -> Self {
@@ -94,10 +97,10 @@ mod tests {
 
     #[tokio::test]
     async fn handle_is_dyn_safe() {
-        let h: CallableHandle = std::sync::Arc::new(FnCallable::labeled(
-            "echo",
-            |input: Value, _ctx| async move { Ok(input) },
-        ));
+        let h: CallableHandle =
+            std::sync::Arc::new(FnCallable::labeled("echo", |input: Value, _ctx| async move {
+                Ok(input)
+            }));
         let out = h.call(serde_json::json!(42), ctx()).await.unwrap();
         assert_eq!(out, serde_json::json!(42));
         assert_eq!(h.label(), "echo");

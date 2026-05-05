@@ -5,8 +5,8 @@ mod prompt_template;
 
 pub use prompt_template::{
     ChatPromptTemplate, ChatPromptTemplateBuilder, Example, ExampleSelector, FewShotChatTemplate,
-    LengthBasedSelector, MessageTemplate, MessagesPlaceholder, RenderedMessage,
-    SemanticSimilaritySelector, StringTemplate,
+    LengthBasedSelector, MessageTemplate, MessagesPlaceholder, RenderedMessage, SemanticSimilaritySelector,
+    StringTemplate,
 };
 
 use async_trait::async_trait;
@@ -24,11 +24,7 @@ pub struct RenderedInstructions {
 
 #[async_trait]
 pub trait InstructionStrategy: Send + Sync + 'static {
-    async fn render(
-        &self,
-        ctx: &AgentContext,
-        budget: &mut TokenBudget,
-    ) -> Result<RenderedInstructions>;
+    async fn render(&self, ctx: &AgentContext, budget: &mut TokenBudget) -> Result<RenderedInstructions>;
 }
 
 /// Resolves `task` for `ComposedInstructionStrategy`.
@@ -113,7 +109,12 @@ where
     B: BehaviorStrategy,
 {
     pub fn new(persona: P, task: T, behavior: B) -> Self {
-        Self { persona, task, behavior, assembler: Box::new(DefaultAssembler) }
+        Self {
+            persona,
+            task,
+            behavior,
+            assembler: Box::new(DefaultAssembler),
+        }
     }
 }
 
@@ -124,11 +125,7 @@ where
     T: TaskStrategy,
     B: BehaviorStrategy,
 {
-    async fn render(
-        &self,
-        ctx: &AgentContext,
-        budget: &mut TokenBudget,
-    ) -> Result<RenderedInstructions> {
+    async fn render(&self, ctx: &AgentContext, budget: &mut TokenBudget) -> Result<RenderedInstructions> {
         // Persona / task / behavior share the parent budget cooperatively.
         let mut subs = budget.split(3);
         let (mut bp, mut bt, mut bb) = (subs.remove(0), subs.remove(0), subs.remove(0));
@@ -187,7 +184,10 @@ mod tests {
         );
         let ctx = AgentContext::for_agent(
             AgentId::from("a-1"),
-            TurnInput { user: "hi".into(), history: vec![] },
+            TurnInput {
+                user: "hi".into(),
+                history: vec![],
+            },
         );
         let mut b = TokenBudget::new(2000);
         let r = composed.render(&ctx, &mut b).await.unwrap();
@@ -199,15 +199,16 @@ mod tests {
     #[tokio::test]
     async fn under_budget_pressure_task_survives() {
         let composed = ComposedInstructionStrategy::new(
-            StaticPersonaStrategy::new(
-                "Long persona ".repeat(50).trim_end().to_string(),
-            ),
+            StaticPersonaStrategy::new("Long persona ".repeat(50).trim_end().to_string()),
             StaticTaskStrategy("Solve the user's request.".into()),
             StaticBehaviorStrategy("Long behavior ".repeat(50).trim_end().to_string()),
         );
         let ctx = AgentContext::for_agent(
             AgentId::from("a-1"),
-            TurnInput { user: "x".into(), history: vec![] },
+            TurnInput {
+                user: "x".into(),
+                history: vec![],
+            },
         );
         // Tight budget — only ~10 tokens of room after persona/behavior split.
         let mut b = TokenBudget::new(40);

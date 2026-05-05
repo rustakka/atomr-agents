@@ -52,7 +52,10 @@ struct Partial {
 
 impl ToolCallParser {
     pub fn new(provider: Provider) -> Self {
-        Self { provider, calls: BTreeMap::new() }
+        Self {
+            provider,
+            calls: BTreeMap::new(),
+        }
     }
 
     pub fn feed(&mut self, delta: &Value) -> Result<()> {
@@ -64,8 +67,12 @@ impl ToolCallParser {
 
     pub fn finish(self) -> Vec<ParsedToolCall> {
         self.calls
-            .into_iter()
-            .map(|(_, p)| ParsedToolCall { id: p.id, name: p.name, arguments_raw: p.args })
+            .into_values()
+            .map(|p| ParsedToolCall {
+                id: p.id,
+                name: p.name,
+                arguments_raw: p.args,
+            })
             .collect()
     }
 
@@ -122,10 +129,7 @@ impl ToolCallParser {
                 // Sometimes the full input arrives at start. Skip
                 // empty objects since deltas will follow.
                 if let Some(input) = block.get("input") {
-                    let is_empty_object = input
-                        .as_object()
-                        .map(|m| m.is_empty())
-                        .unwrap_or(false);
+                    let is_empty_object = input.as_object().map(|m| m.is_empty()).unwrap_or(false);
                     if !input.is_null() && !is_empty_object {
                         entry.args = serde_json::to_string(input).unwrap_or_default();
                     }

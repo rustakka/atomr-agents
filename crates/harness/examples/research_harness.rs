@@ -8,12 +8,8 @@ use std::sync::Arc;
 
 use async_trait::async_trait;
 use atomr_agents_callable::{Callable, FnCallable};
-use atomr_agents_core::{
-    CallCtx, IterationBudget, MoneyBudget, Result, TimeBudget, TokenBudget, Value,
-};
-use atomr_agents_harness::{
-    Harness, HarnessSpec, IterationCapTermination, LoopStrategy, StepOutcome,
-};
+use atomr_agents_core::{CallCtx, IterationBudget, MoneyBudget, Result, TimeBudget, TokenBudget, Value};
+use atomr_agents_harness::{Harness, HarnessSpec, IterationCapTermination, LoopStrategy, StepOutcome};
 use atomr_agents_observability::EventBus;
 use parking_lot::Mutex;
 use semver::Version;
@@ -22,9 +18,24 @@ use std::time::Duration;
 /// Mock corpus the search step queries.
 fn corpus_search(query: &str) -> Vec<String> {
     let docs = [
-        ("rust", vec!["Rust is a systems programming language", "Cargo is the build tool"]),
-        ("actor", vec!["Actors have mailboxes", "Akka pioneered the supervision tree"]),
-        ("agent", vec!["Agents compose strategies", "atomr-agents wires them on top of atomr"]),
+        (
+            "rust",
+            vec![
+                "Rust is a systems programming language",
+                "Cargo is the build tool",
+            ],
+        ),
+        (
+            "actor",
+            vec!["Actors have mailboxes", "Akka pioneered the supervision tree"],
+        ),
+        (
+            "agent",
+            vec![
+                "Agents compose strategies",
+                "atomr-agents wires them on top of atomr",
+            ],
+        ),
     ];
     docs.iter()
         .filter(|(k, _)| query.to_lowercase().contains(*k))
@@ -57,10 +68,7 @@ struct ResearchLoop {
 
 #[async_trait]
 impl LoopStrategy for ResearchLoop {
-    async fn step(
-        &self,
-        state: &mut atomr_agents_harness::HarnessState,
-    ) -> Result<StepOutcome> {
+    async fn step(&self, state: &mut atomr_agents_harness::HarnessState) -> Result<StepOutcome> {
         match state.iteration {
             1 => {
                 // 1. Clarify
@@ -85,8 +93,11 @@ impl LoopStrategy for ResearchLoop {
             }
             3 => {
                 // 3. Read + 4. Synthesize (combined for demo)
-                let summary =
-                    format!("read+synthesize: integrated {} notes on {}", self.notes.count(), self.topic);
+                let summary = format!(
+                    "read+synthesize: integrated {} notes on {}",
+                    self.notes.count(),
+                    self.topic
+                );
                 self.notes.append(summary.clone());
                 Ok(StepOutcome::Continue {
                     working_memory: serde_json::json!({"phase": "synthesize"}),

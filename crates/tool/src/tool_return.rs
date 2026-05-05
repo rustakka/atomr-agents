@@ -60,9 +60,7 @@ impl<T: RichTool> Tool for T {
         match RichTool::invoke_rich(self, args, ctx).await? {
             ToolReturn::Content(v) => Ok(v),
             ToolReturn::ContentAndArtifact { content, .. } => Ok(content),
-            ToolReturn::Command(c) => {
-                Ok(serde_json::to_value(c).unwrap_or(Value::Null))
-            }
+            ToolReturn::Command(c) => Ok(serde_json::to_value(c).unwrap_or(Value::Null)),
         }
     }
 }

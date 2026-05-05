@@ -8,9 +8,7 @@ pub mod sqlite {
     use async_trait::async_trait;
     use atomr_agents_core::{AgentError, Result, RunId, WorkflowId};
 
-    use crate::checkpointer::{
-        CheckpointKey, CheckpointMeta, Checkpointer, Snapshot,
-    };
+    use crate::checkpointer::{CheckpointKey, CheckpointMeta, Checkpointer, Snapshot};
 
     /// SQLite-backed checkpointer.
     ///
@@ -30,7 +28,8 @@ pub mod sqlite {
 
     fn unsupported<T>() -> Result<T> {
         Err(AgentError::Internal(
-            "SqliteCheckpointer: backend stub. Enable the real implementation in your deployment patch.".into(),
+            "SqliteCheckpointer: backend stub. Enable the real implementation in your deployment patch."
+                .into(),
         ))
     }
 
@@ -42,18 +41,10 @@ pub mod sqlite {
         async fn load(&self, _key: &CheckpointKey) -> Result<Option<Snapshot>> {
             unsupported()
         }
-        async fn latest(
-            &self,
-            _workflow_id: &WorkflowId,
-            _run_id: &RunId,
-        ) -> Result<Option<Snapshot>> {
+        async fn latest(&self, _workflow_id: &WorkflowId, _run_id: &RunId) -> Result<Option<Snapshot>> {
             unsupported()
         }
-        async fn list(
-            &self,
-            _workflow_id: &WorkflowId,
-            _run_id: &RunId,
-        ) -> Result<Vec<CheckpointMeta>> {
+        async fn list(&self, _workflow_id: &WorkflowId, _run_id: &RunId) -> Result<Vec<CheckpointMeta>> {
             unsupported()
         }
         async fn fork(
@@ -71,9 +62,7 @@ pub mod postgres {
     use async_trait::async_trait;
     use atomr_agents_core::{AgentError, Result, RunId, WorkflowId};
 
-    use crate::checkpointer::{
-        CheckpointKey, CheckpointMeta, Checkpointer, Snapshot,
-    };
+    use crate::checkpointer::{CheckpointKey, CheckpointMeta, Checkpointer, Snapshot};
 
     pub struct PostgresCheckpointer {
         pub url: String,
@@ -87,7 +76,8 @@ pub mod postgres {
 
     fn unsupported<T>() -> Result<T> {
         Err(AgentError::Internal(
-            "PostgresCheckpointer: backend stub. Enable the real implementation in your deployment patch.".into(),
+            "PostgresCheckpointer: backend stub. Enable the real implementation in your deployment patch."
+                .into(),
         ))
     }
 
@@ -99,18 +89,10 @@ pub mod postgres {
         async fn load(&self, _key: &CheckpointKey) -> Result<Option<Snapshot>> {
             unsupported()
         }
-        async fn latest(
-            &self,
-            _workflow_id: &WorkflowId,
-            _run_id: &RunId,
-        ) -> Result<Option<Snapshot>> {
+        async fn latest(&self, _workflow_id: &WorkflowId, _run_id: &RunId) -> Result<Option<Snapshot>> {
             unsupported()
         }
-        async fn list(
-            &self,
-            _workflow_id: &WorkflowId,
-            _run_id: &RunId,
-        ) -> Result<Vec<CheckpointMeta>> {
+        async fn list(&self, _workflow_id: &WorkflowId, _run_id: &RunId) -> Result<Vec<CheckpointMeta>> {
             unsupported()
         }
         async fn fork(

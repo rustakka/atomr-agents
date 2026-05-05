@@ -3,8 +3,7 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use atomr_agents_core::{
-    AgentError, CallCtx, IterationBudget, MoneyBudget, Result, TimeBudget, TokenBudget,
-    Value, WorkflowId,
+    AgentError, CallCtx, IterationBudget, MoneyBudget, Result, TimeBudget, TokenBudget, Value, WorkflowId,
 };
 
 use crate::dag::{Dag, StepId};
@@ -73,9 +72,11 @@ impl WorkflowRunner {
                     },
                 )
                 .await?;
-            let step = self.dag.steps.get(&step_id).ok_or_else(|| {
-                AgentError::Workflow(format!("unknown step {}", step_id.as_str()))
-            })?;
+            let step = self
+                .dag
+                .steps
+                .get(&step_id)
+                .ok_or_else(|| AgentError::Workflow(format!("unknown step {}", step_id.as_str())))?;
             match self.exec_step(step, &current_input, &mut state).await {
                 Ok(out) => {
                     self.journal
@@ -116,24 +117,25 @@ impl WorkflowRunner {
 
     fn last_output(&self, state: &WorkflowState) -> Option<Value> {
         // Pick output of the topo-last completed step.
-        self.dag
-            .topo_sort()
-            .ok()
-            .and_then(|order| order.into_iter().rev().find_map(|id| state.outputs.get(&id).cloned()))
+        self.dag.topo_sort().ok().and_then(|order| {
+            order
+                .into_iter()
+                .rev()
+                .find_map(|id| state.outputs.get(&id).cloned())
+        })
     }
 
-    async fn exec_step(
-        &self,
-        step: &Step,
-        input: &Value,
-        state: &mut WorkflowState,
-    ) -> Result<Value> {
+    async fn exec_step(&self, step: &Step, input: &Value, state: &mut WorkflowState) -> Result<Value> {
         match step {
             Step::Invoke { callable, mapping: _ } => {
                 let ctx = default_call_ctx();
                 callable.call(input.clone(), ctx).await
             }
-            Step::Branch { predicate, if_true, if_false } => {
+            Step::Branch {
+                predicate,
+                if_true,
+                if_false,
+            } => {
                 let chosen = if predicate.evaluate(input) {
                     if_true.clone()
                 } else {
@@ -145,15 +147,14 @@ impl WorkflowRunner {
             Step::Parallel { steps, join } => {
                 let mut handles = Vec::new();
                 for sid in steps {
-                    let s = self.dag.steps.get(sid).ok_or_else(|| {
-                        AgentError::Workflow(format!("parallel: unknown {}", sid.as_str()))
-                    })?;
+                    let s =
+                        self.dag.steps.get(sid).ok_or_else(|| {
+                            AgentError::Workflow(format!("parallel: unknown {}", sid.as_str()))
+                        })?;
                     if let Step::Invoke { callable, .. } = s {
                         let c = callable.clone();
                         let inp = input.clone();
-                        handles.push(tokio::spawn(async move {
-                            c.call(inp, default_call_ctx()).await
-                        }));
+                        handles.push(tokio::spawn(async move { c.call(inp, default_call_ctx()).await }));
                     } else {
                         return Err(AgentError::Workflow(
                             "parallel currently supports only Invoke children".into(),
@@ -241,10 +242,13 @@ mod tests {
     #[tokio::test]
     async fn parallel_all_collects_outputs() {
         let dag: Dag<Step> = Dag::builder("p")
-            .step("p", Step::Parallel {
-                steps: vec![StepId::new("a"), StepId::new("b")],
-                join: JoinStrategy::All,
-            })
+            .step(
+                "p",
+                Step::Parallel {
+                    steps: vec![StepId::new("a"), StepId::new("b")],
+                    join: JoinStrategy::All,
+                },
+            )
             .step("a", Step::invoke(echo_callable()))
             .step("b", Step::invoke(echo_callable()))
             .build();
@@ -272,12 +276,18 @@ mod tests {
             .step(
                 "b",
                 Step::invoke(Arc::new(FnCallable::labeled("boom", |_v: Value, _ctx| async {
-                    Err(atomr_agents_core::AgentError::Workflow("first run b fails".into()))
+                    Err(atomr_agents_core::AgentError::Workflow(
+                        "first run b fails".into(),
+                    ))
                 }))),
             )
             .edge("a", "b")
             .build();
-        let r1 = WorkflowRunner { id: id.clone(), dag: dag1, journal: journal.clone() };
+        let r1 = WorkflowRunner {
+            id: id.clone(),
+            dag: dag1,
+            journal: journal.clone(),
+        };
         assert!(r1.run(serde_json::json!({})).await.is_err());
 
         // The first run terminated with ok=false. For replay-resume we
@@ -289,8 +299,10 @@ mod tests {
         let history = journal.replay(&id).await.unwrap();
         let clean = InMemoryJournal::new();
         for e in &history {
-            if !matches!(e, WorkflowEvent::Terminated { ok: false } | WorkflowEvent::StepFailed { .. })
-            {
+            if !matches!(
+                e,
+                WorkflowEvent::Terminated { ok: false } | WorkflowEvent::StepFailed { .. }
+            ) {
                 clean.append(&id, e.clone()).await.unwrap();
             }
         }
@@ -300,7 +312,11 @@ mod tests {
             .step("b", Step::invoke(echo_callable()))
             .edge("a", "b")
             .build();
-        let r2 = WorkflowRunner { id, dag: dag2, journal: Arc::new(clean) };
+        let r2 = WorkflowRunner {
+            id,
+            dag: dag2,
+            journal: Arc::new(clean),
+        };
         let out = r2.run(serde_json::json!({"v": 1})).await.unwrap();
         // Counter should be at 1, *not* incremented again, because
         // step "a" was replayed-as-completed.

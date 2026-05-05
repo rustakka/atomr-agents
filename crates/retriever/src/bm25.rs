@@ -26,7 +26,11 @@ pub struct Bm25Retriever {
 impl Bm25Retriever {
     pub fn new(top_k: usize) -> Self {
         Self {
-            index: Arc::new(RwLock::new(Index { docs: Vec::new(), df: HashMap::new(), avg_len: 0.0 })),
+            index: Arc::new(RwLock::new(Index {
+                docs: Vec::new(),
+                df: HashMap::new(),
+                avg_len: 0.0,
+            })),
             top_k,
         }
     }
@@ -39,7 +43,11 @@ impl Bm25Retriever {
         }
         idx.docs.push(doc);
         let total: usize = idx.docs.iter().map(|d| tokenize(&d.text).len()).sum();
-        idx.avg_len = if idx.docs.is_empty() { 0.0 } else { total as f32 / idx.docs.len() as f32 };
+        idx.avg_len = if idx.docs.is_empty() {
+            0.0
+        } else {
+            total as f32 / idx.docs.len() as f32
+        };
     }
 
     pub fn add_many(&self, docs: impl IntoIterator<Item = Document>) {

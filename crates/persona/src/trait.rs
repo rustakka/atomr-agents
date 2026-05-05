@@ -43,11 +43,7 @@ pub struct RenderedPersona {
 
 #[async_trait]
 pub trait PersonaStrategy: Send + Sync + 'static {
-    async fn resolve(
-        &self,
-        ctx: &AgentContext,
-        budget: &mut TokenBudget,
-    ) -> Result<RenderedPersona>;
+    async fn resolve(&self, ctx: &AgentContext, budget: &mut TokenBudget) -> Result<RenderedPersona>;
 }
 
 /// Versioned bundle of personas. Orgs publish a `PersonaSet`; teams

@@ -91,7 +91,12 @@ where
     P: Parser<T> + 'static,
     T: Send + 'static,
 {
-    pub fn new(inner: P, model: Arc<dyn RepairModel>, max_attempts: u32, original_prompt: impl Into<String>) -> Self {
+    pub fn new(
+        inner: P,
+        model: Arc<dyn RepairModel>,
+        max_attempts: u32,
+        original_prompt: impl Into<String>,
+    ) -> Self {
         Self {
             inner: Arc::new(inner),
             model,
@@ -165,10 +170,7 @@ mod tests {
     #[tokio::test]
     async fn retry_with_error_re_prompts_with_failure() {
         let model = Arc::new(ScriptedRepair {
-            replies: Mutex::new(vec![
-                "still bad".into(),
-                r#"{"ok": true}"#.to_string(),
-            ]),
+            replies: Mutex::new(vec!["still bad".into(), r#"{"ok": true}"#.to_string()]),
         });
         let p: RetryWithErrorParser<JsonParser, Value> =
             RetryWithErrorParser::new(JsonParser, model, 5, "Reply with JSON.");

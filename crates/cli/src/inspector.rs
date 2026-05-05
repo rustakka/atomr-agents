@@ -128,9 +128,17 @@ mod tests {
     async fn setup() -> Inspector {
         let cpt = Arc::new(InMemoryCheckpointer::new());
         for step in [0, 1, 2, 3] {
-            cpt.save(snap("wf", "r", step, vec![("messages", serde_json::json!([])), ("step", serde_json::json!(step))]))
-                .await
-                .unwrap();
+            cpt.save(snap(
+                "wf",
+                "r",
+                step,
+                vec![
+                    ("messages", serde_json::json!([])),
+                    ("step", serde_json::json!(step)),
+                ],
+            ))
+            .await
+            .unwrap();
         }
         Inspector::new(cpt)
     }

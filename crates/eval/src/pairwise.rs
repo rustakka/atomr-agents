@@ -23,15 +23,13 @@ pub struct PairwiseScorer {
 
 impl PairwiseScorer {
     pub fn new(model: Arc<dyn JudgeModel>, criteria_label: impl Into<String>) -> Self {
-        Self { model, criteria_label: criteria_label.into() }
+        Self {
+            model,
+            criteria_label: criteria_label.into(),
+        }
     }
 
-    pub async fn compare(
-        &self,
-        prompt: &str,
-        a: &Value,
-        b: &Value,
-    ) -> Result<(PairwiseChoice, String)> {
+    pub async fn compare(&self, prompt: &str, a: &Value, b: &Value) -> Result<(PairwiseChoice, String)> {
         let p = format!(
             "Pairwise preference task. Criterion: {}\n\nPrompt:\n{prompt}\n\nResponse A:\n{a}\n\nResponse B:\n{b}\n\nReply on the first line with one of: A, B, or TIE. Then on the next line a short justification.",
             self.criteria_label

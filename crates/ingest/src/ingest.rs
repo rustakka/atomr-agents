@@ -41,7 +41,9 @@ pub struct IngestPipeline {
 
 impl Default for IngestPipeline {
     fn default() -> Self {
-        Self { splitters: Vec::new() }
+        Self {
+            splitters: Vec::new(),
+        }
     }
 }
 
