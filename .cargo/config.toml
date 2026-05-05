@@ -1,0 +1,3 @@
+[alias]
+# Convenience aliases used by CI and dev workflows.
+xtask = "run --quiet --package xtask --"

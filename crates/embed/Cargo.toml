@@ -1,0 +1,31 @@
+[package]
+name          = "atomr-agents-embed"
+version       = { workspace = true }
+edition       = { workspace = true }
+rust-version  = { workspace = true }
+license       = { workspace = true }
+repository    = { workspace = true }
+homepage      = { workspace = true }
+authors       = { workspace = true }
+description   = "EmbeddingActor and pluggable AnnIndex (CPU default via atomr-accel-agents)."
+
+keywords      = ["agents", "embeddings", "ann", "atomr", "rag"]
+categories    = ["asynchronous", "science"]
+readme        = "../../README.md"
+
+[dependencies]
+atomr-agents-core      = { workspace = true }
+atomr-agents-strategy  = { workspace = true }
+atomr-agents-callable  = { workspace = true }
+atomr-agents-memory    = { workspace = true }
+atomr-agents-tool      = { workspace = true }
+atomr-infer-core       = { workspace = true }
+atomr-accel            = { workspace = true }
+atomr-accel-agents     = { workspace = true }
+atomr-core             = { workspace = true }
+async-trait            = { workspace = true }
+serde                  = { workspace = true }
+parking_lot            = { workspace = true }
+
+[dev-dependencies]
+tokio = { workspace = true }

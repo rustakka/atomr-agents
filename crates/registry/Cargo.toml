@@ -1,0 +1,31 @@
+[package]
+name          = "atomr-agents-registry"
+version       = { workspace = true }
+edition       = { workspace = true }
+rust-version  = { workspace = true }
+license       = { workspace = true }
+repository    = { workspace = true }
+homepage      = { workspace = true }
+authors       = { workspace = true }
+description   = "Versioned artifact registry: tool sets, skills, personas, agents, workflows, harnesses."
+
+keywords      = ["agents", "registry", "semver", "atomr", "ai"]
+categories    = ["asynchronous", "config"]
+readme        = "../../README.md"
+
+[dependencies]
+atomr-agents-core     = { workspace = true }
+atomr-agents-tool     = { workspace = true }
+atomr-agents-skill    = { workspace = true }
+atomr-agents-persona  = { workspace = true }
+atomr-agents-agent    = { workspace = true }
+atomr-agents-workflow = { workspace = true }
+atomr-agents-harness  = { workspace = true }
+atomr-persistence     = { workspace = true }
+atomr-distributed-data = { workspace = true }
+async-trait           = { workspace = true }
+serde                 = { workspace = true }
+serde_json            = { workspace = true }
+semver                = { workspace = true }
+thiserror             = { workspace = true }
+dashmap               = { workspace = true }

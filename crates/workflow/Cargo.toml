@@ -1,0 +1,29 @@
+[package]
+name          = "atomr-agents-workflow"
+version       = { workspace = true }
+edition       = { workspace = true }
+rust-version  = { workspace = true }
+license       = { workspace = true }
+repository    = { workspace = true }
+homepage      = { workspace = true }
+authors       = { workspace = true }
+description   = "Workflow actor: DAG of Steps over event-sourced state."
+
+keywords      = ["agents", "workflow", "dag", "langgraph", "atomr"]
+categories    = ["asynchronous", "concurrency"]
+readme        = "../../README.md"
+
+[dependencies]
+atomr-agents-core     = { workspace = true }
+atomr-agents-callable = { workspace = true }
+atomr-agents-state    = { workspace = true }
+atomr-agents-tool     = { workspace = true }
+atomr-core            = { workspace = true }
+atomr-persistence     = { workspace = true }
+atomr-streams         = { workspace = true }
+async-trait           = { workspace = true }
+serde                 = { workspace = true }
+serde_json            = { workspace = true }
+thiserror             = { workspace = true }
+tokio                 = { workspace = true }
+parking_lot           = { workspace = true }

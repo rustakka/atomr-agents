@@ -1,0 +1,52 @@
+[package]
+name          = "atomr-agents"
+version       = { workspace = true }
+edition       = { workspace = true }
+rust-version  = { workspace = true }
+license       = { workspace = true }
+repository    = { workspace = true }
+homepage      = { workspace = true }
+authors       = { workspace = true }
+description   = "Composable agentic framework on top of atomr actors and atomr-infer."
+
+keywords      = ["agents", "atomr", "ai", "llm", "framework"]
+categories    = ["asynchronous", "api-bindings"]
+readme        = "../../README.md"
+
+[dependencies]
+atomr-agents-core          = { workspace = true }
+atomr-agents-callable      = { workspace = true }
+atomr-agents-strategy      = { workspace = true }
+atomr-agents-context       = { workspace = true }
+atomr-agents-observability = { workspace = true }
+
+atomr-agents-tool          = { workspace = true, optional = true }
+atomr-agents-skill         = { workspace = true, optional = true }
+atomr-agents-memory        = { workspace = true, optional = true }
+atomr-agents-embed         = { workspace = true, optional = true }
+atomr-agents-persona       = { workspace = true, optional = true }
+atomr-agents-instruction   = { workspace = true, optional = true }
+atomr-agents-agent         = { workspace = true, optional = true }
+atomr-agents-workflow      = { workspace = true, optional = true }
+atomr-agents-harness       = { workspace = true, optional = true }
+atomr-agents-org           = { workspace = true, optional = true }
+atomr-agents-registry      = { workspace = true, optional = true }
+atomr-agents-eval          = { workspace = true, optional = true }
+atomr-agents-testkit       = { workspace = true, optional = true }
+
+[features]
+default = ["agent", "tool", "skill", "memory", "persona", "instruction"]
+tool        = ["dep:atomr-agents-tool"]
+skill       = ["dep:atomr-agents-skill", "tool"]
+memory      = ["dep:atomr-agents-memory"]
+embed       = ["dep:atomr-agents-embed", "memory", "tool"]
+persona     = ["dep:atomr-agents-persona"]
+instruction = ["dep:atomr-agents-instruction", "persona"]
+agent       = ["dep:atomr-agents-agent", "tool", "skill", "memory", "persona", "instruction"]
+workflow    = ["dep:atomr-agents-workflow", "tool"]
+harness     = ["dep:atomr-agents-harness", "agent", "workflow"]
+org         = ["dep:atomr-agents-org", "tool"]
+registry    = ["dep:atomr-agents-registry", "harness"]
+eval        = ["dep:atomr-agents-eval", "harness"]
+testkit     = ["dep:atomr-agents-testkit", "agent", "harness"]
+full        = ["agent", "workflow", "harness", "org", "registry", "eval", "embed", "testkit"]

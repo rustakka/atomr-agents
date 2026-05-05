@@ -1,0 +1,28 @@
+[package]
+name          = "atomr-agents-core"
+version       = { workspace = true }
+edition       = { workspace = true }
+rust-version  = { workspace = true }
+license       = { workspace = true }
+repository    = { workspace = true }
+homepage      = { workspace = true }
+authors       = { workspace = true }
+description   = "Core types for the atomr-agents framework: ids, budgets, context, events, errors."
+
+keywords      = ["agents", "actor", "atomr", "ai", "framework"]
+categories    = ["asynchronous", "concurrency"]
+readme        = "../../README.md"
+
+[dependencies]
+atomr-core       = { workspace = true }
+atomr-macros     = { workspace = true }
+atomr-telemetry  = { workspace = true }
+atomr-infer-core = { workspace = true }
+serde            = { workspace = true }
+serde_json       = { workspace = true }
+thiserror        = { workspace = true }
+async-trait      = { workspace = true }
+uuid             = { workspace = true }
+chrono           = { workspace = true }
+semver           = { workspace = true }
+parking_lot      = { workspace = true }

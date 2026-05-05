@@ -1,0 +1,27 @@
+[package]
+name          = "atomr-agents-retriever"
+version       = { workspace = true }
+edition       = { workspace = true }
+rust-version  = { workspace = true }
+license       = { workspace = true }
+repository    = { workspace = true }
+homepage      = { workspace = true }
+authors       = { workspace = true }
+description   = "Retriever zoo: Vector, BM25, MultiQuery, ContextualCompression, ParentDocument, Ensemble-RRF, SelfQuery, EmbeddingsFilter, TimeWeighted."
+
+keywords      = ["agents", "retriever", "rag", "bm25", "vector"]
+categories    = ["asynchronous", "science"]
+readme        = "../../README.md"
+
+[dependencies]
+atomr-agents-core    = { workspace = true }
+atomr-agents-callable = { workspace = true }
+atomr-agents-memory  = { workspace = true }
+atomr-agents-embed   = { workspace = true }
+async-trait          = { workspace = true }
+serde                = { workspace = true }
+serde_json           = { workspace = true }
+parking_lot          = { workspace = true }
+
+[dev-dependencies]
+tokio = { workspace = true }

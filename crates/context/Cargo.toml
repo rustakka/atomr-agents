@@ -1,0 +1,20 @@
+[package]
+name          = "atomr-agents-context"
+version       = { workspace = true }
+edition       = { workspace = true }
+rust-version  = { workspace = true }
+license       = { workspace = true }
+repository    = { workspace = true }
+homepage      = { workspace = true }
+authors       = { workspace = true }
+description   = "AgentContext + ContextAssembler for atomr-agents."
+
+keywords      = ["agents", "atomr", "ai", "context", "budget"]
+categories    = ["asynchronous"]
+readme        = "../../README.md"
+
+[dependencies]
+atomr-agents-core     = { workspace = true }
+atomr-agents-strategy = { workspace = true }
+serde                 = { workspace = true }
+async-trait           = { workspace = true }

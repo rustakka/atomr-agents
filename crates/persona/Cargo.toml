@@ -1,0 +1,25 @@
+[package]
+name          = "atomr-agents-persona"
+version       = { workspace = true }
+edition       = { workspace = true }
+rust-version  = { workspace = true }
+license       = { workspace = true }
+repository    = { workspace = true }
+homepage      = { workspace = true }
+authors       = { workspace = true }
+description   = "Persona strategies: structural (Static, Big Five, MBTI, Jungian, Composite) + emphasis."
+
+keywords      = ["agents", "persona", "atomr", "ai", "llm"]
+categories    = ["asynchronous"]
+readme        = "../../README.md"
+
+[dependencies]
+atomr-agents-core     = { workspace = true }
+atomr-agents-strategy = { workspace = true }
+atomr-agents-context  = { workspace = true }
+async-trait           = { workspace = true }
+serde                 = { workspace = true }
+semver                = { workspace = true }
+
+[dev-dependencies]
+tokio = { workspace = true }

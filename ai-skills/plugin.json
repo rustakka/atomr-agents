@@ -1,0 +1,7 @@
+{
+  "name": "atomr-agents-ai-skills",
+  "version": "0.1.0",
+  "description": "Skills for AI coding assistants working on projects that depend on atomr-agents.",
+  "homepage": "https://github.com/rustakka/atomr-agents",
+  "skills_dir": "skills"
+}
