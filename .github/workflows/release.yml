@@ -289,25 +289,54 @@ jobs:
             echo "::error::CARGO_REGISTRY_TOKEN secret is empty"
             exit 1
           fi
+          # crates.io rate-limits new crates at ~1/min for fresh
+          # accounts/orgs. We pace the loop at 70s and retry on 429.
+          PER_CRATE_SLEEP=70
           for crate in "${list[@]}"; do
-            echo "==> publishing $crate"
-            # `cargo publish` honors CARGO_REGISTRY_TOKEN from the
-            # environment; passing --token is deprecated.
-            if ! out=$(cargo publish -p "$crate" 2>&1); then
-              echo "$out"
-              # Tolerate "crate version already exists" — that means a
-              # prior re-run got past this point and we shouldn't fail.
-              # Anything else is a real error and stops the pipeline.
-              if printf '%s' "$out" | grep -qE 'crate version .* is already uploaded|already exists'; then
-                echo "::warning::$crate v0.1.0 already on crates.io; skipping"
-              else
-                echo "::error::cargo publish failed for $crate"
-                exit 1
+            attempt=0
+            while true; do
+              attempt=$((attempt + 1))
+              echo "==> publishing $crate (attempt $attempt)"
+              if out=$(cargo publish -p "$crate" 2>&1); then
+                echo "$out"
+                break
               fi
-            fi
-            # crates.io needs a moment to propagate the new index entry
-            # before the next dependent crate's publish can resolve it.
-            sleep 30
+              echo "$out"
+              if printf '%s' "$out" | grep -qE 'crate version .* is already uploaded|already exists'; then
+                echo "::warning::$crate already on crates.io at this version; skipping"
+                break
+              fi
+              # 429 from crates.io: parse the retry-after timestamp out
+              # of the body and sleep until then (plus 10s slack).
+              if printf '%s' "$out" | grep -q '429 Too Many Requests'; then
+                if [ "$attempt" -ge 6 ]; then
+                  echo "::error::rate-limited too many times on $crate"
+                  exit 1
+                fi
+                ts=$(printf '%s' "$out" | grep -oE 'try again after [^.]+\.' | sed 's/try again after //; s/\.$//')
+                if [ -n "$ts" ]; then
+                  retry_epoch=$(date -d "$ts" +%s 2>/dev/null || true)
+                else
+                  retry_epoch=""
+                fi
+                if [ -n "$retry_epoch" ]; then
+                  now=$(date +%s)
+                  wait=$(( retry_epoch - now + 10 ))
+                  if [ "$wait" -lt 30 ]; then wait=30; fi
+                else
+                  wait=120
+                fi
+                echo "rate-limited; sleeping ${wait}s before retrying $crate"
+                sleep "$wait"
+                continue
+              fi
+              echo "::error::cargo publish failed for $crate"
+              exit 1
+            done
+            # Pace between crates so we don't tickle the new-crate rate
+            # limit, and so the index has time to propagate before the
+            # next dependent crate's resolver picks it up.
+            sleep "$PER_CRATE_SLEEP"
           done
 
   publish-pypi:
