@@ -75,11 +75,17 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - { target: x86_64-unknown-linux-gnu, runner: ubuntu-latest, ext: "" }
-          - { target: aarch64-unknown-linux-gnu, runner: ubuntu-latest, ext: "", cross: true }
-          - { target: x86_64-apple-darwin, runner: macos-latest, ext: "" }
-          - { target: aarch64-apple-darwin, runner: macos-latest, ext: "" }
-          - { target: x86_64-pc-windows-msvc, runner: windows-latest, ext: ".exe" }
+          - { target: x86_64-unknown-linux-gnu,  runner: ubuntu-latest,    ext: "" }
+          # aarch64 Linux glibc — built natively on a GitHub-hosted ARM
+          # runner (matches the upstream atomr v0.3.1 / atomr-infer v0.6.0
+          # pattern). Native build avoids the ring / aws-lc-rs / openssl
+          # cross-compile blockers that gcc-aarch64-linux-gnu alone can't
+          # paper over, and dodges the cross-rs path-dep mount issue
+          # documented in atomr-infer commit e8e35ee.
+          - { target: aarch64-unknown-linux-gnu, runner: ubuntu-22.04-arm, ext: "" }
+          - { target: x86_64-apple-darwin,       runner: macos-latest,     ext: "" }
+          - { target: aarch64-apple-darwin,      runner: macos-latest,     ext: "" }
+          - { target: x86_64-pc-windows-msvc,    runner: windows-latest,   ext: ".exe" }
     runs-on: ${{ matrix.runner }}
     steps:
       - name: Checkout sibling atomr
@@ -99,16 +105,6 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
         with:
           targets: ${{ matrix.target }}
-      - name: Install cross-compile toolchain
-        if: matrix.cross
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y gcc-aarch64-linux-gnu
-          mkdir -p ~/.cargo
-          cat >> ~/.cargo/config.toml <<'EOF'
-          [target.aarch64-unknown-linux-gnu]
-          linker = "aarch64-linux-gnu-gcc"
-          EOF
       - uses: Swatinem/rust-cache@v2
         with:
           workspaces: atomr-agents
@@ -140,9 +136,14 @@ jobs:
           # PyO3 0.22 supports up to Python 3.13. Pin to 3.11 explicitly
           # via setup-python; do NOT use `--find-interpreter` which would
           # pick up the runner's 3.14 (unsupported) on macOS / Windows.
-          - { runner: ubuntu-latest,  args: "--release --out dist -i python3.11" }
-          - { runner: macos-latest,   args: "--release --out dist -i python3.11" }
-          - { runner: windows-latest, args: "--release --out dist -i python3.11" }
+          - { runner: ubuntu-latest,    args: "--release --out dist -i python3.11" }
+          # Native aarch64-linux glibc wheel — built on a GitHub-hosted
+          # ARM runner (mirrors atomr-infer v0.6.0). Native build avoids
+          # the ring / aws-lc-rs cross-compile blocker that previously
+          # forced ARM-Linux users to install from sdist.
+          - { runner: ubuntu-22.04-arm, args: "--release --out dist -i python3.11" }
+          - { runner: macos-latest,     args: "--release --out dist -i python3.11" }
+          - { runner: windows-latest,   args: "--release --out dist -i python3.11" }
     runs-on: ${{ matrix.runner }}
     steps:
       - name: Checkout sibling atomr
