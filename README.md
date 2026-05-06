@@ -48,9 +48,19 @@ state model verbatim in atomr's actor idiom.
 five tool calls in one turn, atomr-agents fans them into a `JoinSet`
 and aggregates in original order. The streaming `tool_call_delta`
 parser handles OpenAI and Anthropic deltas natively; new providers
-plug in behind the same `Provider` enum. `RichTool` returns
-`ToolReturn::{Content, ContentAndArtifact, Command}` so a tool can
-also drive graph control flow.
+plug in behind the same `Provider` enum. Per-call deltas are also
+surfaced as `Event::ToolCallStreamed` so tracers and UIs see tool
+intent in real time, distinct from the post-call `Event::ToolInvoked`.
+`RichTool` returns `ToolReturn::{Content, ContentAndArtifact, Command}`
+so a tool can also drive graph control flow.
+
+**Provider runtimes are opt-in feature flags.** Enable
+`provider-anthropic`, `provider-openai`, or `provider-gemini` on the
+umbrella to pull the corresponding `atomr-infer-runtime-*` crate and
+re-export its `*Config` / `*Pricing` / `*Runner` via
+`atomr_agents::agent::providers::{anthropic, openai, gemini}`. Cost
+reports include `cached_tokens` (Anthropic prompt-cache, OpenAI cached
+input) and `reasoning_tokens` (o1-style) automatically.
 
 **Granular efficiency.** Rust gives us deterministic resource use,
 zero-cost abstractions, and ownership-as-concurrency-safety. Strategy
@@ -88,7 +98,7 @@ overhead beyond what the actor crate already pays.
 | `atomr-agents-parser` | `Parser<T>` trait, `JsonParser` / `JsonSchemaParser` / `SchemaParser<T>` / `EnumParser` / `CommaListParser` / `XmlParser` / `YamlParser`, `OutputFixingParser`, `RetryWithErrorParser`, `StreamingPartialJsonParser` |
 | `atomr-agents-py-bindings` | `atomr_agents._native` PyO3 module — `Event` / `EventBus` / `Registry` exposed to Python |
 | `atomr-agents-cli` | `atomr-agents` binary with `eval` / `registry` / `harness` / `serve` (Studio-style read+resume inspector) subcommands |
-| `atomr-agents-testkit` | Test fakes: `MockInference` (wraps atomr-infer's `MockRunner`), deterministic strategies, in-memory stores, replay harness |
+| `atomr-agents-testkit` | Stub crate today. For tests, depend on `atomr-infer-testkit` (re-exports `MockRunner` / `MockScript`) directly — that's what `crates/agent` tests use. |
 
 Plus a Python facade — `pip install atomr-agents` — that exposes the
 host-mode `Registry` / `EventBus` and the guest-mode `@tool` /
@@ -100,8 +110,16 @@ The umbrella crate is published on crates.io as **`atomr-agents`**:
 
 ```toml
 [dependencies]
-atomr-agents = { version = "0.1", features = ["agent", "harness", "eval"] }
-atomr-infer  = { version = "0.4", features = ["openai"] }   # or any provider
+atomr-agents = { version = "0.2", features = ["agent", "harness", "eval"] }
+atomr-infer  = { version = "0.6", features = ["openai"] }   # or any provider
+```
+
+Or, to pull a provider runtime through the umbrella so `Agent` /
+`LocalRunnerClient` / `OpenAiRunner` come from one crate:
+
+```toml
+atomr-agents = { version = "0.2", features = ["agent", "provider-openai"] }
+# or features = ["agent", "provider-anthropic"], ["agent", "provider-gemini"]
 ```
 
 A minimal agent against `MockRunner` (good for tests; swap for any

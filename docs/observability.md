@@ -9,12 +9,24 @@ Every observable boundary in the framework emits a typed `Event`:
 
 ```rust
 pub enum Event {
-    StrategyResolved { strategy, agent_id, elapsed_ms, tokens_used },
-    ToolInvoked      { tool_id, args_hash, elapsed_ms, ok },
-    AgentTurn        { agent_id, input_tokens, output_tokens, finish_reason, elapsed_ms },
-    WorkflowStep     { workflow_id, step_id, step_kind, elapsed_ms, ok },
-    HarnessIteration { harness_id, iteration, outcome, budget_remaining_tokens },
-    Backpressure     { actor_path, queued, dropped },
+    StrategyResolved  { strategy, agent_id, elapsed_ms, tokens_used },
+    ToolInvoked       { tool_id, args_hash, elapsed_ms, ok },
+    /// Per detected tool call before dispatch — distinct from
+    /// `ToolInvoked` (post-call). Lets tracers / UIs surface tool
+    /// intent in real time.
+    ToolCallStreamed  { agent_id, tool_name, arguments_hash, iteration },
+    AgentTurn         {
+        agent_id, input_tokens, output_tokens,
+        // `reasoning_tokens` (o1-style) and `cached_tokens` (Anthropic
+        // prompt-cache, OpenAI cached input) are populated when the
+        // provider reports them; both default to 0 for runtimes that
+        // don't surface them. Both are `#[serde(default)]`.
+        reasoning_tokens, cached_tokens,
+        finish_reason, elapsed_ms,
+    },
+    WorkflowStep      { workflow_id, step_id, step_kind, elapsed_ms, ok },
+    HarnessIteration  { harness_id, iteration, outcome, budget_remaining_tokens },
+    Backpressure      { actor_path, queued, dropped },
 }
 ```
 
@@ -55,8 +67,46 @@ bus.emit(Event::AgentTurn {
     agent_id: AgentId::from("a-1"),
     input_tokens: 50,
     output_tokens: 12,
+    reasoning_tokens: 0,        // o1-style; 0 when the provider doesn't report.
+    cached_tokens: 8,           // Anthropic prompt-cache / OpenAI cached input.
     finish_reason: None,
     elapsed_ms: 230,
+});
+```
+
+## Cost reporting
+
+`reasoning_tokens` and `cached_tokens` flow through from
+`atomr_infer_core::tokens::TokenUsage` per-chunk and aggregate into
+the per-turn `AgentTurn`. Use them when computing spend:
+
+- **Anthropic prompt-cache** and **OpenAI cached input** charge a
+  fraction of the normal input rate; `cached_tokens` lets you bill
+  them at the discounted rate instead of double-counting under
+  `input_tokens`.
+- **o1-style reasoning tokens** are billed at the output rate but
+  aren't surfaced in the assistant text — `reasoning_tokens` keeps
+  the accounting honest.
+
+Both fields are `#[serde(default)]`, so older event JSON
+deserialises unchanged.
+
+## ToolCallStreamed vs ToolInvoked
+
+`Event::ToolCallStreamed` fires when the inference layer parses a
+tool call out of the streaming `tool_call_delta` *before* the agent
+dispatches it. `Event::ToolInvoked` fires *after* the tool returns.
+Subscribe to `ToolCallStreamed` for live "the agent is about to call
+X" indicators (Studio-style UIs); subscribe to `ToolInvoked` for
+post-mortem latency / success metrics.
+
+```rust
+bus.subscribe(|env| match &env.event {
+    Event::ToolCallStreamed { tool_name, iteration, .. } =>
+        eprintln!("[stream] iter={iteration} tool={tool_name}"),
+    Event::ToolInvoked { tool_id, elapsed_ms, ok, .. } =>
+        eprintln!("[done] tool={} elapsed={elapsed_ms}ms ok={ok}", tool_id.as_str()),
+    _ => {}
 });
 ```
 

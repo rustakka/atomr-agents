@@ -18,10 +18,16 @@ incoming message
   → tool-call loop:
       while finish_reason == ToolCalls and iters_left > 0:
           parse provider deltas  → Vec<ParsedToolCall>
+          emit Event::ToolCallStreamed per call (pre-dispatch)
           dispatch in parallel   (tokio::JoinSet, order-preserved)
+          emit Event::ToolInvoked per call   (post-dispatch)
           re-issue ExecuteBatch with extended history
   → MemoryStrategy::store
-  → emit Event::AgentTurn (with run_id)
+  → emit Event::AgentTurn (with run_id;
+                           includes reasoning_tokens + cached_tokens
+                           sourced from TokenUsage)
+  → return TurnResult { text, usage, finish_reason,
+                        tool_calls /* aggregated across all iterations */ }
 ```
 
 ## Building an agent
@@ -79,6 +85,47 @@ let inference: Arc<dyn InferenceClient> =
 `Provider::OpenAi` and `Provider::Anthropic` correspond to the two
 streaming `tool_call_delta` formats; the parser handles both
 natively. New providers add a `Provider` variant and a parser arm.
+
+### Provider runtime back-ends
+
+Three feature flags on `atomr-agents-agent` (forwarded by the umbrella
+crate) pull a provider runtime crate and re-export it under
+`crate::providers::*`:
+
+| Feature | Re-exports under |
+|---|---|
+| `provider-anthropic` | `agent::providers::anthropic` — `AnthropicConfig`, `AnthropicPricing`, `classify_anthropic_error`, `AnthropicRunner` |
+| `provider-openai` | `agent::providers::openai` — `OpenAiConfig`, `OpenAiVariant`, `OpenAiPricing`, `classify_openai_error`, `OpenAiRunner` |
+| `provider-gemini` | `agent::providers::gemini` — `GeminiConfig`, `GeminiVariant`, `SafetySetting`, `GeminiPricing`, `classify_gemini_error`, `GeminiRunner` |
+
+```rust
+// Cargo.toml: atomr-agents = { version = "0.2", features = ["agent", "provider-anthropic"] }
+use atomr_agents::agent::{LocalRunnerClient, Provider};
+use atomr_agents::agent::providers::anthropic::{AnthropicConfig, AnthropicRunner};
+
+let runner = AnthropicRunner::new(AnthropicConfig::from_env()?);
+let inference = Arc::new(LocalRunnerClient::new(runner, Provider::Anthropic));
+```
+
+Multiple provider features can be enabled at once for fallback /
+multi-provider patterns — wrap two `LocalRunnerClient`s in
+`with_fallbacks` to tier across them.
+
+## TurnResult shape
+
+```rust
+pub struct TurnResult {
+    pub text: String,
+    pub usage: TokenUsage,                  // includes reasoning_tokens + cached_tokens
+    pub finish_reason: Option<FinishReason>,
+    pub tool_calls: Vec<ParsedToolCall>,    // ALL tool calls aggregated across iterations
+}
+```
+
+`tool_calls` is populated with every `ParsedToolCall` the tool-call
+loop processed (not just the final iteration). Middleware
+`after_model_call` and `after_agent` can inspect it to e.g. enforce a
+"max tools per turn" cap or post-hoc audit which tools fired.
 
 ## Tool calls in parallel
 

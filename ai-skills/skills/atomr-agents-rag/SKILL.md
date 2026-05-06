@@ -92,7 +92,7 @@ let cross_user = store.search(&Namespace::from_parts(["user"]), None, 50).await?
 For production, swap to a feature-gated backend:
 
 ```toml
-atomr-agents-memory = { version = "0.1", features = ["pgvector"] }
+atomr-agents-memory = { version = "0.2", features = ["pgvector"] }
 ```
 
 ```rust
@@ -184,6 +184,31 @@ impl Tool for SearchTool {
     }
 }
 ```
+
+## Lineage queries via `atomr_agents_memory::query`
+
+When you want to replay or audit what a memory-backed agent did
+historically (event-sourced journal sitting behind a `LongStore`-backed
+strategy), wrap the underlying `atomr_persistence::Journal` in
+`SimpleReadJournal` and use the `ReadJournal` surface re-exported from
+`atomr_agents_memory::query`:
+
+```rust
+use atomr_agents_memory::query::{Offset, ReadJournal, SimpleReadJournal};
+
+let read = SimpleReadJournal::new(my_journal_arc);
+
+// All events tagged "agent:a-1", in offset order.
+let envs = read.events_by_tag("agent:a-1", Offset::NoOffset).await?;
+
+// Distinct persistence ids known to this backend.
+let ids = read.all_persistence_ids().await?;
+```
+
+`SimpleReadJournal` has a default-impl `events_by_tag` that returns
+empty for backends without tag indexing — production journals (SQL,
+Cassandra) implement it natively. Use this for eval replays, lineage
+audits, and "rebuild this run from durable state" flows.
 
 ## Canonical references
 

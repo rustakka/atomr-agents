@@ -116,6 +116,38 @@ ToolErrorRecoveryMiddleware
 // {"tool_error": true, "tool": <name>, "message": <error string>}
 ```
 
+## Inspecting the model's tool calls
+
+`TurnResult.tool_calls: Vec<ParsedToolCall>` is populated with every
+tool call the agent processed during the turn (aggregated across all
+tool-call iterations, not just the final one). `after_model_call` and
+`after_agent` can inspect or mutate it — useful for "max tools per
+turn" caps, post-hoc auditing, or routing decisions:
+
+```rust
+use atomr_agents_core::AgentError;
+use atomr_agents::agent::{AgentMiddleware, TurnResult};
+
+pub struct MaxToolsGuard { pub max: usize }
+
+#[async_trait]
+impl AgentMiddleware for MaxToolsGuard {
+    async fn after_model_call(&self, result: &mut TurnResult) -> Result<()> {
+        if result.tool_calls.len() > self.max {
+            return Err(AgentError::Tool(format!(
+                "agent emitted {} tool calls, max is {}",
+                result.tool_calls.len(), self.max,
+            )));
+        }
+        Ok(())
+    }
+}
+```
+
+`TurnResult.usage` (a `TokenUsage`) also includes the new
+`reasoning_tokens` and `cached_tokens` fields — use them in
+cost-tracking middleware.
+
 ## Authoring a custom middleware
 
 ```rust

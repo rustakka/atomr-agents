@@ -36,18 +36,24 @@ checkpointing, parallel tool dispatch, retriever zoo — the LangGraph
 ```toml
 [dependencies]
 # Defaults: agent + tool + skill + memory + persona + instruction
-atomr-agents = "0.1"
-atomr-infer  = { version = "0.4", features = ["openai"] }   # or any provider
+atomr-agents = "0.2"
+atomr-infer  = { version = "0.6", features = ["openai"] }   # or any provider
 
 # Add features as needed:
-# atomr-agents = { version = "0.1", features = ["harness", "eval", "embed"] }
+# atomr-agents = { version = "0.2", features = ["harness", "eval", "embed"] }
+
+# Or pull a provider runtime through the umbrella (skips the explicit
+# atomr-infer dep — runner is re-exported under agent::providers::*):
+# atomr-agents = { version = "0.2", features = ["agent", "provider-anthropic"] }
+# atomr-agents = { version = "0.2", features = ["agent", "provider-openai"] }
+# atomr-agents = { version = "0.2", features = ["agent", "provider-gemini"] }
 
 # RAG-flavored:
-# atomr-agents-retriever = "0.1"
-# atomr-agents-ingest    = "0.1"
+# atomr-agents-retriever = "0.2"
+# atomr-agents-ingest    = "0.2"
 
 # Test scaffolding:
-# atomr-agents = { version = "0.1", features = ["testkit"] }
+# atomr-agents = { version = "0.2", features = ["testkit"] }
 ```
 
 See [`docs/feature-matrix.md`](https://github.com/rustakka/atomr-agents/blob/main/docs/feature-matrix.md)

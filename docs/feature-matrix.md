@@ -34,6 +34,10 @@ org         = ["dep:atomr-agents-org", "tool"]
 registry    = ["dep:atomr-agents-registry", "harness"]
 eval        = ["dep:atomr-agents-eval", "harness"]
 testkit     = ["dep:atomr-agents-testkit", "agent", "harness"]
+# Provider back-ends — forwarded to atomr-agents-agent's per-provider features.
+provider-anthropic = ["agent", "atomr-agents-agent/provider-anthropic"]
+provider-openai    = ["agent", "atomr-agents-agent/provider-openai"]
+provider-gemini    = ["agent", "atomr-agents-agent/provider-gemini"]
 full        = ["agent", "workflow", "harness", "org", "registry", "eval", "embed", "testkit"]
 ```
 
@@ -47,7 +51,10 @@ full        = ["agent", "workflow", "harness", "org", "registry", "eval", "embed
 | `registry` | registry + harness | versioned artifact publishing |
 | `eval` | eval + harness | quality gates and CI eval suites |
 | `embed` | embed + memory + tool | RAG over `LongStore` |
-| `testkit` | testkit + agent + harness | test scaffolding (`MockInference`, replay) |
+| `testkit` | testkit + agent + harness | depend on `atomr-infer-testkit` directly for `MockRunner`; the testkit crate itself is currently a stub |
+| `provider-anthropic` | agent + `atomr-infer-runtime-anthropic` re-exported under `agent::providers::anthropic` | wire the Anthropic Messages API as a `ModelRunner` without touching atomr-infer directly |
+| `provider-openai` | agent + `atomr-infer-runtime-openai` re-exported under `agent::providers::openai` | wire OpenAI Chat Completions / Anthropic-compatible providers |
+| `provider-gemini` | agent + `atomr-infer-runtime-gemini` re-exported under `agent::providers::gemini` | wire Google Gemini (Vertex AI / AI Studio) |
 | `full` | every above | demos, evaluations, "I want everything" |
 
 ## Subsystem-level feature flags
@@ -109,8 +116,8 @@ web     = []     # placeholder — Web loader (reqwest)
 
 ```toml
 [dependencies]
-atomr-agents = "0.1"
-atomr-infer  = { version = "0.4", features = ["openai"] }
+atomr-agents = "0.2"
+atomr-infer  = { version = "0.6", features = ["openai"] }
 ```
 
 Pulls: agent + tool + skill + memory + persona + instruction.
@@ -120,10 +127,10 @@ Suitable for: any single-agent flow.
 
 ```toml
 [dependencies]
-atomr-agents = { version = "0.1", features = ["agent", "embed"] }
-atomr-agents-retriever = "0.1"
-atomr-agents-ingest    = "0.1"
-atomr-infer = { version = "0.4", features = ["openai"] }
+atomr-agents = { version = "0.2", features = ["agent", "embed"] }
+atomr-agents-retriever = "0.2"
+atomr-agents-ingest    = "0.2"
+atomr-infer = { version = "0.6", features = ["openai"] }
 ```
 
 Pulls: agent + retriever zoo + ingestion. Ship a `VectorRetriever`
@@ -133,9 +140,9 @@ backed by `LongStore` plus `RecallMemoryTool` exposed to the agent.
 
 ```toml
 [dependencies]
-atomr-agents = { version = "0.1", features = ["harness", "registry", "eval"] }
-atomr-agents-state = { version = "0.1", features = ["postgres"] }
-atomr-infer = { version = "0.4", features = ["openai", "anthropic"] }
+atomr-agents = { version = "0.2", features = ["harness", "registry", "eval"] }
+atomr-agents-state = { version = "0.2", features = ["postgres"] }
+atomr-infer = { version = "0.6", features = ["openai", "anthropic"] }
 ```
 
 Pulls: harness + registry + eval + Postgres-backed checkpoints.
@@ -146,26 +153,40 @@ on regression.
 
 ```toml
 [dependencies]
-atomr-agents = { version = "0.1", features = ["agent", "org", "workflow"] }
-atomr-infer  = { version = "0.4", features = ["openai", "anthropic"] }
+atomr-agents = { version = "0.2", features = ["agent", "org", "workflow"] }
+atomr-infer  = { version = "0.6", features = ["openai", "anthropic"] }
 ```
 
 Pulls: agent + org + workflow. Build supervisor / swarm / network /
 hierarchical patterns; route through `CapabilityMatchRouter` or the
 `swarm_loop` helper.
 
-### Shape E: Full kitchen-sink (demos, eval rigs)
+### Shape E: Pluggable provider backend (no direct atomr-infer dep)
 
 ```toml
 [dependencies]
-atomr-agents = { version = "0.1", features = ["full"] }
-atomr-agents-retriever = "0.1"
-atomr-agents-ingest    = "0.1"
-atomr-agents-parser    = "0.1"
-atomr-agents-cache     = { version = "0.1", features = ["sqlite"] }
-atomr-agents-state     = { version = "0.1", features = ["sqlite"] }
-atomr-agents-memory    = { version = "0.1", features = ["pgvector"] }
-atomr-infer            = { version = "0.4", features = ["all-runtimes"] }
+atomr-agents = { version = "0.2", features = ["agent", "provider-anthropic"] }
+# add features = ["provider-openai"] / ["provider-gemini"] as needed
+```
+
+Pulls: agent + the chosen provider runtime. Construct an agent against
+`atomr_agents::agent::providers::anthropic::AnthropicRunner::new(
+AnthropicConfig::from_env())`, wrap it in `LocalRunnerClient`, and skip
+the explicit `atomr-infer` dep. Multiple provider features can be
+enabled at once for fallback / multi-provider scenarios.
+
+### Shape F: Full kitchen-sink (demos, eval rigs)
+
+```toml
+[dependencies]
+atomr-agents = { version = "0.2", features = ["full"] }
+atomr-agents-retriever = "0.2"
+atomr-agents-ingest    = "0.2"
+atomr-agents-parser    = "0.2"
+atomr-agents-cache     = { version = "0.2", features = ["sqlite"] }
+atomr-agents-state     = { version = "0.2", features = ["sqlite"] }
+atomr-agents-memory    = { version = "0.2", features = ["pgvector"] }
+atomr-infer            = { version = "0.6", features = ["all-runtimes"] }
 ```
 
 Pulls: every subsystem + sqlite-backed checkpointing/cache +

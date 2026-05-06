@@ -103,7 +103,15 @@ dispatchers, persistence, sharding) is carried through unchanged.
   `RegressionGate`, `AnnotationQueue`.
 - **Run-tree observability** — `EventBus` with `RunId` /
   `parent_run_id`, `RunTreeBuilder`, `Tracer` trait,
-  `StdoutTracer` / `JsonlTracer` / `LangSmithTracer`.
+  `StdoutTracer` / `JsonlTracer` / `LangSmithTracer`. `Event::AgentTurn`
+  carries `reasoning_tokens` + `cached_tokens` for accurate cost
+  reporting under prompt-cache and o1-style usage; `Event::ToolCallStreamed`
+  fires per detected tool call before dispatch.
+- **Pluggable provider back-ends** — `provider-anthropic`,
+  `provider-openai`, `provider-gemini` features pull the corresponding
+  `atomr-infer-runtime-*` crate and re-export it under
+  `agent::providers::*`. Wire a runner without a direct `atomr-infer`
+  dep.
 - **Versioned registry** — `(kind, id, version)` keys,
   `publish_gated` for eval-regression blocking.
 - **Python bindings** — `atomr_agents._native` exposes `EventBus` and

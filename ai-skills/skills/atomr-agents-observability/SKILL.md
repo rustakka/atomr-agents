@@ -15,8 +15,13 @@ typed `Event`. The `EventBus` broadcasts to subscribers; a
 ## Mental model
 
 - **`Event`** is the typed taxonomy (`StrategyResolved`,
-  `ToolInvoked`, `AgentTurn`, `WorkflowStep`, `HarnessIteration`,
-  `Backpressure`).
+  `ToolInvoked`, `ToolCallStreamed`, `AgentTurn`, `WorkflowStep`,
+  `HarnessIteration`, `Backpressure`). `ToolCallStreamed` fires per
+  detected tool call **before** dispatch (live tool intent);
+  `ToolInvoked` fires after dispatch (latency / success). `AgentTurn`
+  carries `reasoning_tokens` (o1-style) and `cached_tokens`
+  (Anthropic prompt-cache, OpenAI cached input) — both
+  `#[serde(default)]` for back-compat.
 - **`EventEnvelope`** wraps an event with `timestamp_ms`,
   `correlation_id`, `run_id`, `parent_run_id`, and `tags`. The
   `run_id` / `parent_run_id` pair lets a tree builder assemble the
@@ -43,8 +48,33 @@ bus.emit(Event::AgentTurn {
     agent_id: AgentId::from("a-1"),
     input_tokens:  50,
     output_tokens: 12,
+    reasoning_tokens: 0,    // populated for o1-style models
+    cached_tokens: 8,       // Anthropic prompt-cache / OpenAI cached input
     finish_reason: None,
     elapsed_ms: 230,
+});
+```
+
+### Cost reporting
+
+`reasoning_tokens` and `cached_tokens` come straight from
+`atomr_infer_core::tokens::TokenUsage` (per-chunk, summed by the
+agent into the `AgentTurn` aggregate). Bill cached tokens at the
+provider's cached-input rate (Anthropic: ~10% of normal input;
+OpenAI: ~50%) to avoid double-counting them under `input_tokens`.
+
+### Distinguishing tool events
+
+`ToolCallStreamed` and `ToolInvoked` cover the two halves of a tool
+call's lifecycle:
+
+```rust
+bus.subscribe(|env| match &env.event {
+    Event::ToolCallStreamed { tool_name, iteration, .. } =>
+        eprintln!("[stream] iter={iteration} tool={tool_name}"),
+    Event::ToolInvoked { tool_id, elapsed_ms, ok, .. } =>
+        eprintln!("[done] tool={} elapsed={elapsed_ms}ms ok={ok}", tool_id.as_str()),
+    _ => {}
 });
 ```
 

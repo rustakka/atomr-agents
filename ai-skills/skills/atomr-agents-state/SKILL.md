@@ -112,7 +112,7 @@ For production, use a backend feature flag:
 
 ```toml
 [dependencies]
-atomr-agents-state = { version = "0.1", features = ["sqlite"] }
+atomr-agents-state = { version = "0.2", features = ["sqlite"] }
 # or "postgres"
 ```
 

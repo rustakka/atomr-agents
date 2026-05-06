@@ -100,7 +100,7 @@ ship as feature-gated stubs; real wiring lives in deployment
 patches:
 
 ```toml
-atomr-agents-state = { version = "0.1", features = ["sqlite"] }
+atomr-agents-state = { version = "0.2", features = ["sqlite"] }
 ```
 
 ```rust

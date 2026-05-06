@@ -132,6 +132,34 @@ The primary is tried; on error, alternates run in declared order
 until one succeeds. The error returned is the *last* alternate's
 error if all fail.
 
+### Multi-provider fallbacks via `provider-*` features
+
+Enable two or more provider features on the umbrella to tier across
+runtimes — useful when one provider is rate-limited or down:
+
+```toml
+atomr-agents = { version = "0.2", features = ["agent", "provider-anthropic", "provider-openai"] }
+```
+
+```rust
+use std::sync::Arc;
+use atomr_agents::agent::{InferenceClient, LocalRunnerClient, Provider};
+use atomr_agents::agent::providers::{anthropic, openai};
+use atomr_agents::callable::with_fallbacks;
+
+let primary: Arc<dyn InferenceClient> = Arc::new(LocalRunnerClient::new(
+    anthropic::AnthropicRunner::new(anthropic::AnthropicConfig::from_env()?),
+    Provider::Anthropic,
+));
+let backup: Arc<dyn InferenceClient> = Arc::new(LocalRunnerClient::new(
+    openai::OpenAiRunner::new(openai::OpenAiConfig::from_env()?),
+    Provider::OpenAi,
+));
+
+// Wrap each runner in its own pipeline stage and use with_fallbacks
+// at the callable layer for tiered failover.
+```
+
 ## Config tags + run name
 
 ```rust
