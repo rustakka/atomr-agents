@@ -122,7 +122,8 @@ where
         let mut final_text = String::new();
         let mut final_usage = atomr_infer_core::tokens::TokenUsage::default();
         let mut final_finish = None;
-        for _iter in 0..self.max_tool_iterations.max(1) {
+        let mut all_tool_calls: Vec<atomr_agents_tool::ParsedToolCall> = Vec::new();
+        for iter in 0..self.max_tool_iterations.max(1) {
             iterations.consume_one()?;
             let batch = ExecuteBatch {
                 request_id: format!("turn-{}", uuid_str()),
@@ -136,6 +137,18 @@ where
             final_text = r.text.clone();
             final_usage.add(r.usage);
             final_finish = r.finish_reason;
+            // Surface every streamed tool call to observers before
+            // dispatch — distinct from the post-call ToolInvoked event.
+            for call in &r.tool_calls {
+                let args = call.arguments().unwrap_or(Json::Value::Null);
+                self.bus.emit(Event::ToolCallStreamed {
+                    agent_id: self.id.clone(),
+                    tool_name: call.name.clone(),
+                    arguments_hash: hash_value(&args),
+                    iteration: iter,
+                });
+            }
+            all_tool_calls.extend(r.tool_calls.iter().cloned());
             // Stop conditions.
             if r.tool_calls.is_empty()
                 || r.finish_reason != Some(atomr_infer_core::tokens::FinishReason::ToolCalls)
@@ -216,6 +229,8 @@ where
             agent_id: self.id.clone(),
             input_tokens: final_usage.input_tokens,
             output_tokens: final_usage.output_tokens,
+            reasoning_tokens: final_usage.reasoning_tokens,
+            cached_tokens: final_usage.cached_tokens,
             finish_reason: final_finish,
             elapsed_ms: start.elapsed().as_millis() as u64,
         });
@@ -224,7 +239,7 @@ where
             text: final_text,
             usage: final_usage,
             finish_reason: final_finish,
-            tool_calls: vec![],
+            tool_calls: all_tool_calls,
         })
     }
 }
@@ -287,60 +302,7 @@ mod tests {
     use atomr_agents_tool::{DynTool, Provider, StaticToolStrategy, Tool, ToolDescriptor, ToolSchema};
 
     use crate::inference::LocalRunnerClient;
-
-    /// Inline mock runner for the simple-text test — equivalent to
-    /// `atomr_infer_testkit::MockRunner` but vendored so the agent
-    /// crate doesn't depend on the unpublished testkit.
-    struct InlineTextMock {
-        chunks: Vec<String>,
-    }
-    impl InlineTextMock {
-        fn from_text<I: IntoIterator<Item = impl Into<String>>>(chunks: I) -> Self {
-            Self { chunks: chunks.into_iter().map(Into::into).collect() }
-        }
-    }
-    #[async_trait]
-    impl atomr_infer_core::runner::ModelRunner for InlineTextMock {
-        async fn execute(
-            &mut self,
-            batch: atomr_infer_core::batch::ExecuteBatch,
-        ) -> atomr_infer_core::error::InferenceResult<atomr_infer_core::runner::RunHandle> {
-            use atomr_infer_core::tokens::{FinishReason, TokenChunk, TokenUsage};
-            use futures::stream::{self, BoxStream, StreamExt};
-            let chunks = self.chunks.clone();
-            let request_id = batch.request_id.clone();
-            let total = chunks.len();
-            let stream: BoxStream<'static, atomr_infer_core::error::InferenceResult<TokenChunk>> =
-                stream::iter(chunks.into_iter().enumerate().map(move |(i, c)| {
-                    let last = i == total.saturating_sub(1);
-                    Ok::<_, atomr_infer_core::error::InferenceError>(TokenChunk {
-                        request_id: request_id.clone(),
-                        text_delta: c,
-                        tool_call_delta: None,
-                        usage: last.then(|| TokenUsage {
-                            input_tokens: 1,
-                            output_tokens: total as u32,
-                            ..Default::default()
-                        }),
-                        finish_reason: last.then_some(FinishReason::Stop),
-                    })
-                }))
-                .boxed();
-            Ok(atomr_infer_core::runner::RunHandle::streaming(stream))
-        }
-        async fn rebuild_session(
-            &mut self,
-            _: atomr_infer_core::runner::SessionRebuildCause,
-        ) -> atomr_infer_core::error::InferenceResult<()> {
-            Ok(())
-        }
-        fn runtime_kind(&self) -> atomr_infer_core::runtime::RuntimeKind {
-            atomr_infer_core::runtime::RuntimeKind::Custom("inline-mock".into())
-        }
-        fn transport_kind(&self) -> atomr_infer_core::runtime::TransportKind {
-            atomr_infer_core::runtime::TransportKind::LocalGpu
-        }
-    }
+    use atomr_infer_testkit::{MockRunner, MockScript};
 
     struct CalculatorTool {
         d: ToolDescriptor,
@@ -370,7 +332,7 @@ mod tests {
     }
 
     fn build_agent(
-        runner: InlineTextMock,
+        runner: MockRunner,
     ) -> Agent<
         ComposedInstructionStrategy<StaticPersonaStrategy, StaticTaskStrategy, StaticBehaviorStrategy>,
         StaticToolStrategy,
@@ -403,7 +365,7 @@ mod tests {
 
     #[tokio::test]
     async fn agent_runs_simple_text_turn() {
-        let runner = InlineTextMock::from_text(["the answer is ", "42"]);
+        let runner = MockRunner::new(MockScript::from_text(["the answer is ", "42"]));
         let agent = build_agent(runner);
         let r = agent
             .run_turn(

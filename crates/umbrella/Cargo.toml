@@ -49,4 +49,9 @@ org         = ["dep:atomr-agents-org", "tool"]
 registry    = ["dep:atomr-agents-registry", "harness"]
 eval        = ["dep:atomr-agents-eval", "harness"]
 testkit     = ["dep:atomr-agents-testkit", "agent", "harness"]
+# Provider back-ends — forwarded to atomr-agents-agent's per-provider
+# features so consumers can enable them via the umbrella crate.
+provider-anthropic = ["agent", "atomr-agents-agent/provider-anthropic"]
+provider-openai    = ["agent", "atomr-agents-agent/provider-openai"]
+provider-gemini    = ["agent", "atomr-agents-agent/provider-gemini"]
 full        = ["agent", "workflow", "harness", "org", "registry", "eval", "embed", "testkit"]

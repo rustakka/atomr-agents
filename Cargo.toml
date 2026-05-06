@@ -85,30 +85,37 @@ pyo3                 = { version = "0.22", default-features = false, features = 
 pyo3-async-runtimes  = { version = "0.22", default-features = false, features = ["tokio-runtime"] }
 
 # Sibling atomr workspace ---------------------------------------------------
-atomr                  = { path = "../atomr/crates/atomr",                  version = "0.1.0" }
-atomr-core             = { path = "../atomr/crates/atomr-core",             version = "0.1.0" }
-atomr-config           = { path = "../atomr/crates/atomr-config",           version = "0.1.0" }
-atomr-macros           = { path = "../atomr/crates/atomr-macros",           version = "0.1.0" }
-atomr-testkit          = { path = "../atomr/crates/atomr-testkit",          version = "0.1.0" }
-atomr-cluster          = { path = "../atomr/crates/atomr-cluster",          version = "0.1.0" }
-atomr-cluster-tools    = { path = "../atomr/crates/atomr-cluster-tools",    version = "0.1.0" }
-atomr-cluster-sharding = { path = "../atomr/crates/atomr-cluster-sharding", version = "0.1.0" }
-atomr-distributed-data = { path = "../atomr/crates/atomr-distributed-data", version = "0.1.0" }
-atomr-streams          = { path = "../atomr/crates/atomr-streams",          version = "0.1.0" }
-atomr-persistence      = { path = "../atomr/crates/atomr-persistence",      version = "0.1.0" }
-atomr-telemetry        = { path = "../atomr/crates/atomr-telemetry",        version = "0.1.0" }
-atomr-coordination     = { path = "../atomr/crates/atomr-coordination",     version = "0.1.0" }
-atomr-discovery        = { path = "../atomr/crates/atomr-discovery",        version = "0.1.0" }
+atomr                  = { path = "../atomr/crates/atomr",                  version = "0.3.1" }
+atomr-core             = { path = "../atomr/crates/atomr-core",             version = "0.3.1" }
+atomr-config           = { path = "../atomr/crates/atomr-config",           version = "0.3.1" }
+atomr-macros           = { path = "../atomr/crates/atomr-macros",           version = "0.3.1" }
+atomr-testkit          = { path = "../atomr/crates/atomr-testkit",          version = "0.3.1" }
+atomr-cluster          = { path = "../atomr/crates/atomr-cluster",          version = "0.3.1" }
+atomr-cluster-tools    = { path = "../atomr/crates/atomr-cluster-tools",    version = "0.3.1" }
+atomr-cluster-sharding = { path = "../atomr/crates/atomr-cluster-sharding", version = "0.3.1" }
+atomr-distributed-data = { path = "../atomr/crates/atomr-distributed-data", version = "0.3.1" }
+atomr-streams          = { path = "../atomr/crates/atomr-streams",          version = "0.3.1" }
+atomr-persistence      = { path = "../atomr/crates/atomr-persistence",      version = "0.3.1" }
+atomr-persistence-query = { path = "../atomr/crates/atomr-persistence-query", version = "0.3.1" }
+atomr-telemetry        = { path = "../atomr/crates/atomr-telemetry",        version = "0.3.1" }
+atomr-coordination     = { path = "../atomr/crates/atomr-coordination",     version = "0.3.1" }
+atomr-discovery        = { path = "../atomr/crates/atomr-discovery",        version = "0.3.1" }
 
 # Sibling atomr-infer workspace --------------------------------------------
-# Only the published crates from atomr-infer are wired here; atomr-infer
-# (umbrella) and atomr-infer-testkit aren't on crates.io yet.
-atomr-infer-core    = { path = "../atomr-infer/crates/inference-core",    version = "0.4.0" }
-atomr-infer-runtime = { path = "../atomr-infer/crates/inference-runtime", version = "0.4.0" }
+# Wired against local 0.6.0 path deps. Publishing atomr-agents requires
+# atomr-infer 0.6.0 to be on crates.io first.
+atomr-infer-core               = { path = "../atomr-infer/crates/inference-core",               version = "0.6.0" }
+atomr-infer-runtime            = { path = "../atomr-infer/crates/inference-runtime",            version = "0.6.0" }
+atomr-infer-testkit            = { path = "../atomr-infer/crates/inference-testkit",            version = "0.6.0" }
+atomr-infer-runtime-anthropic  = { path = "../atomr-infer/crates/inference-runtime-anthropic",  version = "0.6.0" }
+atomr-infer-runtime-openai     = { path = "../atomr-infer/crates/inference-runtime-openai",     version = "0.6.0" }
+atomr-infer-runtime-gemini     = { path = "../atomr-infer/crates/inference-runtime-gemini",     version = "0.6.0" }
 
 # Sibling atomr-accel workspace --------------------------------------------
-atomr-accel        = { path = "../atomr-accel/crates/atomr-accel",        version = "0.1.0" }
-atomr-accel-agents = { path = "../atomr-accel/crates/atomr-accel-agents", version = "0.1.0" }
+# Wired against local 0.3.1 path deps. Publishing atomr-agents requires
+# atomr-accel 0.3.1 to be on crates.io first.
+atomr-accel        = { path = "../atomr-accel/crates/atomr-accel",        version = "0.3.1" }
+atomr-accel-agents = { path = "../atomr-accel/crates/atomr-accel-agents", version = "0.3.1" }
 
 # Internal crates -----------------------------------------------------------
 atomr-agents-core          = { path = "crates/core", version = "0.1.4" }

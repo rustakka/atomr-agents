@@ -87,6 +87,8 @@ mod tests {
             agent_id: AgentId::from("a-1"),
             input_tokens: 10,
             output_tokens: 5,
+            reasoning_tokens: 0,
+            cached_tokens: 0,
             finish_reason: None,
             elapsed_ms: 20,
         });
@@ -112,6 +114,8 @@ mod tests {
                 agent_id: AgentId::from("a-1"),
                 input_tokens: 1,
                 output_tokens: 2,
+                reasoning_tokens: 0,
+                cached_tokens: 0,
                 finish_reason: None,
                 elapsed_ms: 3,
             },

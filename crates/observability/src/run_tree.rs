@@ -147,6 +147,7 @@ fn classify(e: &Event) -> RunKind {
     match e {
         Event::AgentTurn { .. } => RunKind::Agent,
         Event::ToolInvoked { .. } => RunKind::Tool,
+        Event::ToolCallStreamed { .. } => RunKind::Tool,
         Event::WorkflowStep { .. } => RunKind::Workflow,
         Event::HarnessIteration { .. } => RunKind::Harness,
         Event::StrategyResolved { .. } => RunKind::Chain,
@@ -158,6 +159,11 @@ fn name_of(e: &Event) -> String {
     match e {
         Event::AgentTurn { agent_id, .. } => format!("agent:{}", agent_id.as_str()),
         Event::ToolInvoked { tool_id, .. } => format!("tool:{}", tool_id.as_str()),
+        Event::ToolCallStreamed {
+            tool_name,
+            iteration,
+            ..
+        } => format!("tool-call-stream:{tool_name}#{iteration}"),
         Event::WorkflowStep { step_id, .. } => format!("step:{step_id}"),
         Event::HarnessIteration {
             harness_id,
@@ -206,6 +212,8 @@ mod tests {
                 agent_id: AgentId::from("a"),
                 input_tokens: 5,
                 output_tokens: 5,
+                reasoning_tokens: 0,
+                cached_tokens: 0,
                 finish_reason: None,
                 elapsed_ms: 10,
             },

@@ -53,6 +53,7 @@ impl PyEvent {
         match self.inner.event {
             Event::StrategyResolved { .. } => "strategy_resolved",
             Event::ToolInvoked { .. } => "tool_invoked",
+            Event::ToolCallStreamed { .. } => "tool_call_streamed",
             Event::AgentTurn { .. } => "agent_turn",
             Event::WorkflowStep { .. } => "workflow_step",
             Event::HarnessIteration { .. } => "harness_iteration",
@@ -107,18 +108,24 @@ impl PyEventBus {
         Ok(())
     }
 
-    /// Emit an agent-turn event from Python.
+    /// Emit an agent-turn event from Python. `reasoning_tokens` and
+    /// `cached_tokens` default to 0 when omitted.
+    #[pyo3(signature = (agent_id, input_tokens, output_tokens, elapsed_ms, reasoning_tokens=0, cached_tokens=0))]
     fn emit_agent_turn(
         &self,
         agent_id: String,
         input_tokens: u32,
         output_tokens: u32,
         elapsed_ms: u64,
+        reasoning_tokens: u32,
+        cached_tokens: u32,
     ) -> PyResult<()> {
         self.inner.emit(Event::AgentTurn {
             agent_id: AgentId::from(agent_id),
             input_tokens,
             output_tokens,
+            reasoning_tokens,
+            cached_tokens,
             finish_reason: None,
             elapsed_ms,
         });

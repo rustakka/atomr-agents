@@ -21,10 +21,27 @@ pub enum Event {
         elapsed_ms: u64,
         ok: bool,
     },
+    /// Emitted when an inference turn streams a tool call before it
+    /// is dispatched. Lets tracers / UIs surface tool intent in
+    /// real-time, distinct from `ToolInvoked` which fires post-call.
+    ToolCallStreamed {
+        agent_id: AgentId,
+        tool_name: String,
+        arguments_hash: u64,
+        iteration: u32,
+    },
     AgentTurn {
         agent_id: AgentId,
         input_tokens: u32,
         output_tokens: u32,
+        /// Provider-reported reasoning tokens (e.g. o1-style).
+        /// Defaults to 0 for runtimes that don't surface them.
+        #[serde(default)]
+        reasoning_tokens: u32,
+        /// Cached prefix tokens (Anthropic prompt-cache, OpenAI cached
+        /// input). Priced lower than `input_tokens` by most providers.
+        #[serde(default)]
+        cached_tokens: u32,
         finish_reason: Option<FinishReason>,
         elapsed_ms: u64,
     },

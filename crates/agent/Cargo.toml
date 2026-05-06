@@ -38,3 +38,19 @@ futures                    = { workspace = true }
 chrono                     = { workspace = true }
 parking_lot                = { workspace = true }
 
+# Optional provider backends. Enable the corresponding feature to make
+# the runner type available via `crate::providers::{anthropic, openai,
+# gemini}`. Each backend pulls its own HTTP/SSE plumbing transitively.
+atomr-infer-runtime-anthropic = { workspace = true, optional = true }
+atomr-infer-runtime-openai    = { workspace = true, optional = true }
+atomr-infer-runtime-gemini    = { workspace = true, optional = true }
+
+[features]
+default          = []
+provider-anthropic = ["dep:atomr-infer-runtime-anthropic"]
+provider-openai    = ["dep:atomr-infer-runtime-openai"]
+provider-gemini    = ["dep:atomr-infer-runtime-gemini"]
+
+[dev-dependencies]
+atomr-infer-testkit         = { workspace = true }
+
