@@ -160,6 +160,31 @@ jobs:
           fi
           echo "version=$new_ver" >> "$GITHUB_OUTPUT"
 
+      - name: Bump pyproject.toml to match
+        if: steps.decide.outputs.kind != 'skip'
+        working-directory: atomr-agents
+        env:
+          NEW_VERSION: ${{ steps.bump.outputs.version }}
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import os, pathlib, re
+          p = pathlib.Path("pyproject.toml")
+          new_ver = os.environ["NEW_VERSION"]
+          text = p.read_text()
+          new = re.sub(
+              r'^version\s*=\s*"[^"]+"',
+              f'version = "{new_ver}"',
+              text,
+              count=1,
+              flags=re.M,
+          )
+          if new == text:
+              raise SystemExit("pyproject.toml: no top-level version line matched")
+          p.write_text(new)
+          print(f"pyproject.toml -> {new_ver}")
+          PY
+
       - name: Commit + tag
         if: steps.decide.outputs.kind != 'skip' && github.event.inputs.dry_run != 'true'
         working-directory: atomr-agents
