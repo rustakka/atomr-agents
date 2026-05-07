@@ -15,3 +15,4 @@ manifest-path = "crates/py-bindings/Cargo.toml"
 module-name = "atomr_agents._native"
 python-source = "python"
 features = []
+include = [{ path = "LICENSE", format = "sdist" }]
