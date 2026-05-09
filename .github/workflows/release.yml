@@ -63,12 +63,29 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
         with: { workspaces: atomr-agents }
-      # System deps for the heaviest opt-in features the
-      # `--all-features` build pulls in: cpal needs `libasound2-dev`
-      # (`mic`), whisper-rs needs cmake (`whisper-cpp`).
+      # System deps for the heaviest opt-in features we exercise
+      # below: cpal needs `libasound2-dev` (`stt-mic`), whisper-rs
+      # needs cmake (`whisper-cpp`). The `metal`/`coreml`/`cuda`
+      # GPU forwarders on stt-runtime-whisper are macOS/CUDA-only
+      # and intentionally NOT exercised here.
       - name: Install system deps for opt-in features
         run: sudo apt-get update && sudo apt-get install -y libasound2-dev cmake
-      - run: cargo check --workspace --all-features
+      # Default features: matches what plain `cargo build` users see.
+      - run: cargo check --workspace
+        working-directory: atomr-agents
+      # Umbrella `full` feature: enables every framework + STT
+      # capability surface that doesn't require a platform-specific
+      # toolchain (excludes whisper-cpp/metal/coreml/cuda).
+      - run: cargo check -p atomr-agents --features full
+        working-directory: atomr-agents
+      # Spot-check the opt-in heavy features individually so we
+      # catch breakage without enabling cross-platform feature
+      # combinations cargo can't satisfy on Linux.
+      - run: cargo check -p atomr-agents-stt-runtime-whisper --features whisper-cpp
+        working-directory: atomr-agents
+      - run: cargo check -p atomr-agents-stt-audio --features mic
+        working-directory: atomr-agents
+      - run: cargo check -p atomr-agents-stt-voice --features vad-silero
         working-directory: atomr-agents
       - run: cargo test --workspace
         working-directory: atomr-agents
