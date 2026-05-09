@@ -190,11 +190,18 @@ jobs:
       - name: Build wheels
         working-directory: atomr-agents
         run: maturin build --manifest-path crates/py-bindings/Cargo.toml ${{ matrix.args }}
-      - name: Build sdist
+      # sdist is best-effort. Maturin's `sdist` recurses through
+      # path-deps and fails when the locally-checked-out sibling
+      # workspaces (atomr / atomr-infer / atomr-accel) drift to
+      # incompatible version pins. Wheels are sufficient for PyPI
+      # installation; treat sdist failure as a warning.
+      - name: Build sdist (best-effort)
         if: matrix.runner == 'ubuntu-latest'
+        continue-on-error: true
         working-directory: atomr-agents
         run: maturin sdist --manifest-path crates/py-bindings/Cargo.toml --out dist
       - uses: actions/upload-artifact@v4
+        if: always()
         with:
           name: wheels-${{ matrix.runner }}
           path: atomr-agents/dist/*
