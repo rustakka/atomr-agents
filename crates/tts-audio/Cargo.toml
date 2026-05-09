@@ -18,14 +18,15 @@ default      = ["encode-wav"]
 # WAV (RIFF/PCM) writer via hound — small, no system deps.
 encode-wav   = ["dep:hound"]
 # cpal speaker output (default-off; cpal needs platform audio dev headers).
-speaker      = ["dep:cpal"]
+speaker      = ["dep:cpal", "dep:parking_lot"]
 
 [dependencies]
 atomr-agents-stt-core  = { workspace = true }
 atomr-agents-tts-core  = { workspace = true }
 
-hound = { version = "3.5", optional = true }
-cpal  = { version = "0.15", optional = true }
+hound       = { version = "3.5", optional = true }
+cpal        = { version = "0.15", optional = true }
+parking_lot = { workspace = true, optional = true }
 
 bytes        = { workspace = true }
 tokio        = { workspace = true, features = ["sync", "rt", "macros"] }
