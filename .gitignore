@@ -14,5 +14,12 @@ __pycache__/
 *.py[cod]
 *.egg-info/
 .venv/
+.venv-*/
 dist/
 build/
+
+# maturin-built native extension (developers run `maturin develop` locally;
+# the wheel is built fresh in CI).
+python/atomr_agents/_native*.so
+python/atomr_agents/_native*.pyd
+*.so
