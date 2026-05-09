@@ -5,7 +5,8 @@
 //! struct is `serde`-derived so it round-trips to Python as a dict
 //! and JSON for telemetry / registry artifacts.
 
-use serde::Serialize;
+use serde::ser::SerializeMap;
+use serde::{Serialize, Serializer};
 
 use crate::audio::AudioFormat;
 
@@ -96,8 +97,7 @@ pub enum DiarizationSupport {
     NamedSpeakers,
 }
 
-#[derive(Debug, Clone, Serialize)]
-#[serde(tag = "kind", rename_all = "snake_case")]
+#[derive(Debug, Clone)]
 pub enum Languages {
     /// Backend handles any language without an enrollment list.
     All,
@@ -110,6 +110,27 @@ impl Languages {
         match self {
             Languages::All => true,
             Languages::Subset(list) => list.iter().any(|l| l.eq_ignore_ascii_case(bcp47)),
+        }
+    }
+}
+
+// Custom serialize: serde's internally-tagged tuple variants don't
+// accept sequence payloads, so we emit `{kind: "all"}` or
+// `{kind: "subset", codes: [...]}` by hand.
+impl Serialize for Languages {
+    fn serialize<S: Serializer>(&self, ser: S) -> Result<S::Ok, S::Error> {
+        match self {
+            Languages::All => {
+                let mut m = ser.serialize_map(Some(1))?;
+                m.serialize_entry("kind", "all")?;
+                m.end()
+            }
+            Languages::Subset(codes) => {
+                let mut m = ser.serialize_map(Some(2))?;
+                m.serialize_entry("kind", "subset")?;
+                m.serialize_entry("codes", codes)?;
+                m.end()
+            }
         }
     }
 }

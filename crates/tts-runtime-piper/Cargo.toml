@@ -1,0 +1,34 @@
+[package]
+name        = "atomr-agents-tts-runtime-piper"
+version.workspace     = true
+edition.workspace     = true
+rust-version.workspace = true
+license.workspace     = true
+repository.workspace  = true
+homepage.workspace    = true
+documentation.workspace = true
+authors.workspace     = true
+readme.workspace      = true
+description = "Piper ONNX TTS backend for atomr-agents (local)."
+
+[dependencies]
+atomr-agents-stt-core = { workspace = true }
+atomr-agents-tts-core = { workspace = true }
+atomr-agents-tts-audio = { workspace = true }
+async-trait           = { workspace = true }
+serde                 = { workspace = true }
+serde_json            = { workspace = true }
+thiserror             = { workspace = true }
+tracing               = { workspace = true }
+tokio                 = { workspace = true }
+bytes                 = { workspace = true }
+
+# Optional: ONNX Runtime binding. The crate ships the trait + CAPS
+# regardless; calls fail with typed ModelLoad errors when the feature
+# is disabled. Wiring against `ort` lands when the upstream
+# `atomr-infer-runtime-ort` matures.
+ort = { version = "2.0.0-rc.10", optional = true, default-features = false, features = ["std"] }
+
+[features]
+default = []
+piper-ort = ["ort"]

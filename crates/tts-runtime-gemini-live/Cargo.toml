@@ -1,0 +1,35 @@
+[package]
+name        = "atomr-agents-tts-runtime-gemini-live"
+version.workspace     = true
+edition.workspace     = true
+rust-version.workspace = true
+license.workspace     = true
+repository.workspace  = true
+homepage.workspace    = true
+documentation.workspace = true
+authors.workspace     = true
+readme.workspace      = true
+description = "Gemini Live API backend for atomr-agents (bidirectional voice agents)."
+
+[dependencies]
+atomr-agents-stt-core         = { workspace = true }
+atomr-agents-stt-remote-core  = { workspace = true }
+atomr-agents-tts-core         = { workspace = true }
+async-trait    = { workspace = true }
+serde          = { workspace = true }
+serde_json     = { workspace = true }
+thiserror      = { workspace = true }
+tracing        = { workspace = true }
+tokio          = { workspace = true }
+futures        = { workspace = true }
+futures-util   = { workspace = true }
+bytes          = { workspace = true }
+url            = { workspace = true }
+secrecy        = { workspace = true }
+reqwest        = { workspace = true }
+tokio-tungstenite = { workspace = true }
+parking_lot    = { workspace = true }
+
+[features]
+default = []
+integration = []

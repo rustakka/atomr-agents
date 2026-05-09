@@ -6,6 +6,101 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## [0.6.0] — 2026-05-08
+
+### Added — text-to-speech capability
+
+The mirror of the v0.5.0 STT capability: a new TTS surface with
+cloud + local backends, a unified `Capabilities` struct that
+advertises the five MOSS-TTS surfaces (plain TTS, voicegen-from-text,
+voice cloning, multispeaker dialogue, sound effects, plus
+realtime-bidirectional and streaming output), and an agent-framework
+adapter pair (`SpeakTool`, `voice_response_skill`).
+
+Eleven new crates under `crates/tts-*/` plus PyO3 bindings at
+`crates/py-bindings/src/tts.rs` and a Python facade at
+`python/atomr_agents/tts.py`. Each runner exports a `pub const CAPS`
+so callers can compare backends before wiring one in.
+
+- **`atomr-agents-tts-core`** — `TextToSpeech`, `SynthesisStream`,
+  `RealtimeSession` traits; `SynthesisRequest::{Tts, SoundEffect,
+  Dialogue}`; `VoiceRef::{Library, DescribedAs, ClonedFrom, Custom}`;
+  `Capabilities` with the five MOSS-TTS surface flags; `AudioOutput`
+  (PCM or container bytes); `RealtimeEvent` covering audio frames,
+  inbound transcripts, outbound text, speech-start/end, barge-in,
+  and done; `MockTextToSpeech` for tests.
+- **`atomr-agents-tts-audio`** — output-side audio: WAV writer
+  (`encode-wav`, default-on), `cpal`-backed `SpeakerStream`
+  (`speaker`, default-off), and pump helpers.
+- **`atomr-agents-tts-runtime-openai`** — `POST /v1/audio/speech`
+  batch + chunked streaming for `tts-1`, `tts-1-hd`,
+  `gpt-4o-mini-tts`. Eleven preset voices.
+- **`atomr-agents-tts-runtime-elevenlabs`** — REST batch +
+  `POST .../stream` chunked stream + `POST /v1/sound-generation`
+  SFX + Conversational AI WS realtime. Voice cloning (60s reference
+  clip), 30 supported languages, dynamic voice catalog.
+- **`atomr-agents-tts-runtime-openai-realtime`** — `wss://
+  api.openai.com/v1/realtime` bidirectional voice agent. Maps
+  audio.delta / audio_transcript.delta / speech_started/_stopped /
+  input_audio_transcription.completed events onto the unified
+  `RealtimeEvent` shape.
+- **`atomr-agents-tts-runtime-gemini-live`** — `wss://
+  generativelanguage.googleapis.com/.../BidiGenerateContent` voice
+  agent with the same trait shape. Setup picks voice (Puck / Charon /
+  Kore / Fenrir / Aoede), modalities, and a system instruction.
+- **`atomr-agents-tts-runtime-piper`** — Piper local TTS
+  (~50 MB ONNX models, ~30 languages, RTF ~0.05). Ships the trait
+  surface + CAPS today; the ORT pipeline lands behind the
+  `piper-ort` feature once `atomr-infer-runtime-ort` matures
+  (mirrors the `stt-diarize-sherpa` skeleton-with-feature-gate
+  pattern).
+- **`atomr-agents-tts-runtime-kokoro`** — Kokoro-82M local TTS
+  (English, 21 preset voices). Same skeleton-with-feature-gate
+  pattern (`kokoro-ort`).
+- **`atomr-agents-tts-runtime-moss`** — MOSS-TTS local backend
+  covering all five surfaces (Delay-8B / Local-1.7B / TTSD /
+  VoiceGenerator / SoundEffect / Realtime variants). Talks to a
+  colocated Python server (SGLang or FastAPI wrapper) over HTTP;
+  feature `moss-http` enables the client.
+- **`atomr-agents-tts-runtime-xtts`** — Coqui XTTS v2 zero-shot
+  voice cloning (6s reference, 17 languages). Same Python-server
+  pattern as MOSS (`xtts-http` feature).
+- **`atomr-agents-tts-voice`** — `Conversation` session with
+  `TurnBased` (caller drives transcript in, gets synthesised reply
+  out) and `UnifiedRealtime` (one realtime backend serves both
+  directions) modes. `ConversationAgent` trait + `NoopAgent` for
+  testing. `ConversationEvent::{UserSpoke, AssistantText,
+  AssistantAudio, Interrupted, Done}`.
+- **`atomr-agents-tts-tool`** — `SpeakTool` (a framework `Tool` the
+  model can call to render a WAV file), `voice_response_skill(stt,
+  tts)` (bundles `SpeakTool` + `TranscribeTool` into a Skill), and
+  `voice_speak_skill(tts)` (speak-only).
+
+### Python bindings
+
+`python/atomr_agents/tts.py` re-exports the TTS submodule.
+Backend constructors (in addition to `mock_tts`):
+`tts_openai`, `tts_elevenlabs`, `tts_openai_realtime`,
+`tts_gemini_live`, `tts_piper`, `tts_kokoro`, `tts_moss`,
+`tts_xtts`. Each accepts the standard `api_key="env:VARNAME"` /
+`"file:/path"` / literal forms used by the STT constructors.
+
+### Umbrella feature flags
+
+`atomr-agents` umbrella adds: `tts`, `tts-{openai, elevenlabs,
+openai-realtime, gemini-live, piper, kokoro, moss, xtts}`,
+`tts-speaker`, `tts-voice`, `tts-full`, and a top-level
+`conversation` (= `stt-full + tts-full + tts-voice + stt-voice`)
+feature for live voice-agent setups.
+
+### Wire-format fix
+
+`Languages::Subset(...)` now serializes via a custom `Serialize`
+impl as `{"kind": "subset", "codes": [...]}`; the previous
+internally-tagged form failed at runtime when serializing to JSON
+through the Python bridge (serde rejects sequence payloads inside
+internally-tagged tuple variants).
+
 ## [0.5.0] — 2026-05-08
 
 ### Added — speech-to-text capability

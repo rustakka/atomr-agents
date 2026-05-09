@@ -65,6 +65,7 @@ if _native is not None:
     eval = _native.eval  # noqa: A001 - shadowing intentional
     guest = _native.guest
     stt = _native.stt
+    tts = _native.tts
     voice = _native.voice
 
     # ----- top-level convenience re-exports -----------------------------
@@ -144,6 +145,7 @@ __all__ = [
     "eval",
     "guest",
     "stt",
+    "tts",
     "voice",
     # core
     "AgentId",

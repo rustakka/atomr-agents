@@ -61,3 +61,35 @@ pub mod stt {
     #[cfg(feature = "stt-voice")]
     pub use atomr_agents_stt_voice as voice;
 }
+
+/// Text-to-speech capability. Mirrors the STT module: pulls in the
+/// core trait + types (`atomr_agents_tts_core`), the audio output
+/// helpers (`atomr_agents_tts_audio`), the tool/skill adapters
+/// (`atomr_agents_tts_tool`), and any backends enabled via
+/// `tts-{openai,elevenlabs,openai-realtime,gemini-live,piper,
+/// kokoro,moss,xtts,voice,speaker}` features.
+#[cfg(feature = "tts")]
+pub mod tts {
+    pub use atomr_agents_tts_audio as audio;
+    pub use atomr_agents_tts_core::*;
+    pub use atomr_agents_tts_tool as tool;
+
+    #[cfg(feature = "tts-openai")]
+    pub use atomr_agents_tts_runtime_openai as openai;
+    #[cfg(feature = "tts-elevenlabs")]
+    pub use atomr_agents_tts_runtime_elevenlabs as elevenlabs;
+    #[cfg(feature = "tts-openai-realtime")]
+    pub use atomr_agents_tts_runtime_openai_realtime as openai_realtime;
+    #[cfg(feature = "tts-gemini-live")]
+    pub use atomr_agents_tts_runtime_gemini_live as gemini_live;
+    #[cfg(feature = "tts-piper")]
+    pub use atomr_agents_tts_runtime_piper as piper;
+    #[cfg(feature = "tts-kokoro")]
+    pub use atomr_agents_tts_runtime_kokoro as kokoro;
+    #[cfg(feature = "tts-moss")]
+    pub use atomr_agents_tts_runtime_moss as moss;
+    #[cfg(feature = "tts-xtts")]
+    pub use atomr_agents_tts_runtime_xtts as xtts;
+    #[cfg(feature = "tts-voice")]
+    pub use atomr_agents_tts_voice as voice;
+}

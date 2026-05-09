@@ -1,0 +1,29 @@
+[package]
+name        = "atomr-agents-tts-runtime-xtts"
+version.workspace     = true
+edition.workspace     = true
+rust-version.workspace = true
+license.workspace     = true
+repository.workspace  = true
+homepage.workspace    = true
+documentation.workspace = true
+authors.workspace     = true
+readme.workspace      = true
+description = "Coqui XTTS v2 backend for atomr-agents (local, voice cloning + 17 languages)."
+
+[dependencies]
+atomr-agents-stt-core = { workspace = true }
+atomr-agents-tts-core = { workspace = true }
+async-trait           = { workspace = true }
+serde                 = { workspace = true }
+serde_json            = { workspace = true }
+thiserror             = { workspace = true }
+tracing               = { workspace = true }
+tokio                 = { workspace = true }
+bytes                 = { workspace = true }
+url                   = { workspace = true }
+reqwest               = { workspace = true, optional = true }
+
+[features]
+default = []
+xtts-http = ["reqwest"]

@@ -1,0 +1,41 @@
+[package]
+name          = "atomr-agents-tts-runtime-openai"
+version       = { workspace = true }
+edition       = { workspace = true }
+rust-version  = { workspace = true }
+license       = { workspace = true }
+repository    = { workspace = true }
+homepage      = { workspace = true }
+authors       = { workspace = true }
+description   = "OpenAI TTS backend (tts-1, tts-1-hd, gpt-4o-mini-tts) for atomr-agents text-to-speech."
+
+keywords      = ["agents", "tts", "openai", "speech", "atomr"]
+categories    = ["asynchronous", "multimedia::audio"]
+readme        = "../../README.md"
+
+[features]
+default     = ["rustls"]
+rustls      = ["atomr-agents-stt-remote-core/rustls"]
+native-tls  = ["atomr-agents-stt-remote-core/native-tls"]
+integration = []
+
+[dependencies]
+atomr-agents-stt-core         = { workspace = true }
+atomr-agents-stt-remote-core  = { workspace = true }
+atomr-agents-tts-core         = { workspace = true }
+
+reqwest      = { workspace = true, features = ["stream"] }
+async-trait  = { workspace = true }
+tokio        = { workspace = true, features = ["sync", "rt", "macros"] }
+futures      = { workspace = true }
+futures-util = { workspace = true }
+bytes        = { workspace = true }
+serde        = { workspace = true }
+serde_json   = { workspace = true }
+secrecy      = { workspace = true }
+url          = { workspace = true }
+tracing      = { workspace = true }
+parking_lot  = { workspace = true }
+
+[dev-dependencies]
+futures = { workspace = true }

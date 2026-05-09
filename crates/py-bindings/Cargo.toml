@@ -41,6 +41,18 @@ atomr-agents-stt-runtime-assemblyai = { workspace = true }
 atomr-agents-stt-runtime-whisper   = { workspace = true }
 atomr-agents-stt-voice             = { workspace = true }
 atomr-agents-stt-tool              = { workspace = true }
+atomr-agents-tts-core              = { workspace = true }
+atomr-agents-tts-audio             = { workspace = true }
+atomr-agents-tts-runtime-openai    = { workspace = true }
+atomr-agents-tts-runtime-elevenlabs       = { workspace = true }
+atomr-agents-tts-runtime-openai-realtime  = { workspace = true }
+atomr-agents-tts-runtime-gemini-live      = { workspace = true }
+atomr-agents-tts-runtime-piper     = { workspace = true }
+atomr-agents-tts-runtime-kokoro    = { workspace = true }
+atomr-agents-tts-runtime-moss      = { workspace = true }
+atomr-agents-tts-runtime-xtts      = { workspace = true }
+atomr-agents-tts-voice             = { workspace = true }
+atomr-agents-tts-tool              = { workspace = true }
 atomr-agents-retriever     = { workspace = true }
 atomr-agents-ingest        = { workspace = true }
 atomr-agents-parser        = { workspace = true }
@@ -59,6 +71,7 @@ atomr-infer-core           = { workspace = true }
 
 # Audio I/O.
 bytes                      = { workspace = true }
+url                        = { workspace = true }
 
 # PyO3 + tokio bridge.
 pyo3                       = { workspace = true, features = ["extension-module"] }

@@ -1,0 +1,31 @@
+[package]
+name        = "atomr-agents-tts-tool"
+version.workspace     = true
+edition.workspace     = true
+rust-version.workspace = true
+license.workspace     = true
+repository.workspace  = true
+homepage.workspace    = true
+documentation.workspace = true
+authors.workspace     = true
+readme.workspace      = true
+description = "Tool + Skill adapters that expose atomr-agents text-to-speech inside the agent framework."
+
+[dependencies]
+atomr-agents-core      = { workspace = true }
+atomr-agents-tool      = { workspace = true }
+atomr-agents-skill     = { workspace = true }
+atomr-agents-stt-core  = { workspace = true }
+atomr-agents-stt-tool  = { workspace = true }
+atomr-agents-tts-core  = { workspace = true }
+atomr-agents-tts-audio = { workspace = true }
+
+async-trait = { workspace = true }
+serde       = { workspace = true }
+serde_json  = { workspace = true }
+tracing     = { workspace = true }
+tokio       = { workspace = true }
+bytes       = { workspace = true }
+
+[dev-dependencies]
+tempfile = "3"

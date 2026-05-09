@@ -87,6 +87,14 @@ jobs:
         working-directory: atomr-agents
       - run: cargo check -p atomr-agents-stt-voice --features vad-silero
         working-directory: atomr-agents
+      # Text-to-speech capability — exercise the full surface and the
+      # opt-in features individually.
+      - run: cargo check -p atomr-agents --features tts-full
+        working-directory: atomr-agents
+      - run: cargo check -p atomr-agents --features conversation
+        working-directory: atomr-agents
+      - run: cargo check -p atomr-agents-tts-audio --features speaker
+        working-directory: atomr-agents
       - run: cargo test --workspace
         working-directory: atomr-agents
 
@@ -326,6 +334,19 @@ jobs:
             atomr-agents-stt-diarize-sherpa
             atomr-agents-stt-voice
             atomr-agents-stt-tool
+            # --- text-to-speech capability ---------------------------
+            atomr-agents-tts-core
+            atomr-agents-tts-audio
+            atomr-agents-tts-runtime-openai
+            atomr-agents-tts-runtime-elevenlabs
+            atomr-agents-tts-runtime-openai-realtime
+            atomr-agents-tts-runtime-gemini-live
+            atomr-agents-tts-runtime-piper
+            atomr-agents-tts-runtime-kokoro
+            atomr-agents-tts-runtime-moss
+            atomr-agents-tts-runtime-xtts
+            atomr-agents-tts-voice
+            atomr-agents-tts-tool
             # ---------------------------------------------------------
             atomr-agents-py-bindings
             atomr-agents-cli

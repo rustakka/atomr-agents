@@ -53,6 +53,7 @@ mod skill;
 mod state;
 mod stt;
 mod tool;
+mod tts;
 mod voice;
 mod workflow;
 
@@ -80,6 +81,7 @@ fn _native(py: Python<'_>, m: &Bound<'_, PyModule>) -> PyResult<()> {
     eval::register(py, m)?;
     guest::register(py, m)?;
     stt::register(py, m)?;
+    tts::register(py, m)?;
     voice::register(py, m)?;
     Ok(())
 }

@@ -1,0 +1,28 @@
+[package]
+name          = "atomr-agents-tts-core"
+version       = { workspace = true }
+edition       = { workspace = true }
+rust-version  = { workspace = true }
+license       = { workspace = true }
+repository    = { workspace = true }
+homepage      = { workspace = true }
+authors       = { workspace = true }
+description   = "Core types and traits for atomr-agents text-to-speech: TextToSpeech / SynthesisStream / RealtimeSession traits, Capabilities, SynthesisRequest, VoiceRef, AudioOutput, MockTextToSpeech."
+
+keywords      = ["agents", "tts", "speech", "audio", "atomr"]
+categories    = ["asynchronous", "multimedia::audio"]
+readme        = "../../README.md"
+
+[dependencies]
+atomr-agents-core      = { workspace = true }
+atomr-agents-stt-core  = { workspace = true }
+async-trait            = { workspace = true }
+serde                  = { workspace = true }
+serde_json             = { workspace = true }
+bytes                  = { workspace = true }
+futures                = { workspace = true }
+thiserror              = { workspace = true }
+tokio                  = { workspace = true }
+
+[dev-dependencies]
+tokio = { workspace = true }
