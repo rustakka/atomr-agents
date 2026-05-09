@@ -6,6 +6,74 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+### Added — speech-to-text capability
+
+A new capability surface for ingesting audio into agent workflows.
+Lives across ten new crates under `crates/stt-*/` plus PyO3 wrappers
+at `crates/py-bindings/src/{stt,voice}.rs` and Python facades at
+`python/atomr_agents/{stt,voice}.py`. All backends advertise their
+abilities via a rich `Capabilities` struct (a `pub const` on each
+runner) so callers can introspect support for streaming, diarization,
+languages, word timestamps, max audio length, and per-minute cost
+before wiring a backend into an agent.
+
+- **`atomr-agents-stt-core`** — `SpeechToText` and `StreamingSession`
+  traits, `Capabilities` (serializable to JSON for Python
+  introspection), `AudioInput` (file / bytes / PCM), `Transcript`
+  with per-word timing and speaker tags, `BackendKind` /
+  `TransportKind` enums, and `MockSpeechToText` for tests.
+- **`atomr-agents-stt-remote-core`** — shared HTTP / WebSocket
+  plumbing: `reqwest::Client` builder, `tokio-tungstenite` connect
+  helper, `SecretRef` (env / literal / file), `RetryPolicy`,
+  `Timeouts`, `RateLimits`, exponential-backoff `retry()` helper.
+- **`atomr-agents-stt-audio`** — `symphonia`-based decoder,
+  `rubato` resampler, `cpal`-based microphone capture (feature
+  `mic`, default-off because `cpal` requires platform audio dev
+  headers).
+- **`atomr-agents-stt-runtime-openai`** — Whisper / `gpt-4o-transcribe`
+  REST batch.
+- **`atomr-agents-stt-runtime-deepgram`** — REST batch + live
+  WebSocket; diarization (speaker count); partial results;
+  VAD-based endpointing.
+- **`atomr-agents-stt-runtime-assemblyai`** — REST upload + poll +
+  Universal-Streaming WebSocket; named-speaker diarization.
+- **`atomr-agents-stt-runtime-whisper`** — local whisper.cpp via
+  `whisper-rs`. The actual binding is gated behind the
+  `whisper-cpp` feature so plain workspace builds don't need a
+  C++ toolchain. Without the feature, `transcribe` returns a
+  typed `SttError::ModelLoad` naming the missing flag. Optional
+  `download-models` helper fetches ggml weights into the OS
+  cache dir.
+- **`atomr-agents-stt-diarize-sherpa`** — `Diarizer` trait,
+  always-available `MockDiarizer`, and a `SherpaDiarizer` stub
+  ready for the upstream `sherpa-onnx` Rust binding to be
+  wired in. `apply_to_transcript` stitches diarization spans
+  into segment speaker tags.
+- **`atomr-agents-stt-voice`** — `VoiceSession` with `Live` vs
+  `TurnBased { silence_ms }` modes layered on top of any
+  `StreamingSession`. Includes a `Vad` trait, an always-on
+  `EnergyVad`, and (via the `vad-silero` feature) a `SileroVad`
+  using the `voice_activity_detector` crate. The `mic` feature
+  enables a `pump_mic_to_stream` helper that wires
+  `MicCaptureSession` → `StreamingSession::push_audio`.
+- **`atomr-agents-stt-tool`** — `TranscribeTool` (a `Tool` the
+  model can elect to call) and `voice_input_skill(stt) -> (Skill,
+  DynTool)` for declarative agent integration.
+- **Umbrella crate** gains `stt`, `stt-{openai,deepgram,assemblyai,
+  whisper,diarize,voice,mic}`, and `stt-full` features that
+  re-export the relevant backend modules under
+  `atomr_agents::stt`.
+- **Python bindings** — `atomr_agents._native.stt` exposes
+  `SpeechToText`, `Capabilities`, `Transcript`, `StreamingSession`,
+  `StreamEvent`, `audio_{file,bytes,pcm}`, plus backend
+  constructors `mock_speech_to_text()`, `stt_openai()`,
+  `stt_deepgram()`, `stt_assemblyai()`, `stt_whisper()`. The
+  `voice` submodule exposes `VoiceMode`, `VoiceEvent`, and
+  `VoiceSession`. Async iterators follow the same
+  `__aiter__`/`__anext__` pattern as `EventStream` in
+  `observability`. Python-level facades at
+  `python/atomr_agents/{stt,voice}.py`.
+
 ### Changed — track upstream atomr 0.6.0 + atomr-accel 0.4.0 + atomr-infer 0.7.0
 
 - **Catch up to current sibling workspaces.** Path-dep version pins

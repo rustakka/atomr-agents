@@ -1,0 +1,35 @@
+[package]
+name          = "atomr-agents-stt-diarize-sherpa"
+version       = { workspace = true }
+edition       = { workspace = true }
+rust-version  = { workspace = true }
+license       = { workspace = true }
+repository    = { workspace = true }
+homepage      = { workspace = true }
+authors       = { workspace = true }
+description   = "Local speaker diarization via sherpa-onnx for atomr-agents speech-to-text. Plugs into any backend whose Capabilities::diarization is None."
+
+keywords      = ["agents", "stt", "diarization", "sherpa", "atomr"]
+categories    = ["asynchronous", "multimedia::audio"]
+readme        = "../../README.md"
+
+[features]
+# Default builds expose the Diarizer trait + MockDiarizer only.
+# Enable `sherpa-onnx` to link the actual ONNX-based pipeline
+# (requires the sherpa-onnx C library or a Rust binding crate).
+default        = []
+sherpa-onnx    = []
+cuda           = ["sherpa-onnx"]
+download-models = ["dep:reqwest", "dep:dirs"]
+
+[dependencies]
+atomr-agents-stt-core  = { workspace = true }
+
+reqwest = { workspace = true, features = ["stream"], optional = true }
+dirs    = { workspace = true, optional = true }
+
+async-trait  = { workspace = true }
+tokio        = { workspace = true, features = ["sync", "rt", "macros", "fs"] }
+serde        = { workspace = true }
+tracing      = { workspace = true }
+futures-util = { workspace = true }

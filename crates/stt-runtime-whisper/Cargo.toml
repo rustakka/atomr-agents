@@ -1,0 +1,40 @@
+[package]
+name          = "atomr-agents-stt-runtime-whisper"
+version       = { workspace = true }
+edition       = { workspace = true }
+rust-version  = { workspace = true }
+license       = { workspace = true }
+repository    = { workspace = true }
+homepage      = { workspace = true }
+authors       = { workspace = true }
+description   = "Local whisper.cpp speech-to-text backend (via whisper-rs) for atomr-agents."
+
+keywords      = ["agents", "stt", "whisper", "local", "atomr"]
+categories    = ["asynchronous", "multimedia::audio"]
+readme        = "../../README.md"
+
+[features]
+# Default builds expose only the config + CAPS const so the crate
+# compiles without a C++ toolchain. Enable `whisper-cpp` to link
+# the actual whisper.cpp runtime (requires cmake + a C++ compiler).
+default        = []
+whisper-cpp    = ["dep:whisper-rs"]
+cuda           = ["whisper-cpp", "whisper-rs/cuda"]
+metal          = ["whisper-cpp", "whisper-rs/metal"]
+coreml         = ["whisper-cpp", "whisper-rs/coreml"]
+download-models = ["dep:reqwest", "dep:dirs"]
+
+[dependencies]
+atomr-agents-stt-core  = { workspace = true }
+atomr-agents-stt-audio = { workspace = true }
+
+whisper-rs = { version = "0.13", optional = true, default-features = false }
+
+reqwest    = { workspace = true, features = ["stream"], optional = true }
+dirs       = { workspace = true, optional = true }
+
+async-trait  = { workspace = true }
+tokio        = { workspace = true, features = ["rt", "macros", "sync"] }
+parking_lot  = { workspace = true }
+serde        = { workspace = true }
+tracing      = { workspace = true }

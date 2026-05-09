@@ -11,6 +11,16 @@ members = [
     "crates/skill",
     "crates/memory",
     "crates/embed",
+    "crates/stt-core",
+    "crates/stt-remote-core",
+    "crates/stt-runtime-openai",
+    "crates/stt-audio",
+    "crates/stt-runtime-whisper",
+    "crates/stt-runtime-deepgram",
+    "crates/stt-runtime-assemblyai",
+    "crates/stt-diarize-sherpa",
+    "crates/stt-voice",
+    "crates/stt-tool",
     "crates/retriever",
     "crates/ingest",
     "crates/persona",
@@ -80,6 +90,12 @@ semver    = { version = "1", features = ["serde"] }
 # Testing
 proptest = "1"
 
+# HTTP / WebSockets / audio (used by stt-* crates)
+reqwest           = { version = "0.12", default-features = false, features = ["json", "stream", "multipart"] }
+tokio-tungstenite = { version = "0.23", default-features = false }
+secrecy           = "0.10"
+dirs              = "5"
+
 # Python bindings (optional)
 pyo3                 = { version = "0.22", default-features = false, features = ["macros"] }
 pyo3-async-runtimes  = { version = "0.22", default-features = false, features = ["tokio-runtime"] }
@@ -135,6 +151,16 @@ atomr-agents-tool          = { path = "crates/tool", version = "0.4.0" }
 atomr-agents-skill         = { path = "crates/skill", version = "0.4.0" }
 atomr-agents-memory        = { path = "crates/memory", version = "0.4.0" }
 atomr-agents-embed         = { path = "crates/embed", version = "0.4.0" }
+atomr-agents-stt-core         = { path = "crates/stt-core", version = "0.4.0" }
+atomr-agents-stt-remote-core  = { path = "crates/stt-remote-core", version = "0.4.0" }
+atomr-agents-stt-runtime-openai     = { path = "crates/stt-runtime-openai", version = "0.4.0" }
+atomr-agents-stt-audio        = { path = "crates/stt-audio", version = "0.4.0" }
+atomr-agents-stt-runtime-whisper = { path = "crates/stt-runtime-whisper", version = "0.4.0" }
+atomr-agents-stt-runtime-deepgram = { path = "crates/stt-runtime-deepgram", version = "0.4.0" }
+atomr-agents-stt-runtime-assemblyai = { path = "crates/stt-runtime-assemblyai", version = "0.4.0" }
+atomr-agents-stt-diarize-sherpa = { path = "crates/stt-diarize-sherpa", version = "0.4.0" }
+atomr-agents-stt-voice        = { path = "crates/stt-voice", version = "0.4.0" }
+atomr-agents-stt-tool         = { path = "crates/stt-tool", version = "0.4.0" }
 atomr-agents-persona       = { path = "crates/persona", version = "0.4.0" }
 atomr-agents-instruction   = { path = "crates/instruction", version = "0.4.0" }
 atomr-agents-agent         = { path = "crates/agent", version = "0.4.0" }

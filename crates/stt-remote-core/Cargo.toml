@@ -1,0 +1,42 @@
+[package]
+name          = "atomr-agents-stt-remote-core"
+version       = { workspace = true }
+edition       = { workspace = true }
+rust-version  = { workspace = true }
+license       = { workspace = true }
+repository    = { workspace = true }
+homepage      = { workspace = true }
+authors       = { workspace = true }
+description   = "Shared HTTP / WebSocket plumbing for atomr-agents speech-to-text remote backends: client builder, secret refs, retry/backoff, rate limits, error classification."
+
+keywords      = ["agents", "stt", "http", "websocket", "atomr"]
+categories    = ["asynchronous", "network-programming"]
+readme        = "../../README.md"
+
+[features]
+default          = ["rustls", "ws"]
+rustls           = ["reqwest/rustls-tls", "tokio-tungstenite/rustls-tls-webpki-roots", "tokio-tungstenite/connect"]
+native-tls       = ["reqwest/native-tls", "tokio-tungstenite/native-tls", "tokio-tungstenite/connect"]
+ws               = ["dep:tokio-tungstenite"]
+
+[dependencies]
+atomr-agents-stt-core = { workspace = true }
+
+# HTTP / WS
+reqwest             = { workspace = true }
+tokio-tungstenite   = { workspace = true, optional = true }
+
+# Concurrency / async
+tokio        = { workspace = true }
+async-trait  = { workspace = true }
+futures      = { workspace = true }
+futures-util = { workspace = true }
+bytes        = { workspace = true }
+
+# Errors / serde / time
+thiserror  = { workspace = true }
+serde      = { workspace = true }
+serde_json = { workspace = true }
+secrecy    = { workspace = true }
+url        = { workspace = true }
+tracing    = { workspace = true }

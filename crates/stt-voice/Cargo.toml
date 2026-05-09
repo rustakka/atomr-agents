@@ -1,0 +1,39 @@
+[package]
+name          = "atomr-agents-stt-voice"
+version       = { workspace = true }
+edition       = { workspace = true }
+rust-version  = { workspace = true }
+license       = { workspace = true }
+repository    = { workspace = true }
+homepage      = { workspace = true }
+authors       = { workspace = true }
+description   = "Higher-level voice-session abstraction (Live vs TurnBased) plus VAD and mic→stream pump for atomr-agents speech-to-text."
+
+keywords      = ["agents", "stt", "voice", "vad", "atomr"]
+categories    = ["asynchronous", "multimedia::audio"]
+readme        = "../../README.md"
+
+[features]
+default     = []
+# When the `vad-silero` feature is enabled the default VAD becomes
+# the Silero ONNX model via the `voice_activity_detector` crate.
+# Without it the only built-in is `EnergyVad`.
+vad-silero  = ["dep:voice_activity_detector"]
+# Mic → StreamingSession pump helper. Pulls in stt-audio's mic
+# feature transitively.
+mic         = ["atomr-agents-stt-audio/mic"]
+
+[dependencies]
+atomr-agents-stt-core  = { workspace = true }
+atomr-agents-stt-audio = { workspace = true }
+
+voice_activity_detector = { version = "0.2", optional = true }
+
+async-trait  = { workspace = true }
+tokio        = { workspace = true, features = ["sync", "rt", "macros", "time"] }
+futures      = { workspace = true }
+futures-util = { workspace = true }
+bytes        = { workspace = true }
+serde        = { workspace = true }
+tracing      = { workspace = true }
+parking_lot  = { workspace = true }

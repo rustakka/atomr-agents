@@ -51,7 +51,9 @@ mod registry;
 mod runtime;
 mod skill;
 mod state;
+mod stt;
 mod tool;
+mod voice;
 mod workflow;
 
 /// Module init. Exposed as `atomr_agents._native`.
@@ -77,5 +79,7 @@ fn _native(py: Python<'_>, m: &Bound<'_, PyModule>) -> PyResult<()> {
     harness::register(py, m)?;
     eval::register(py, m)?;
     guest::register(py, m)?;
+    stt::register(py, m)?;
+    voice::register(py, m)?;
     Ok(())
 }

@@ -1,0 +1,47 @@
+[package]
+name          = "atomr-agents-stt-audio"
+version       = { workspace = true }
+edition       = { workspace = true }
+rust-version  = { workspace = true }
+license       = { workspace = true }
+repository    = { workspace = true }
+homepage      = { workspace = true }
+authors       = { workspace = true }
+description   = "Audio decoding (symphonia) and microphone capture (cpal) for atomr-agents speech-to-text."
+
+keywords      = ["agents", "stt", "audio", "decode", "microphone"]
+categories    = ["multimedia::audio"]
+readme        = "../../README.md"
+
+[features]
+default  = ["decode", "resample"]
+# Symphonia container/codec decode + WAV writer.
+decode   = ["dep:symphonia", "dep:hound"]
+# rubato-based sample-rate conversion (used by whisper-rs to
+# downsample to 16 kHz mono).
+resample = ["dep:rubato"]
+# cpal microphone capture (default-off because cpal pulls platform
+# audio system deps).
+mic      = ["dep:cpal"]
+
+[dependencies]
+atomr-agents-stt-core = { workspace = true }
+
+# Decode
+symphonia = { version = "0.5", optional = true, default-features = false, features = ["mp3", "flac", "wav", "ogg", "vorbis", "isomp4", "aac", "pcm", "adpcm"] }
+hound     = { version = "3.5", optional = true }
+
+# Resample
+rubato    = { version = "0.15", optional = true }
+
+# Mic capture
+cpal      = { version = "0.15", optional = true }
+
+# Async / errors
+tokio        = { workspace = true }
+tracing      = { workspace = true }
+thiserror    = { workspace = true }
+bytes        = { workspace = true }
+
+[dev-dependencies]
+tokio = { workspace = true }

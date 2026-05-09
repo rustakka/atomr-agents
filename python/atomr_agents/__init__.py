@@ -64,6 +64,8 @@ if _native is not None:
     harness = _native.harness
     eval = _native.eval  # noqa: A001 - shadowing intentional
     guest = _native.guest
+    stt = _native.stt
+    voice = _native.voice
 
     # ----- top-level convenience re-exports -----------------------------
     AgentId = core.AgentId
@@ -141,6 +143,8 @@ __all__ = [
     "harness",
     "eval",
     "guest",
+    "stt",
+    "voice",
     # core
     "AgentId",
     "TeamId",

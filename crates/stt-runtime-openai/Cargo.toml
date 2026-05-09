@@ -1,0 +1,39 @@
+[package]
+name          = "atomr-agents-stt-runtime-openai"
+version       = { workspace = true }
+edition       = { workspace = true }
+rust-version  = { workspace = true }
+license       = { workspace = true }
+repository    = { workspace = true }
+homepage      = { workspace = true }
+authors       = { workspace = true }
+description   = "OpenAI Whisper / gpt-4o-transcribe REST backend for atomr-agents speech-to-text."
+
+keywords      = ["agents", "stt", "openai", "whisper", "atomr"]
+categories    = ["asynchronous", "multimedia::audio"]
+readme        = "../../README.md"
+
+[features]
+default     = ["rustls"]
+rustls      = ["atomr-agents-stt-remote-core/rustls"]
+native-tls  = ["atomr-agents-stt-remote-core/native-tls"]
+# Enabled by `cargo test --features integration` when API keys are
+# present; gates `tests/cloud.rs`.
+integration = []
+
+[dependencies]
+atomr-agents-stt-core         = { workspace = true }
+atomr-agents-stt-remote-core  = { workspace = true, features = ["rustls"] }
+
+reqwest      = { workspace = true, features = ["multipart"] }
+async-trait  = { workspace = true }
+tokio        = { workspace = true }
+bytes        = { workspace = true }
+serde        = { workspace = true }
+serde_json   = { workspace = true }
+secrecy      = { workspace = true }
+url          = { workspace = true }
+tracing      = { workspace = true }
+
+[dev-dependencies]
+futures = { workspace = true }

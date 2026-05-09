@@ -218,7 +218,17 @@ overhead beyond what the actor crate already pays.
 | `atomr-agents-eval` | `EvalSuite`, `Scorer` (Contains / Equality / Regex / `LlmJudgeScorer` / `RubricScorer` / `PairwiseScorer`), `RegressionGate`, `AnnotationQueue` |
 | `atomr-agents-cache` | `LlmCache` trait + `InMemoryLlmCache` + `SemanticLlmCache` (cosine match on prompt embedding); SQLite/Redis backend stubs behind features |
 | `atomr-agents-parser` | `Parser<T>` trait, `JsonParser` / `JsonSchemaParser` / `SchemaParser<T>` / `EnumParser` / `CommaListParser` / `XmlParser` / `YamlParser`, `OutputFixingParser`, `RetryWithErrorParser`, `StreamingPartialJsonParser` |
-| `atomr-agents-py-bindings` | `atomr_agents._native` PyO3 module — `Event` / `EventBus` / `Registry` exposed to Python |
+| `atomr-agents-stt-core` | `SpeechToText` / `StreamingSession` traits, `Capabilities` (advertised per backend via a `pub const`), `AudioInput` / `Transcript` / `StreamEvent`, `MockSpeechToText` |
+| `atomr-agents-stt-remote-core` | Shared HTTP / WebSocket plumbing for cloud STT backends: `reqwest` client builder, `tokio-tungstenite` connect helper, `SecretRef` (env / literal / file), retry / rate-limit / timeout config |
+| `atomr-agents-stt-audio` | `symphonia`-based decoder, `rubato` resampler, and (feature `mic`) `cpal`-based `MicCaptureSession` with backpressure-aware mpsc producer |
+| `atomr-agents-stt-runtime-openai` | OpenAI Whisper / `gpt-4o-transcribe` REST batch backend |
+| `atomr-agents-stt-runtime-deepgram` | Deepgram REST + WebSocket backend; speaker-count diarization, partial results, VAD endpointing |
+| `atomr-agents-stt-runtime-assemblyai` | AssemblyAI REST upload + Universal-Streaming WebSocket; named-speaker diarization |
+| `atomr-agents-stt-runtime-whisper` | Local whisper.cpp via `whisper-rs` (gated behind the `whisper-cpp` feature). Optional `download-models` helper fetches ggml weights |
+| `atomr-agents-stt-diarize-sherpa` | `Diarizer` trait, `MockDiarizer`, sherpa-onnx-backed `SherpaDiarizer` (gated behind `sherpa-onnx`), `apply_to_transcript` stitching |
+| `atomr-agents-stt-voice` | `VoiceSession` (`Live` vs `TurnBased { silence_ms }`), `Vad` trait + `EnergyVad`/`SileroVad`, `pump_mic_to_stream` glue |
+| `atomr-agents-stt-tool` | `TranscribeTool` (a `Tool` the model can call) and `voice_input_skill(stt) -> (Skill, DynTool)` for declarative agent integration |
+| `atomr-agents-py-bindings` | `atomr_agents._native` PyO3 module — `Event` / `EventBus` / `Registry` / `stt.SpeechToText` / `voice.VoiceSession` exposed to Python |
 | `atomr-agents-cli` | `atomr-agents` binary with `eval` / `registry` / `harness` / `serve` (Studio-style read+resume inspector) subcommands |
 | `atomr-agents-testkit` | Stub crate today. For tests, depend on `atomr-infer-testkit` (re-exports `MockRunner` / `MockScript`) directly — that's what `crates/agent` tests use. |
 

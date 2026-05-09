@@ -34,6 +34,19 @@ atomr-agents-registry      = { workspace = true, optional = true }
 atomr-agents-eval          = { workspace = true, optional = true }
 atomr-agents-testkit       = { workspace = true, optional = true }
 
+# Speech-to-text capability surface. Each backend / capability is
+# behind its own feature flag; the umbrella `stt` feature pulls in
+# the always-needed core + tool integration.
+atomr-agents-stt-core              = { workspace = true, optional = true }
+atomr-agents-stt-audio             = { workspace = true, optional = true }
+atomr-agents-stt-runtime-openai    = { workspace = true, optional = true }
+atomr-agents-stt-runtime-deepgram  = { workspace = true, optional = true }
+atomr-agents-stt-runtime-assemblyai = { workspace = true, optional = true }
+atomr-agents-stt-runtime-whisper   = { workspace = true, optional = true }
+atomr-agents-stt-diarize-sherpa    = { workspace = true, optional = true }
+atomr-agents-stt-voice             = { workspace = true, optional = true }
+atomr-agents-stt-tool              = { workspace = true, optional = true }
+
 [features]
 default = ["agent", "tool", "skill", "memory", "persona", "instruction"]
 tool        = ["dep:atomr-agents-tool"]
@@ -54,4 +67,15 @@ testkit     = ["dep:atomr-agents-testkit", "agent", "harness"]
 provider-anthropic = ["agent", "atomr-agents-agent/provider-anthropic"]
 provider-openai    = ["agent", "atomr-agents-agent/provider-openai"]
 provider-gemini    = ["agent", "atomr-agents-agent/provider-gemini"]
-full        = ["agent", "workflow", "harness", "org", "registry", "eval", "embed", "testkit"]
+full        = ["agent", "workflow", "harness", "org", "registry", "eval", "embed", "testkit", "stt-full"]
+
+# ----- Speech-to-text feature surface ---------------------------------------
+stt              = ["dep:atomr-agents-stt-core", "dep:atomr-agents-stt-audio", "dep:atomr-agents-stt-tool", "tool"]
+stt-openai       = ["stt", "dep:atomr-agents-stt-runtime-openai"]
+stt-deepgram     = ["stt", "dep:atomr-agents-stt-runtime-deepgram"]
+stt-assemblyai   = ["stt", "dep:atomr-agents-stt-runtime-assemblyai"]
+stt-whisper      = ["stt", "dep:atomr-agents-stt-runtime-whisper"]
+stt-diarize      = ["stt", "dep:atomr-agents-stt-diarize-sherpa"]
+stt-mic          = ["stt", "atomr-agents-stt-audio/mic"]
+stt-voice        = ["stt", "dep:atomr-agents-stt-voice"]
+stt-full         = ["stt-openai", "stt-deepgram", "stt-assemblyai", "stt-whisper", "stt-diarize", "stt-voice"]

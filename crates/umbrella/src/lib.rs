@@ -35,3 +35,29 @@ pub use atomr_agents_testkit as testkit;
 pub use atomr_agents_tool as tool;
 #[cfg(feature = "workflow")]
 pub use atomr_agents_workflow as workflow;
+
+/// Speech-to-text capability. Pulls in the core trait + types
+/// (`atomr_agents_stt_core`), the audio I/O helpers
+/// (`atomr_agents_stt_audio`), the tool/skill adapters
+/// (`atomr_agents_stt_tool`), and any backends / voice-session
+/// modules enabled via `stt-{openai,deepgram,assemblyai,whisper,
+/// diarize,voice,mic}` features.
+#[cfg(feature = "stt")]
+pub mod stt {
+    pub use atomr_agents_stt_audio as audio;
+    pub use atomr_agents_stt_core::*;
+    pub use atomr_agents_stt_tool as tool;
+
+    #[cfg(feature = "stt-openai")]
+    pub use atomr_agents_stt_runtime_openai as openai;
+    #[cfg(feature = "stt-deepgram")]
+    pub use atomr_agents_stt_runtime_deepgram as deepgram;
+    #[cfg(feature = "stt-assemblyai")]
+    pub use atomr_agents_stt_runtime_assemblyai as assemblyai;
+    #[cfg(feature = "stt-whisper")]
+    pub use atomr_agents_stt_runtime_whisper as whisper;
+    #[cfg(feature = "stt-diarize")]
+    pub use atomr_agents_stt_diarize_sherpa as diarize;
+    #[cfg(feature = "stt-voice")]
+    pub use atomr_agents_stt_voice as voice;
+}
