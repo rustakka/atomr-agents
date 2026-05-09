@@ -48,13 +48,13 @@ jobs:
     steps:
       - name: Checkout sibling atomr
         uses: actions/checkout@v4
-        with: { repository: rustakka/atomr, path: atomr }
+        with: { repository: rustakka/atomr, path: atomr, ref: v0.6.1 }
       - name: Checkout sibling atomr-infer
         uses: actions/checkout@v4
-        with: { repository: rustakka/atomr-infer, path: atomr-infer }
+        with: { repository: rustakka/atomr-infer, path: atomr-infer, ref: 70837f6a945d8cc42d6128ace26e89f95dcb54ec }
       - name: Checkout sibling atomr-accel
         uses: actions/checkout@v4
-        with: { repository: rustakka/atomr-accel, path: atomr-accel }
+        with: { repository: rustakka/atomr-accel, path: atomr-accel, ref: v0.4.2 }
       - name: Checkout atomr-agents
         uses: actions/checkout@v4
         with:
@@ -120,13 +120,13 @@ jobs:
     steps:
       - name: Checkout sibling atomr
         uses: actions/checkout@v4
-        with: { repository: rustakka/atomr, path: atomr }
+        with: { repository: rustakka/atomr, path: atomr, ref: v0.6.1 }
       - name: Checkout sibling atomr-infer
         uses: actions/checkout@v4
-        with: { repository: rustakka/atomr-infer, path: atomr-infer }
+        with: { repository: rustakka/atomr-infer, path: atomr-infer, ref: 70837f6a945d8cc42d6128ace26e89f95dcb54ec }
       - name: Checkout sibling atomr-accel
         uses: actions/checkout@v4
-        with: { repository: rustakka/atomr-accel, path: atomr-accel }
+        with: { repository: rustakka/atomr-accel, path: atomr-accel, ref: v0.4.2 }
       - name: Checkout atomr-agents
         uses: actions/checkout@v4
         with:
@@ -178,13 +178,13 @@ jobs:
     steps:
       - name: Checkout sibling atomr
         uses: actions/checkout@v4
-        with: { repository: rustakka/atomr, path: atomr }
+        with: { repository: rustakka/atomr, path: atomr, ref: v0.6.1 }
       - name: Checkout sibling atomr-infer
         uses: actions/checkout@v4
-        with: { repository: rustakka/atomr-infer, path: atomr-infer }
+        with: { repository: rustakka/atomr-infer, path: atomr-infer, ref: 70837f6a945d8cc42d6128ace26e89f95dcb54ec }
       - name: Checkout sibling atomr-accel
         uses: actions/checkout@v4
-        with: { repository: rustakka/atomr-accel, path: atomr-accel }
+        with: { repository: rustakka/atomr-accel, path: atomr-accel, ref: v0.4.2 }
       - name: Checkout atomr-agents
         uses: actions/checkout@v4
         with:
@@ -272,13 +272,13 @@ jobs:
     steps:
       - name: Checkout sibling atomr
         uses: actions/checkout@v4
-        with: { repository: rustakka/atomr, path: atomr }
+        with: { repository: rustakka/atomr, path: atomr, ref: v0.6.1 }
       - name: Checkout sibling atomr-infer
         uses: actions/checkout@v4
-        with: { repository: rustakka/atomr-infer, path: atomr-infer }
+        with: { repository: rustakka/atomr-infer, path: atomr-infer, ref: 70837f6a945d8cc42d6128ace26e89f95dcb54ec }
       - name: Checkout sibling atomr-accel
         uses: actions/checkout@v4
-        with: { repository: rustakka/atomr-accel, path: atomr-accel }
+        with: { repository: rustakka/atomr-accel, path: atomr-accel, ref: v0.4.2 }
       - name: Checkout atomr-agents
         uses: actions/checkout@v4
         with:
