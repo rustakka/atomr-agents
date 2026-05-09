@@ -21,6 +21,128 @@ let pipeline = Pipeline::from(prompt)
 let answer = pipeline.call(input, ctx).await?;
 ```
 
+## Python parity wave
+
+The Python facade in 0.3 catches up to the Rust surface. The native
+extension `atomr_agents._native` is now split into hierarchical
+submodules — `errors`, `core`, `observability`, `registry`, `tool`,
+`skill`, `persona`, `agent`, `workflow`, `harness`, `eval`, `guest` —
+mirroring `atomr-infer/inference-py-bindings`. The top-level package
+re-exports the full surface, ships a PEP 561 `py.typed` marker, and
+exposes async coroutines / async iterators over `pyo3-async-runtimes`.
+
+### Install
+
+```bash
+pip install atomr-agents
+```
+
+For an editable workflow against the local checkout:
+
+```bash
+pip install maturin
+maturin develop --features python -m crates/py-bindings/Cargo.toml
+pip install -e ".[dev]"
+```
+
+### Host-mode async event stream
+
+`EventBus.stream()` returns an `EventStream` that implements the
+Python async iterator protocol. Drive a producer on the same loop
+and consume events as they fire:
+
+```python
+import asyncio
+from atomr_agents.observability import EventBus
+
+
+async def main() -> None:
+    bus = EventBus()
+    stream = bus.stream()
+
+    bus.emit_tool_invoked("calc", args_hash=0, elapsed_ms=5, ok=True)
+    bus.emit_tool_invoked("search", args_hash=1, elapsed_ms=12, ok=True)
+
+    async for ev in stream:
+        print(ev.kind, ev.timestamp_ms)
+        if ev.kind == "tool_invoked" and ev.tool == "search":
+            break
+
+
+asyncio.run(main())
+```
+
+### Async registry publish
+
+`Registry.publish_async` returns a Python awaitable backed by a
+`tokio` future, so version pins land without blocking the event loop:
+
+```python
+import asyncio
+from atomr_agents.registry import Registry
+
+
+async def main() -> None:
+    registry = Registry()
+    record = await registry.publish_async(
+        "tool_set", "calc", "0.1.0", {"name": "calc"}
+    )
+    print(record.kind, record.id, record.version)
+
+
+asyncio.run(main())
+```
+
+### Guest-mode `@tool` decorator
+
+`atomr_agents.guest` exposes real decorators wired through
+`_native.guest.register_*_factory`. A guest tool is a class with an
+`async def invoke(self, args, ctx)` method:
+
+```python
+from atomr_agents.guest import tool
+
+
+@tool(toolset="calc")
+class Add:
+    name = "add"
+
+    async def invoke(self, args: dict, ctx) -> dict:
+        return {"sum": args["a"] + args["b"]}
+```
+
+Mirror decorators are available for `@strategy`, `@persona`,
+`@skill`, `@parser`, `@scorer`, `@memory_store`, and `@embedder`.
+
+### Where things live
+
+The hierarchical layout is reflected in the Python facade — every
+submodule has a one-to-one `.py` mirror under `atomr_agents/`:
+
+```python
+from atomr_agents.errors import RegistryError
+from atomr_agents.core import TokenBudget, AgentId
+from atomr_agents.agent import AgentSpec, AgentBudgets
+from atomr_agents.tool import ToolDescriptor, ToolCallParser
+from atomr_agents.observability import EventBus, RunTreeBuilder
+from atomr_agents.registry import Registry
+```
+
+The top-level package keeps the 0.2.x convenience names — so
+`from atomr_agents import EventBus, Registry` still works.
+
+### Roadmap
+
+`Agent.run_turn`, `Harness.run`, and `WorkflowRunner.run` are not
+yet exposed as Python coroutines. The Rust types are generic over
+four-plus strategy traits, so PyO3 cannot construct them from a
+stable `#[pyclass]` shape; they need a `Boxed*` adapter
+(`BoxedAgent` / `BoxedHarness` / `BoxedWorkflow`) under
+`crates/agent` / `crates/harness` / `crates/workflow`. Until that
+adapter lands, host code drives the loop in Rust and observes
+progress over the (already async-iterable) `EventBus`. See
+[`docs/python-api.md`](docs/python-api.md) for the full module map.
+
 ## Why an agentic framework, in Rust, on actors
 
 Agentic systems don't fail because the models aren't good enough —
@@ -201,6 +323,7 @@ subinterpreter-pool dispatcher pattern inherited from atomr's pycore.
 - [`docs/multi-agent-patterns.md`](docs/multi-agent-patterns.md) — supervisor / swarm / network / hierarchical
 - [`docs/feature-matrix.md`](docs/feature-matrix.md) — every feature flag, what it pulls in
 - [`docs/python.md`](docs/python.md) — Python bindings + subinterpreter-pool guest mode
+- [`docs/python-api.md`](docs/python-api.md) — Python API reference: submodule map, async surfaces, 0.2 → 0.3 migration
 - [`docs/migrating-from-langgraph.md`](docs/migrating-from-langgraph.md) — concept-mapping table + concrete code translations
 - [`ai-skills/`](ai-skills/) — Claude Code / Agent SDK skills for AI-assisted coding against atomr-agents
 

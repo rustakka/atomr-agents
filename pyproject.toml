@@ -4,15 +4,49 @@ build-backend = "maturin"
 
 [project]
 name = "atomr-agents"
-version = "0.2.2"
+version = "0.3.0"
 description = "Composable agentic framework on top of atomr actors and atomr-infer."
 readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "Apache-2.0" }
+authors = [{ name = "atomr-agents contributors" }]
+keywords = ["agents", "ai", "llm", "actor", "rust", "atomr"]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Programming Language :: Rust",
+  "License :: OSI Approved :: Apache Software License",
+  "Intended Audience :: Developers",
+  "Topic :: Software Development :: Libraries :: Python Modules",
+  "Operating System :: POSIX :: Linux",
+  "Operating System :: MacOS",
+  "Operating System :: Microsoft :: Windows",
+]
+
+[project.urls]
+Homepage = "https://github.com/rustakka/atomr-agents"
+Documentation = "https://github.com/rustakka/atomr-agents/tree/main/docs"
+Repository = "https://github.com/rustakka/atomr-agents"
+Issues = "https://github.com/rustakka/atomr-agents/issues"
+Changelog = "https://github.com/rustakka/atomr-agents/blob/main/CHANGELOG.md"
+
+[project.optional-dependencies]
+dev = ["pytest>=7", "pytest-asyncio>=0.23"]
 
 [tool.maturin]
 manifest-path = "crates/py-bindings/Cargo.toml"
 module-name = "atomr_agents._native"
 python-source = "python"
 features = []
-include = [{ path = "LICENSE", format = "sdist" }]
+include = [
+  { path = "LICENSE", format = "sdist" },
+  { path = "python/atomr_agents/py.typed", format = ["sdist", "wheel"] },
+]
+
+[tool.pytest.ini_options]
+testpaths = ["python/atomr_agents/tests"]
+asyncio_mode = "auto"

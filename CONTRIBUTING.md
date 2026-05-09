@@ -64,6 +64,35 @@ See [`RELEASING.md`](RELEASING.md).
 - Prefer adding behind a feature flag over breaking an existing
   signature.
 
+## Building the Python extension
+
+The Python facade lives at `python/atomr_agents/`; the native
+extension is built from `crates/py-bindings/` via
+[maturin](https://www.maturin.rs/). For an editable, in-place build:
+
+```bash
+pip install maturin
+maturin develop --features python -m crates/py-bindings/Cargo.toml
+pip install -e ".[dev]"
+```
+
+`maturin develop` compiles the cdylib into the active venv and
+installs the Python wrapper from `python/atomr_agents/`. The
+`-e ".[dev]"` step pulls the dev extras declared under
+`[project.optional-dependencies]` (pytest, mypy, …).
+
+Run the smoke tests against the built extension:
+
+```bash
+pytest python/atomr_agents/tests/
+```
+
+The Rust side is exercised with the usual workspace test command:
+
+```bash
+cargo test --workspace
+```
+
 ## Tests
 
 The workspace passes 136 tests at present. New code should keep that

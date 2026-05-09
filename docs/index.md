@@ -147,6 +147,7 @@ python -c "from atomr_agents import Registry; print(Registry())"
 - [Multi-agent patterns](multi-agent-patterns.md) — supervisor / swarm / network / hierarchical.
 - [Feature matrix](feature-matrix.md) — every feature flag, what it pulls in.
 - [Python bindings](python.md) — host-mode + guest-mode, GIL containment.
+- [Python API reference](python-api.md) — module-by-module map of `atomr_agents.*`, async surfaces, 0.2 → 0.3 migration.
 - [Migrating from LangGraph / LangChain](migrating-from-langgraph.md) — concept map and code translations.
 - [`../README.md`](https://github.com/rustakka/atomr-agents) — repository overview.
 - [`../ai-skills/`](https://github.com/rustakka/atomr-agents/tree/main/ai-skills) — skills for AI-assisted coding.

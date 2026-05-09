@@ -6,17 +6,110 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
-### Changed
+### Changed — track upstream atomr 0.6.0 + atomr-accel 0.4.0 + atomr-infer 0.7.0
 
 - **Catch up to current sibling workspaces.** Path-dep version pins
-  bumped to **atomr 0.3.1**, **atomr-infer 0.6.0**, **atomr-accel
-  0.3.1**. No source changes were required for the bump itself —
-  atomr-agents existing usage of the sibling APIs is forward-compatible.
+  bumped to **atomr 0.6.0**, **atomr-infer 0.7.0**, **atomr-accel
+  0.4.0**. No source changes were required for the bump itself —
+  atomr-agents' existing usage of the sibling APIs (`ExecuteBatch`,
+  `Message`, `MessageContent`, `Role`, `SamplingParams`, `TokenUsage`,
+  `FinishReason`, `RunHandle`, `RuntimeKind`, `TransportKind`,
+  `ModelRunner`, plus `atomr_core`'s `Event` / `ActorRef` /
+  `ActorSystem`) is forward-compatible. `cargo check --workspace`
+  and `cargo test --workspace` are clean against the new pins.
 - **`Event::AgentTurn`** carries two new u32 fields, `reasoning_tokens`
   and `cached_tokens`, sourced from `atomr_infer_core::tokens::TokenUsage`.
   Both are `#[serde(default)]` so existing event JSON deserialises
   unchanged. Surfaces o1-style reasoning-token billing and Anthropic
   prompt-cache / OpenAI cached-input pricing in cost reports.
+
+### Added — Python parity wave
+
+The PyO3 surface is restructured from a 260-line monolithic `lib.rs`
+into hierarchical `atomr_agents._native.{...}` submodules, mirroring
+the upstream `atomr-infer/inference-py-bindings/src/` layout. The
+top-level Python facade re-exports the new surface, ships a `py.typed`
+PEP 561 marker, and wires the previously-stub `@tool` / `@strategy` /
+`@persona` decorators through real `_native.guest.register_*_factory`
+factories. Async coroutines and async iterators are exposed via
+`pyo3-async-runtimes::tokio::future_into_py` for the surfaces that
+already have a non-generic Rust adapter.
+
+- **`atomr_agents._native.errors`** — exception hierarchy rooted at
+  `AgentError`, with leaf classes `RegistryError`, `BudgetExhausted`,
+  `ToolError`, `StrategyError`, `WorkflowError`, `HarnessError`,
+  `EvalError`, `MemoryError`, `ParserError`, `CacheError`. Translates
+  Rust `Result<T, AgentError>` into structured Python exceptions
+  instead of opaque `RuntimeError`.
+- **`atomr_agents._native.core`** — IDs (`AgentId`, `TeamId`,
+  `DepartmentId`, `OrgId`, `WorkflowId`, `HarnessId`, `ToolId`,
+  `ToolSetId`, `SkillId`, `PersonaId`, `RunId`); budgets
+  (`TokenBudget`, `TimeBudget`, `MoneyBudget`, `IterationBudget`);
+  `MemoryNamespace` (Agent / Team / Org variants); string-tagged
+  `MemoryKind`; `MemoryItem` and `MemoryChunk`; `TokenUsage`;
+  `FinishReason`.
+- **`atomr_agents._native.context`** — `ContextFragment`,
+  `RenderedContext`, free `assemble(fragments, budget)` function for
+  priority-based bin-packing under a `TokenBudget`.
+- **`atomr_agents._native.state`** — `CheckpointKey`,
+  `CheckpointMeta`, `Snapshot`, `InMemoryCheckpointer`, plus reducer
+  marker classes (`LastWriteWins`, `AppendList`, `AppendMessages`,
+  `MergeMap`, `MaxByTimestamp`).
+- **`atomr_agents._native.observability`** — `Event`, `EventBus`,
+  `EventStream` (async iterator via `__aiter__` / `__anext__`),
+  `RunTreeBuilder` with async `flush_stdout` / `flush_jsonl` /
+  `flush_langsmith`.
+- **`atomr_agents._native.registry`** — `Registry` with sync
+  `publish` / `get` / `latest` / `list` plus async `publish_async`;
+  string-tagged `ArtifactKind`; `ArtifactRecord`; `EvalSummary`.
+- **`atomr_agents._native.tool`** — `ToolSchema`, `ToolDescriptor`,
+  string-tagged `Provider`, `ParsedToolCall`, stateful streaming
+  `ToolCallParser` (`feed` / `finish`), `ToolSet`.
+- **`atomr_agents._native.skill`** — `Skill`, `SkillSet`.
+- **`atomr_agents._native.persona`** — `RenderedPersona`.
+- **`atomr_agents._native.parser`** — `JsonParser`,
+  `JsonSchemaParser`, `CommaListParser`, `XmlParser`, `YamlParser`,
+  `StreamingPartialJsonParser`. All async `parse(raw)` methods bridge
+  through `future_into_py`.
+- **`atomr_agents._native.cache`** — `CacheKey`, `CachedTurn`,
+  `InMemoryLlmCache` (async `get` / `put`).
+- **`atomr_agents._native.agent`** — `AgentSpec`, `AgentBudgets`,
+  `TurnResult`.
+- **`atomr_agents._native.workflow`** — string-tagged `StepKind`.
+- **`atomr_agents._native.harness`** — `HarnessSpec`,
+  `IterationCapTermination`.
+- **`atomr_agents._native.eval`** — `PairwiseChoice`, `Verdict`.
+- **`atomr_agents._native.guest`** — `GuestHandle` plus
+  `register_*_factory` entry points for Python-implementable Rust
+  traits, a working `PyToolAdapter` that dispatches Python `invoke`
+  methods (sync or async) under the GIL, and `build_guest_toolset` to
+  turn registered guest tools into a Rust `ToolSet`. The `@tool` /
+  `@strategy` / `@persona` / `@skill` / `@parser` / `@scorer` /
+  `@memory_store` / `@embedder` decorators in `atomr_agents.guest`
+  now bind to these factories rather than acting as no-op markers.
+- **Async surfaces today.** `pyo3-async-runtimes::tokio::future_into_py`
+  is plumbed through `Registry.publish_async`,
+  `RunTreeBuilder.flush_stdout` / `flush_jsonl` / `flush_langsmith`,
+  `EventBus.stream() -> EventStream` (async iterator), every
+  `parser.*.parse`, and `InMemoryLlmCache.get` / `put`. Awaitable
+  from any `asyncio` event loop without blocking the Python thread.
+- **Top-level Python facade.** `python/atomr_agents/__init__.py`
+  re-exports the full submodule surface and resolves `__version__`
+  via `importlib.metadata`. One facade `.py` per submodule (`core.py`,
+  `errors.py`, `observability.py`, `registry.py`, `tool.py`,
+  `skill.py`, `persona.py`, `agent.py`, `workflow.py`, `harness.py`,
+  `eval.py`) means `from atomr_agents.errors import RegistryError`
+  and `from atomr_agents.agent import AgentSpec` resolve without
+  dipping into `_native.*`. `host.py` exposes the full host-mode
+  entry points; `guest.py` carries the real decorator set wired to
+  `_native.guest.register_*_factory`. `py.typed` ships a PEP 561
+  marker so type checkers pick up the public surface.
+- **`pyproject.toml`** updated with classifiers, `[project.urls]`,
+  `[project.optional-dependencies] dev = [...]`,
+  `[tool.pytest.ini_options]`, and `py.typed` packaging.
+- **`python/atomr_agents/tests/test_smoke.py`** exercises the
+  hierarchical imports, budget construction, tool descriptors, the
+  async registry path, and a guest-factory round-trip end-to-end.
 
 ### Added
 
@@ -51,10 +144,20 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Deferred / known gaps
 
+- **`Agent.run_turn` / `Harness.run` / `WorkflowRunner.run` async
+  surfaces.** Rust-side `Agent<I, T, Ms, Sk>`, `Harness<L, T>`, and
+  `WorkflowRunner<...>` are all generic over four-plus strategy
+  traits, so PyO3 cannot construct them directly from a stable
+  `#[pyclass]` shape. Landing the async Python entry points needs a
+  `Boxed*` Rust adapter (`BoxedAgent`, `BoxedHarness`,
+  `BoxedWorkflow`) under `crates/agent`, `crates/harness`, and
+  `crates/workflow` — that adapter does not exist yet. Until it
+  does, host code drives the loop in Rust and observes via
+  `EventBus` (which is already async-iterable from Python).
 - **Publish gate.** Releasing this version to crates.io requires
-  **atomr-infer 0.6.0** and **atomr-accel 0.3.1** to be published
-  upstream first; both are currently at 0.4.0 / 0.1.0 on crates.io.
-  Local builds and tests work today against the path deps.
+  **atomr 0.6.0**, **atomr-infer 0.7.0**, and **atomr-accel 0.4.0**
+  to be published upstream first. Local builds and tests work today
+  against the path deps.
 - **MSRV regression (pre-existing).** Transitive `clap_lex 1.1.0`
   requires `edition2024`, breaking `cargo +1.78 check`. Independent
   of the sibling bumps; either pin clap below 4.6 or raise the

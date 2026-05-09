@@ -14,20 +14,51 @@ categories    = ["asynchronous", "api-bindings"]
 readme        = "../../README.md"
 
 [lib]
-name       = "atomr_agents_native"
+# Must match the maturin `module-name = "atomr_agents._native"` so the
+# cdylib emits PyInit__native. Mirrors atomr-pycore's `name = "_native"`.
+name       = "_native"
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
+# atomr-agents internal crates (full surface for Python parity wave).
 atomr-agents-core          = { workspace = true }
-atomr-agents-harness       = { workspace = true }
-atomr-agents-tool          = { workspace = true }
+atomr-agents-callable      = { workspace = true }
+atomr-agents-context       = { workspace = true }
+atomr-agents-state         = { workspace = true }
 atomr-agents-strategy      = { workspace = true }
+atomr-agents-tool          = { workspace = true }
+atomr-agents-skill         = { workspace = true }
 atomr-agents-persona       = { workspace = true }
-atomr-agents-observability = { workspace = true }
+atomr-agents-instruction   = { workspace = true }
+atomr-agents-memory        = { workspace = true }
+atomr-agents-embed         = { workspace = true }
+atomr-agents-retriever     = { workspace = true }
+atomr-agents-ingest        = { workspace = true }
+atomr-agents-parser        = { workspace = true }
+atomr-agents-cache         = { workspace = true }
+atomr-agents-agent         = { workspace = true }
+atomr-agents-workflow      = { workspace = true }
+atomr-agents-harness       = { workspace = true }
+atomr-agents-org           = { workspace = true }
 atomr-agents-registry      = { workspace = true }
+atomr-agents-eval          = { workspace = true }
+atomr-agents-observability = { workspace = true }
+atomr-agents-testkit       = { workspace = true }
+# atomr-infer types are re-exported through atomr_agents_core::inference,
+# but a direct dep makes the import paths in agent.rs / cache.rs clearer.
+atomr-infer-core           = { workspace = true }
+
+# PyO3 + tokio bridge.
 pyo3                       = { workspace = true, features = ["extension-module"] }
 pyo3-async-runtimes        = { workspace = true }
 tokio                      = { workspace = true }
+async-trait                = { workspace = true }
+futures                    = { workspace = true }
+parking_lot                = { workspace = true }
+dashmap                    = { workspace = true }
+once_cell                  = { workspace = true }
+
+# Serialization / time.
 serde                      = { workspace = true }
 serde_json                 = { workspace = true }
 semver                     = { workspace = true }
