@@ -63,6 +63,11 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
         with: { workspaces: atomr-agents }
+      # System deps for the heaviest opt-in features the
+      # `--all-features` build pulls in: cpal needs `libasound2-dev`
+      # (`mic`), whisper-rs needs cmake (`whisper-cpp`).
+      - name: Install system deps for opt-in features
+        run: sudo apt-get update && sudo apt-get install -y libasound2-dev cmake
       - run: cargo check --workspace --all-features
         working-directory: atomr-agents
       - run: cargo test --workspace
@@ -259,7 +264,9 @@ jobs:
           ALLOWLIST: ${{ vars.ATOMR_AGENTS_PUBLISH_ALLOWLIST }}
         run: |
           set -euo pipefail
-          # Default = full 26-crate workspace, in dep order.
+          # Default = full workspace, in dep order. STT capability
+          # crates (atomr-agents-stt-*) slot in just before
+          # py-bindings since py-bindings depends on them.
           default_order=(
             atomr-agents-core
             atomr-agents-callable
@@ -284,6 +291,18 @@ jobs:
             atomr-agents-registry
             atomr-agents-eval
             atomr-agents-testkit
+            # --- speech-to-text capability ---------------------------
+            atomr-agents-stt-core
+            atomr-agents-stt-remote-core
+            atomr-agents-stt-audio
+            atomr-agents-stt-runtime-openai
+            atomr-agents-stt-runtime-deepgram
+            atomr-agents-stt-runtime-assemblyai
+            atomr-agents-stt-runtime-whisper
+            atomr-agents-stt-diarize-sherpa
+            atomr-agents-stt-voice
+            atomr-agents-stt-tool
+            # ---------------------------------------------------------
             atomr-agents-py-bindings
             atomr-agents-cli
             atomr-agents
