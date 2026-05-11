@@ -11,5 +11,5 @@ pub use annotation::{AnnotationItem, AnnotationQueue, InMemoryAnnotationQueue, V
 pub use judge::{JudgeModel, LlmJudgeScorer, RubricCriterion, RubricScorer};
 pub use pairwise::{PairwiseChoice, PairwiseScorer};
 pub use regression::{RegressionGate, RegressionResult};
-pub use scorer::{Scorer, ScorerOutcome};
+pub use scorer::{AsyncScorer, Scorer, ScorerOutcome};
 pub use suite::{EvalCase, EvalResult, EvalRun, EvalSuite};

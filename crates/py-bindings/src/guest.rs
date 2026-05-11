@@ -69,6 +69,18 @@ fn register_kind(kind: &str, key: String, target: PyObject) -> PyGuestHandle {
     }
 }
 
+/// Look up a previously-registered guest target by kind + key.
+///
+/// Returns the `Arc<PyObject>` stored at registration time, or `None`
+/// if no entry exists. Used by builder functions that turn a registered
+/// Python class into a Rust trait-object adapter
+/// (e.g. [`crate::eval::build_guest_async_scorer`]).
+pub(crate) fn lookup_guest(kind: &str, key: &str) -> Option<Arc<PyObject>> {
+    GUESTS
+        .get(&(kind.to_string(), key.to_string()))
+        .map(|e| e.value().clone())
+}
+
 #[pyfunction]
 #[pyo3(signature = (key, target, descriptor=None))]
 fn register_tool_factory(
