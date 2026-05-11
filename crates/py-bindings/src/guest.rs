@@ -58,15 +58,24 @@ struct ToolEntry {
 /// Process-wide registries. Generic factories store any PyObject;
 /// tool factories additionally carry their descriptor so the Rust
 /// adapter advertises the right schema.
-static GUESTS: Lazy<DashMap<(String, String), Arc<PyObject>>> = Lazy::new(DashMap::new);
+pub(crate) static GUESTS: Lazy<DashMap<(String, String), Arc<PyObject>>> = Lazy::new(DashMap::new);
 static TOOLS: Lazy<DashMap<String, ToolEntry>> = Lazy::new(DashMap::new);
 
-fn register_kind(kind: &str, key: String, target: PyObject) -> PyGuestHandle {
+pub(crate) fn register_kind(kind: &str, key: String, target: PyObject) -> PyGuestHandle {
     GUESTS.insert((kind.to_string(), key.clone()), Arc::new(target));
     PyGuestHandle {
         kind: kind.to_string(),
         key,
     }
+}
+
+/// Look up a registered guest by `(kind, key)`. Returns the stored
+/// `Arc<PyObject>` if present. Used by adapter modules that build a
+/// Rust trait impl wrapping the Python target.
+pub(crate) fn lookup_guest(kind: &str, key: &str) -> Option<Arc<PyObject>> {
+    GUESTS
+        .get(&(kind.to_string(), key.to_string()))
+        .map(|entry| entry.value().clone())
 }
 
 #[pyfunction]

@@ -1,10 +1,14 @@
 //! Harness — tested, packaged, persistent execution loop.
 
+mod boxed;
+mod dispatch;
 mod harness;
 mod loop_strategy;
 mod state;
 mod termination;
 
+pub use boxed::BoxedHarness;
+pub use dispatch::{HarnessDispatch, HarnessRef};
 pub use harness::{Harness, HarnessSpec};
 pub use loop_strategy::{LoopStrategy, StepOutcome};
 pub use state::{HarnessState, StepEvent};
