@@ -5,7 +5,7 @@ use atomr_agents_core::{CallCtx, IterationBudget, MoneyBudget, Result, TimeBudge
 use serde::{Deserialize, Serialize};
 use std::time::Duration;
 
-use crate::scorer::{Scorer, ScorerOutcome};
+use crate::scorer::{AsyncScorer, ScorerOutcome};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct EvalCase {
@@ -42,7 +42,15 @@ impl EvalRun {
 pub struct EvalSuite {
     pub id: String,
     pub cases: Vec<EvalCase>,
-    pub scorer: Arc<dyn Scorer>,
+    /// Scorer used to grade each case. The field is typed as
+    /// `Arc<dyn AsyncScorer>` so judges that genuinely await (LLM
+    /// judges, retrieval-grounded checks, network probes) compose
+    /// directly without a `block_on` bridge. Sync `Scorer` impls are
+    /// promoted into `AsyncScorer` via the blanket impl in
+    /// `crate::scorer`, so callers can construct with
+    /// `Arc::new(MySyncScorer) as Arc<dyn AsyncScorer>` (or rely on
+    /// type inference at the field-init site).
+    pub scorer: Arc<dyn AsyncScorer>,
 }
 
 impl EvalSuite {
@@ -52,7 +60,7 @@ impl EvalSuite {
         for case in &self.cases {
             let t0 = std::time::Instant::now();
             let actual = callable.call(case.input.clone(), default_ctx()).await?;
-            let outcome = self.scorer.score(&case.expected, &actual);
+            let outcome = self.scorer.score(&case.expected, &actual).await;
             if outcome.passed {
                 run.passed += 1;
             } else {

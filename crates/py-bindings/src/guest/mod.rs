@@ -170,6 +170,16 @@ fn clear_factories() -> usize {
     n
 }
 
+/// Look up a registered Python target by `(kind, key)`. Returns `None`
+/// if no entry exists. Used by builder functions in sibling modules
+/// (e.g. [`crate::eval::build_guest_async_scorer`]) that turn a
+/// registered Python class into a Rust trait-object adapter.
+pub(crate) fn lookup_guest(kind: &str, key: &str) -> Option<std::sync::Arc<PyObject>> {
+    GUESTS
+        .get(&(kind.to_string(), key.to_string()))
+        .map(|e| e.value().clone())
+}
+
 pub fn register(py: Python<'_>, parent: &Bound<'_, PyModule>) -> PyResult<()> {
     let m = PyModule::new_bound(py, "guest")?;
     m.add_class::<PyGuestHandle>()?;
