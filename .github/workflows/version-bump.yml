@@ -1,19 +1,23 @@
 name: Version bump + tag
 
 # When commits land on `main`, decide a SemVer bump from
-# Conventional-Commit subjects and (optionally) push a `vX.Y.Z` tag
-# that fires the `release.yml` pipeline.
+# Conventional-Commit subjects and (if non-skip) push a `vX.Y.Z`
+# tag, then explicitly dispatch `release.yml` against that tag.
 #
-# Bump rules:
-#   * `BREAKING CHANGE` / `!:` in any commit since the last tag → major
-#   * `feat:`                                                  → minor
-#   * `fix:` / `perf:` / `revert:`                             → patch
+# Bump rules (highest precedence first):
+#   * `Release-As: X.Y.Z` footer / workflow_dispatch `release_as`  → exact
+#   * `BREAKING CHANGE` body or `!:` after type                    → major
+#   * `feat:`                                                      → minor
+#   * `fix:` / `perf:` / `revert:`                                 → patch
 #   * `chore:` / `docs:` / `ci:` / `test:` / `refactor:` /
-#     `style:` / `build:` only                                 → skip
+#     `style:` / `build:` only                                     → skip
 #
-# Override: a commit footer `Release-As: X.Y.Z` (in any commit since
-# the last tag) forces an exact version. `workflow_dispatch` accepts
-# `release_as` to do the same on demand.
+# The `Trigger release.yml against the new tag` step is REQUIRED:
+# tag pushes authored by the default `GITHUB_TOKEN` do NOT fire
+# `on: push: tags` workflows (a long-standing GitHub safety
+# feature). Without an explicit `gh workflow run`, releases would
+# silently never publish — atomr lost five releases (0.6.1 → 0.9.1)
+# to exactly this gap before introducing the trampoline.
 
 on:
   push:
@@ -39,6 +43,14 @@ concurrency:
 
 permissions:
   contents: write
+  # Needed so the post-tag step can `gh workflow run release.yml`
+  # against the freshly-pushed `vX.Y.Z` tag. Tags pushed by a job
+  # using the default `GITHUB_TOKEN` do NOT trigger downstream
+  # workflows on their own (a long-standing GitHub safety feature),
+  # so the release pipeline has to be kicked off explicitly. atomr
+  # lost five releases (0.6.1 → 0.9.1) to exactly this gap before
+  # introducing the trampoline.
+  actions: write
 
 jobs:
   decide-and-bump:
@@ -48,27 +60,14 @@ jobs:
     # don't loop.
     if: github.event_name == 'workflow_dispatch' || !startsWith(github.event.head_commit.message, 'chore(release):')
     steps:
-      - name: Checkout sibling atomr
-        uses: actions/checkout@v4
-        with: { repository: rustakka/atomr, path: atomr }
-      - name: Checkout sibling atomr-infer
-        uses: actions/checkout@v4
-        with: { repository: rustakka/atomr-infer, path: atomr-infer }
-      - name: Checkout sibling atomr-accel
-        uses: actions/checkout@v4
-        with: { repository: rustakka/atomr-accel, path: atomr-accel }
-      - name: Checkout atomr-agents
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 0
-          path: atomr-agents
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
-        with: { workspaces: atomr-agents }
 
       - name: Decide bump kind from Conventional Commits
         id: decide
-        working-directory: atomr-agents
         env:
           DRY_RUN: ${{ github.event.inputs.dry_run }}
           RELEASE_AS: ${{ github.event.inputs.release_as }}
@@ -136,7 +135,6 @@ jobs:
       - name: Bump version + refresh Cargo.lock
         if: steps.decide.outputs.kind != 'skip'
         id: bump
-        working-directory: atomr-agents
         run: |
           set -euo pipefail
           kind="${{ steps.decide.outputs.kind }}"
@@ -162,7 +160,6 @@ jobs:
 
       - name: Bump pyproject.toml to match
         if: steps.decide.outputs.kind != 'skip'
-        working-directory: atomr-agents
         env:
           NEW_VERSION: ${{ steps.bump.outputs.version }}
         run: |
@@ -187,7 +184,6 @@ jobs:
 
       - name: Commit + tag
         if: steps.decide.outputs.kind != 'skip' && github.event.inputs.dry_run != 'true'
-        working-directory: atomr-agents
         env:
           NEW_VERSION: ${{ steps.bump.outputs.version }}
         run: |
@@ -204,6 +200,22 @@ jobs:
           fi
           git tag -a "v${NEW_VERSION}" -m "atomr-agents v${NEW_VERSION}"
           git push origin HEAD --follow-tags
+
+      - name: Trigger release.yml against the new tag
+        if: steps.decide.outputs.kind != 'skip' && github.event.inputs.dry_run != 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NEW_VERSION: ${{ steps.bump.outputs.version }}
+        run: |
+          set -euo pipefail
+          # Tag pushes authored by GITHUB_TOKEN don't fire `on: push: tags`
+          # workflows, so dispatch release.yml ourselves against the freshly
+          # pushed tag ref. `dry_run=false` performs the real publish.
+          gh workflow run release.yml \
+            --ref "v${NEW_VERSION}" \
+            -f dry_run=false \
+            -f skip_python=false \
+            -f skip_crates=false
 
       - name: Summary
         run: |
