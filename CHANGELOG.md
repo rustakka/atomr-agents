@@ -6,6 +6,54 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+### Added — Phase C: async scorers, guest adapters, boxed Agent/Harness, Python workflow runner
+
+Closes the "Phase B" deferral comments scattered across `crates/agent`,
+`crates/harness`, `crates/eval`, and `crates/py-bindings/src/{agent,
+harness,workflow,eval}.rs`. The five blocks:
+
+- **`AsyncScorer` trait** (`crates/eval/src/scorer.rs`). Parallel to
+  the existing sync `Scorer`; blanket `impl<S: Scorer> AsyncScorer for
+  S` keeps existing sync impls compatible. `LlmJudgeScorer`,
+  `RubricScorer`, and `PairwiseScorer` now implement `AsyncScorer`
+  directly — dropping the `tokio::task::block_in_place` workaround
+  the sync `Scorer` impl required. `EvalSuite::scorer` field type
+  changed from `Arc<dyn Scorer>` to `Arc<dyn AsyncScorer>`.
+- **6 Python→Rust guest adapters** (`crates/py-bindings/src/guest/`).
+  The single-file `guest.rs` (331 LOC) is split into a `guest/`
+  directory (10 files, ~1400 LOC). New adapters: `PyInstructionAdapter`,
+  `PyMemoryStrategyAdapter`, `PySkillStrategyAdapter`, `PyPersonaAdapter`,
+  `PyMemoryStoreAdapter`, `PyEmbedderAdapter`. Each ships a
+  `build_guest_*` factory mirroring the existing `build_guest_toolset`
+  pattern.
+- **`BoxedAgent` + `AgentSpec::into_agent`** (`crates/agent/src/boxed.rs`).
+  Object-erased `BoxedAgent` for config-driven instantiation. The typed
+  `Agent<I,T,Ms,Sk>` keeps hot-path monomorphization; both share a
+  `pub(crate) async fn run_turn_impl` helper.
+- **`HarnessDispatch` + `HarnessRef` + `BoxedHarness`** (`crates/harness/`).
+  Mirror of the Agent boxed-handle pattern. `Harness::into_boxed`,
+  `HarnessSpec::into_harness`, and `impl HarnessDispatch for Harness<L,T>`
+  added.
+- **`PyAgent`, `PyHarness`, `PyWorkflowRunner` Python wrappers** with
+  `from_spec` / `from_dict` constructors and async `run_turn` / `run`
+  exposed as Python coroutines via
+  `pyo3_async_runtimes::tokio::future_into_py`. `WorkflowRunner::new`
+  was added as a public constructor.
+
+### Changed
+
+- **`EvalSuite::scorer`** field type: `Arc<dyn Scorer>` →
+  `Arc<dyn AsyncScorer>`. The blanket `impl<S: Scorer> AsyncScorer
+  for S` means callers holding a sync `Arc::new(SomeSyncScorer)`
+  continue to compile via auto-unsizing into the new field type.
+  Direct `&dyn Scorer` callers of `LlmJudgeScorer` / `RubricScorer`
+  must migrate to `&dyn AsyncScorer` — Rust coherence forbids both
+  the blanket `AsyncScorer` impl and a direct `Scorer` impl on the
+  same judge (`ContainsScorer` is unaffected).
+- **Sibling deps** (`atomr`, `atomr-infer`, `atomr-accel`) consume
+  crates.io artifacts only — no `path = "../sibling/..."` links.
+  Pinned to atomr 0.9.2 / atomr-infer 0.8.0 / atomr-accel 0.10.0.
+
 ## [0.6.0] — 2026-05-08
 
 ### Added — text-to-speech capability

@@ -1,42 +1,51 @@
 name: Release
 
-# Releases are tagged from `main`. Push a tag matching `v*` (e.g.
-# `v0.1.0`, `v1.0.0-rc.1`) to fire this pipeline. The bump-and-tag
-# step is automated by `.github/workflows/version-bump.yml`.
+# Releases are tagged from `main`. There are two ways to fire this
+# pipeline:
+#   1. Push a tag matching `v*` directly (e.g. `git push origin v0.1.0`).
+#   2. `workflow_dispatch` against a `v*` tag ref. This is how
+#      `version-bump.yml` triggers a publish — tag pushes authored by
+#      the default `GITHUB_TOKEN` do NOT fire `on: push: tags` workflows
+#      (a long-standing GitHub safety feature), so the bump job calls
+#      `gh workflow run release.yml --ref vX.Y.Z -f dry_run=false`
+#      after pushing the tag.
 #
 # This workflow:
-#   1. Verifies the workspace builds + tests cleanly.
+#   1. Runs the verify gate (build + test) so a tag never ships an
+#      untested build.
 #   2. Builds release binaries (`atomr-agents` from `atomr-agents-cli`)
 #      for Linux x86_64 + aarch64, macOS x86_64 + aarch64, Windows x86_64.
-#   3. Builds Python wheels + sdist via maturin.
+#   3. Builds Python wheels (manylinux + musllinux for x86_64/aarch64,
+#      macOS, Windows) covering CPython 3.10–3.13 via maturin's
+#      `--interpreter` flag, plus a single sdist.
 #   4. Packages `ai-skills.tar.gz` for the Claude Code marketplace.
 #   5. Creates the GitHub Release with the artifacts attached.
-#   6. Publishes every allowlisted Rust crate to crates.io in
-#      dependency order.
-#   7. Publishes wheels + sdist to PyPI via OIDC trusted publishing.
-#
-# atomr-agents path-depends on the sibling atomr, atomr-infer, and
-# atomr-accel workspaces. Every job that touches Cargo.toml checks
-# all four out side-by-side under the runner's work directory.
-#
-# Allowlist:
-#   The publish step honors a repo variable
-#   `ATOMR_AGENTS_PUBLISH_ALLOWLIST` (space-separated crate names).
-#   Default = the full 26-crate workspace in the order documented
-#   in RELEASING.md. Set to the empty string to skip publish.
+#   6. Publishes every publishable Rust crate to crates.io in
+#      dependency order. Honors `--dry-run` for `workflow_dispatch`.
+#   7. Publishes wheels + sdist to PyPI via OIDC trusted publishing
+#      (or TestPyPI for dry-runs).
 
 on:
   push:
-    tags: ['v*']
+    tags: ["v*"]
   workflow_dispatch:
     inputs:
-      tag:
-        description: "Existing tag to (re)release (e.g. v0.1.0)"
-        required: true
+      dry_run:
+        description: "Run cargo publish + maturin upload with --dry-run; skip GitHub Release upload"
+        required: false
+        default: "true"
+      skip_python:
+        description: "Skip the Python wheel build/publish jobs"
+        required: false
+        default: "false"
+      skip_crates:
+        description: "Skip the crates.io publish job"
+        required: false
+        default: "false"
 
-permissions:
-  contents: write
-  id-token: write
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
 
 env:
   CARGO_TERM_COLOR: always
@@ -46,23 +55,11 @@ jobs:
     name: verify (build + test gate)
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout sibling atomr
-        uses: actions/checkout@v4
-        with: { repository: rustakka/atomr, path: atomr, ref: v0.6.1 }
-      - name: Checkout sibling atomr-infer
-        uses: actions/checkout@v4
-        with: { repository: rustakka/atomr-infer, path: atomr-infer, ref: 70837f6a945d8cc42d6128ace26e89f95dcb54ec }
-      - name: Checkout sibling atomr-accel
-        uses: actions/checkout@v4
-        with: { repository: rustakka/atomr-accel, path: atomr-accel, ref: v0.4.2 }
-      - name: Checkout atomr-agents
-        uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event.inputs.tag || github.ref }}
-          path: atomr-agents
+      - uses: actions/checkout@v5
       - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
       - uses: Swatinem/rust-cache@v2
-        with: { workspaces: atomr-agents }
       # System deps for the heaviest opt-in features we exercise
       # below: cpal needs `libasound2-dev` (`stt-mic`), whisper-rs
       # needs cmake (`whisper-cpp`). The `metal`/`coreml`/`cuda`
@@ -72,31 +69,22 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y libasound2-dev cmake
       # Default features: matches what plain `cargo build` users see.
       - run: cargo check --workspace
-        working-directory: atomr-agents
       # Umbrella `full` feature: enables every framework + STT
       # capability surface that doesn't require a platform-specific
       # toolchain (excludes whisper-cpp/metal/coreml/cuda).
       - run: cargo check -p atomr-agents --features full
-        working-directory: atomr-agents
       # Spot-check the opt-in heavy features individually so we
       # catch breakage without enabling cross-platform feature
       # combinations cargo can't satisfy on Linux.
       - run: cargo check -p atomr-agents-stt-runtime-whisper --features whisper-cpp
-        working-directory: atomr-agents
       - run: cargo check -p atomr-agents-stt-audio --features mic
-        working-directory: atomr-agents
       - run: cargo check -p atomr-agents-stt-voice --features vad-silero
-        working-directory: atomr-agents
       # Text-to-speech capability — exercise the full surface and the
       # opt-in features individually.
       - run: cargo check -p atomr-agents --features tts-full
-        working-directory: atomr-agents
       - run: cargo check -p atomr-agents --features conversation
-        working-directory: atomr-agents
       - run: cargo check -p atomr-agents-tts-audio --features speaker
-        working-directory: atomr-agents
       - run: cargo test --workspace
-        working-directory: atomr-agents
 
   build-binaries:
     name: build-binaries (${{ matrix.target }})
@@ -105,123 +93,119 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - { target: x86_64-unknown-linux-gnu,  runner: ubuntu-latest,    ext: "" }
+          - { target: x86_64-unknown-linux-gnu,  runner: ubuntu-latest,    archive_ext: tar.gz }
           # aarch64 Linux glibc — built natively on a GitHub-hosted ARM
-          # runner (matches the upstream atomr v0.3.1 / atomr-infer v0.6.0
-          # pattern). Native build avoids the ring / aws-lc-rs / openssl
-          # cross-compile blockers that gcc-aarch64-linux-gnu alone can't
-          # paper over, and dodges the cross-rs path-dep mount issue
-          # documented in atomr-infer commit e8e35ee.
-          - { target: aarch64-unknown-linux-gnu, runner: ubuntu-22.04-arm, ext: "" }
-          - { target: x86_64-apple-darwin,       runner: macos-latest,     ext: "" }
-          - { target: aarch64-apple-darwin,      runner: macos-latest,     ext: "" }
-          - { target: x86_64-pc-windows-msvc,    runner: windows-latest,   ext: ".exe" }
+          # runner. Native build avoids the ring / aws-lc-rs / openssl
+          # cross-compile blockers and dodges the cross-rs path-dep
+          # mount issue documented in the atomr-infer history.
+          - { target: aarch64-unknown-linux-gnu, runner: ubuntu-22.04-arm, archive_ext: tar.gz }
+          - { target: x86_64-apple-darwin,       runner: macos-latest,     archive_ext: tar.gz }
+          - { target: aarch64-apple-darwin,      runner: macos-latest,     archive_ext: tar.gz }
+          - { target: x86_64-pc-windows-msvc,    runner: windows-latest,   archive_ext: zip,    bin_ext: .exe }
     runs-on: ${{ matrix.runner }}
     steps:
-      - name: Checkout sibling atomr
-        uses: actions/checkout@v4
-        with: { repository: rustakka/atomr, path: atomr, ref: v0.6.1 }
-      - name: Checkout sibling atomr-infer
-        uses: actions/checkout@v4
-        with: { repository: rustakka/atomr-infer, path: atomr-infer, ref: 70837f6a945d8cc42d6128ace26e89f95dcb54ec }
-      - name: Checkout sibling atomr-accel
-        uses: actions/checkout@v4
-        with: { repository: rustakka/atomr-accel, path: atomr-accel, ref: v0.4.2 }
-      - name: Checkout atomr-agents
-        uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event.inputs.tag || github.ref }}
-          path: atomr-agents
+      - uses: actions/checkout@v5
       - uses: dtolnay/rust-toolchain@stable
         with:
           targets: ${{ matrix.target }}
       - uses: Swatinem/rust-cache@v2
         with:
-          workspaces: atomr-agents
           key: ${{ matrix.target }}
       - name: Build atomr-agents binary
-        working-directory: atomr-agents
         run: cargo build --release -p atomr-agents-cli --target ${{ matrix.target }}
-      - name: Stage artifact
+      - name: Stage artifact (unix)
+        if: matrix.archive_ext == 'tar.gz'
         shell: bash
-        working-directory: atomr-agents
         run: |
           set -euo pipefail
-          name="atomr-agents-${{ matrix.target }}"
-          mkdir -p "../dist"
-          cp "target/${{ matrix.target }}/release/atomr-agents${{ matrix.ext }}" "../dist/${name}${{ matrix.ext }}"
-          ls -la ../dist
+          mkdir -p artifacts
+          src="target/${{ matrix.target }}/release/atomr-agents"
+          [ -f "$src" ] && cp "$src" "artifacts/atomr-agents-${{ matrix.target }}"
+          (cd artifacts && tar czf "atomr-agents-${{ matrix.target }}.tar.gz" "atomr-agents-${{ matrix.target }}")
+          ls -la artifacts
+      - name: Stage artifact (windows)
+        if: matrix.archive_ext == 'zip'
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path artifacts | Out-Null
+          $src = "target/${{ matrix.target }}/release/atomr-agents${{ matrix.bin_ext }}"
+          if (Test-Path $src) { Copy-Item $src "artifacts/atomr-agents-${{ matrix.target }}${{ matrix.bin_ext }}" }
+          Compress-Archive -Path "artifacts/atomr-agents-${{ matrix.target }}*" -DestinationPath "artifacts/atomr-agents-${{ matrix.target }}.zip"
       - uses: actions/upload-artifact@v4
         with:
           name: bin-${{ matrix.target }}
-          path: dist/*
+          path: artifacts/atomr-agents-${{ matrix.target }}.${{ matrix.archive_ext }}
 
   build-wheels:
-    name: build-wheels (${{ matrix.runner }})
+    name: build-wheels (${{ matrix.target }} / ${{ matrix.runner }})
     needs: verify
+    if: github.event_name == 'push' || github.event.inputs.skip_python != 'true'
+    runs-on: ${{ matrix.runner }}
     strategy:
       fail-fast: false
       matrix:
         include:
-          # PyO3 0.22 supports up to Python 3.13. Pin to 3.11 explicitly
-          # via setup-python; do NOT use `--find-interpreter` which would
-          # pick up the runner's 3.14 (unsupported) on macOS / Windows.
-          - { runner: ubuntu-latest,    args: "--release --out dist -i python3.11" }
-          # Native aarch64-linux glibc wheel — built on a GitHub-hosted
-          # ARM runner (mirrors atomr-infer v0.6.0). Native build avoids
-          # the ring / aws-lc-rs cross-compile blocker that previously
-          # forced ARM-Linux users to install from sdist.
-          - { runner: ubuntu-22.04-arm, args: "--release --out dist -i python3.11" }
-          - { runner: macos-latest,     args: "--release --out dist -i python3.11" }
-          - { runner: windows-latest,   args: "--release --out dist -i python3.11" }
-    runs-on: ${{ matrix.runner }}
+          # Linux glibc + musl, x86_64 + aarch64. maturin uses
+          # manylinux/musllinux containers under the hood; the
+          # `manylinux: auto` flag picks the right base image.
+          - { runner: ubuntu-latest,    target: x86_64-unknown-linux-gnu,    python-target: x86_64,     manylinux: auto }
+          # aarch64 Linux glibc — built natively on a GitHub-hosted
+          # ARM runner so we don't have to cross-compile `ring` /
+          # `aws-lc-rs` inside the x86_64 manylinux container.
+          - { runner: ubuntu-22.04-arm, target: aarch64-unknown-linux-gnu,   python-target: aarch64,    manylinux: auto }
+          - { runner: ubuntu-latest,    target: x86_64-unknown-linux-musl,   python-target: x86_64,     manylinux: musllinux_1_2 }
+          # aarch64 Linux musl — also built natively on the ARM
+          # runner, mirroring the glibc coverage.
+          - { runner: ubuntu-22.04-arm, target: aarch64-unknown-linux-musl,  python-target: aarch64,    manylinux: musllinux_1_2 }
+          # macOS — universal2 yields a single fat wheel covering
+          # both x86_64 and arm64 architectures.
+          - { runner: macos-latest,     target: universal2-apple-darwin,     python-target: universal2, manylinux: "off" }
+          - { runner: windows-latest,   target: x86_64-pc-windows-msvc,      python-target: x64,        manylinux: "off" }
     steps:
-      - name: Checkout sibling atomr
-        uses: actions/checkout@v4
-        with: { repository: rustakka/atomr, path: atomr, ref: v0.6.1 }
-      - name: Checkout sibling atomr-infer
-        uses: actions/checkout@v4
-        with: { repository: rustakka/atomr-infer, path: atomr-infer, ref: 70837f6a945d8cc42d6128ace26e89f95dcb54ec }
-      - name: Checkout sibling atomr-accel
-        uses: actions/checkout@v4
-        with: { repository: rustakka/atomr-accel, path: atomr-accel, ref: v0.4.2 }
-      - name: Checkout atomr-agents
-        uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event.inputs.tag || github.ref }}
-          path: atomr-agents
+      - uses: actions/checkout@v5
       - uses: actions/setup-python@v5
-        with: { python-version: "3.11" }
-      - uses: dtolnay/rust-toolchain@stable
-      - name: Install maturin
-        run: pip install maturin
-      - name: Build wheels
-        working-directory: atomr-agents
-        run: maturin build --manifest-path crates/py-bindings/Cargo.toml ${{ matrix.args }}
-      # sdist is best-effort. Maturin's `sdist` recurses through
-      # path-deps and fails when the locally-checked-out sibling
-      # workspaces (atomr / atomr-infer / atomr-accel) drift to
-      # incompatible version pins. Wheels are sufficient for PyPI
-      # installation; treat sdist failure as a warning.
-      - name: Build sdist (best-effort)
-        if: matrix.runner == 'ubuntu-latest'
-        continue-on-error: true
-        working-directory: atomr-agents
-        run: maturin sdist --manifest-path crates/py-bindings/Cargo.toml --out dist
-      - uses: actions/upload-artifact@v4
-        if: always()
         with:
-          name: wheels-${{ matrix.runner }}
-          path: atomr-agents/dist/*
+          python-version: "3.12"
+      - name: Build wheels (maturin)
+        uses: PyO3/maturin-action@v1
+        with:
+          target: ${{ matrix.python-target }}
+          # Build a wheel per supported CPython ABI on this platform.
+          # PyO3 0.22 supports CPython 3.10–3.13.
+          args: --release --strip --out dist --interpreter "python3.10 python3.11 python3.12 python3.13"
+          # `auto` builds inside a manylinux container; `off` runs natively.
+          manylinux: ${{ matrix.manylinux }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: wheels-${{ matrix.target }}
+          path: dist/*.whl
+
+  build-sdist:
+    name: build-sdist (Python)
+    needs: verify
+    if: github.event_name == 'push' || github.event.inputs.skip_python != 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Build sdist
+        uses: PyO3/maturin-action@v1
+        with:
+          command: sdist
+          args: --out dist
+      - uses: actions/upload-artifact@v4
+        with:
+          name: sdist
+          path: dist/*.tar.gz
 
   package-skills:
     name: package ai-skills.tar.gz
     needs: verify
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event.inputs.tag || github.ref }}
+      - uses: actions/checkout@v5
       - name: Tar ai-skills/
         run: tar -czf ai-skills.tar.gz ai-skills/
       - uses: actions/upload-artifact@v4
@@ -229,24 +213,33 @@ jobs:
 
   github-release:
     name: GitHub Release
-    needs: [build-binaries, build-wheels, package-skills]
+    needs: [verify, build-binaries, build-wheels, build-sdist, package-skills]
     runs-on: ubuntu-latest
+    # Run for direct tag pushes AND for `workflow_dispatch` runs
+    # targeting a `v*` ref with `dry_run=false` (the trampoline
+    # path used by `version-bump.yml`).
+    if: |
+      startsWith(github.ref, 'refs/tags/v') &&
+      (github.event_name == 'push' ||
+       (github.event_name == 'workflow_dispatch' && github.event.inputs.dry_run != 'true'))
+    permissions:
+      contents: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
-          ref: ${{ github.event.inputs.tag || github.ref }}
+          fetch-depth: 0
       - uses: actions/download-artifact@v4
         with:
           path: artifacts
       - name: Flatten + list artifacts
         run: |
           mkdir -p release
-          find artifacts -type f \( -name 'atomr-agents-*' -o -name '*.whl' -o -name '*.tar.gz' \) -exec cp {} release/ \;
+          find artifacts -type f \( -name 'atomr-agents-*' -o -name '*.whl' -o -name '*.tar.gz' -o -name '*.zip' \) -exec cp {} release/ \;
           ls -la release
       - name: Create or update GitHub Release
         env:
           GH_TOKEN: ${{ github.token }}
-          TAG: ${{ github.event.inputs.tag || github.ref_name }}
+          TAG: ${{ github.ref_name }}
         run: |
           set -euo pipefail
           notes=$(awk "/^## \[Unreleased\]/{flag=1; next} flag && /^## /{exit} flag" CHANGELOG.md || true)
@@ -267,38 +260,38 @@ jobs:
 
   publish-crates:
     name: publish crates.io
-    needs: github-release
+    needs: [verify, github-release]
     runs-on: ubuntu-latest
+    if: |
+      startsWith(github.ref, 'refs/tags/v') &&
+      github.event.inputs.skip_crates != 'true' &&
+      (github.event_name == 'push' ||
+       (github.event_name == 'workflow_dispatch' && github.event.inputs.dry_run != 'true'))
+    permissions:
+      contents: read
+    env:
+      # Repo secret name is CRATES_IO_TOKEN; cargo itself reads
+      # CARGO_REGISTRY_TOKEN, so map it through.
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CRATES_IO_TOKEN }}
+      ALLOWLIST: ${{ vars.ATOMR_AGENTS_PUBLISH_ALLOWLIST }}
     steps:
-      - name: Checkout sibling atomr
-        uses: actions/checkout@v4
-        with: { repository: rustakka/atomr, path: atomr, ref: v0.6.1 }
-      - name: Checkout sibling atomr-infer
-        uses: actions/checkout@v4
-        with: { repository: rustakka/atomr-infer, path: atomr-infer, ref: 70837f6a945d8cc42d6128ace26e89f95dcb54ec }
-      - name: Checkout sibling atomr-accel
-        uses: actions/checkout@v4
-        with: { repository: rustakka/atomr-accel, path: atomr-accel, ref: v0.4.2 }
-      - name: Checkout atomr-agents
-        uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event.inputs.tag || github.ref }}
-          path: atomr-agents
+      - uses: actions/checkout@v5
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
-        with: { workspaces: atomr-agents }
+
+      # Walk every publishable crate in dependency order. Each
+      # `cargo publish` waits briefly for the index to become visible
+      # before moving on, so the next crate can resolve its
+      # path-dependencies from crates.io. `already uploaded` is
+      # treated as success so a partially-completed run can be
+      # safely retried by re-tagging.
       - name: Publish each crate in dep order
-        working-directory: atomr-agents
-        env:
-          # Repo secret name is CRATES_IO_TOKEN (per gh secret list); cargo
-          # itself reads CARGO_REGISTRY_TOKEN, so map it through.
-          CARGO_REGISTRY_TOKEN: ${{ secrets.CRATES_IO_TOKEN }}
-          ALLOWLIST: ${{ vars.ATOMR_AGENTS_PUBLISH_ALLOWLIST }}
         run: |
           set -euo pipefail
           # Default = full workspace, in dep order. STT capability
-          # crates (atomr-agents-stt-*) slot in just before
-          # py-bindings since py-bindings depends on them.
+          # crates (atomr-agents-stt-*) and TTS capability crates
+          # (atomr-agents-tts-*) slot in just before py-bindings
+          # since py-bindings depends on them.
           default_order=(
             atomr-agents-core
             atomr-agents-callable
@@ -364,58 +357,133 @@ jobs:
           # crates.io rate-limits new crates at ~1/min for fresh
           # accounts/orgs. We pace the loop at 70s and retry on 429.
           PER_CRATE_SLEEP=70
-          for crate in "${list[@]}"; do
-            attempt=0
+          publish_one() {
+            local crate=$1
+            local attempt=0
             while true; do
               attempt=$((attempt + 1))
               echo "==> publishing $crate (attempt $attempt)"
               if out=$(cargo publish -p "$crate" 2>&1); then
                 echo "$out"
-                break
+                return 0
               fi
               echo "$out"
               if printf '%s' "$out" | grep -qE 'crate version .* is already uploaded|already exists'; then
                 echo "::warning::$crate already on crates.io at this version; skipping"
-                break
+                return 0
               fi
-              # 429 from crates.io. The new-crate rate limit is ~1
-              # per 10 minutes for fresh accounts/orgs after the burst
-              # window — so wait at least 10 min, regardless of what
-              # the response says (the timestamp parsed out of the
-              # body has been observed to be too optimistic).
+              # 429 from crates.io. The new-crate rate limit is
+              # ~1 per 10 minutes for fresh accounts/orgs after the
+              # burst window — wait at least 10 min, regardless of
+              # what the response body claims (its timestamp has
+              # been observed to be too optimistic).
               if printf '%s' "$out" | grep -q '429 Too Many Requests'; then
                 if [ "$attempt" -ge 12 ]; then
                   echo "::error::rate-limited too many times on $crate"
-                  exit 1
+                  return 1
                 fi
-                wait=620   # 10 min + 20s slack
+                local wait=620   # 10 min + 20s slack
                 echo "rate-limited; sleeping ${wait}s before retrying $crate (attempt $attempt/12)"
                 sleep "$wait"
                 continue
               fi
               echo "::error::cargo publish failed for $crate"
-              exit 1
+              return 1
             done
-            # Pace between crates so we don't tickle the new-crate rate
-            # limit, and so the index has time to propagate before the
-            # next dependent crate's resolver picks it up.
+          }
+          for crate in "${list[@]}"; do
+            publish_one "$crate"
+            # Pace between crates so we don't tickle the new-crate
+            # rate limit, and so the index has time to propagate
+            # before the next dependent crate's resolver picks it up.
             sleep "$PER_CRATE_SLEEP"
+          done
+
+  publish-crates-dry-run:
+    name: publish crates.io (dry run)
+    needs: verify
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.dry_run == 'true' && github.event.inputs.skip_crates != 'true'
+    steps:
+      - uses: actions/checkout@v5
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - name: Dry-run publish (foundation + leaf crates)
+        run: |
+          # Spot-check a representative subset (foundation crates that
+          # everything else depends on, plus the leaf crates). A full
+          # 48-crate dry-run takes >15min and burns runner time; this
+          # subset catches the vast majority of metadata regressions.
+          for c in atomr-agents-core atomr-agents-callable atomr-agents-strategy \
+                   atomr-agents-context atomr-agents-state atomr-agents-observability \
+                   atomr-agents-tool atomr-agents-skill atomr-agents-memory \
+                   atomr-agents-stt-core atomr-agents-tts-core \
+                   atomr-agents-py-bindings atomr-agents-cli atomr-agents; do
+            echo "==> $c"
+            cargo publish -p "$c" --dry-run --allow-dirty || true
           done
 
   publish-pypi:
     name: publish PyPI
-    needs: github-release
+    needs: [verify, build-wheels, build-sdist, github-release]
     runs-on: ubuntu-latest
+    if: |
+      startsWith(github.ref, 'refs/tags/v') &&
+      github.event.inputs.skip_python != 'true' &&
+      (github.event_name == 'push' ||
+       (github.event_name == 'workflow_dispatch' && github.event.inputs.dry_run != 'true'))
+    # Trusted publishing — configure on PyPI: pypi.org → manage project →
+    # publishing → add GitHub publisher (owner / repo / workflow / env).
     environment:
       name: pypi
       url: https://pypi.org/p/atomr-agents
+    permissions:
+      id-token: write
     steps:
       - uses: actions/download-artifact@v4
         with:
-          path: artifacts
-          pattern: wheels-*
-          merge-multiple: true
-      - name: List wheels
-        run: ls -la artifacts
-      - uses: pypa/gh-action-pypi-publish@release/v1
-        with: { packages-dir: artifacts }
+          path: dist
+          # Only Python artifacts — binary tarballs share the
+          # `*.tar.gz` extension with the sdist but are not valid
+          # PyPI uploads, so download just the wheel + sdist
+          # artifact buckets.
+          pattern: "{wheels-*,sdist}"
+      - name: Flatten wheel + sdist artifacts
+        run: |
+          mkdir -p upload
+          find dist -type f \( -name "*.whl" -o -name "*.tar.gz" \) -exec cp {} upload/ \;
+          ls -la upload/
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: upload
+          # If trusted publishing is not yet configured, set
+          # `password: ${{ secrets.PYPI_API_TOKEN }}` instead.
+          skip-existing: true
+
+  publish-pypi-dry-run:
+    name: PyPI dry-run (TestPyPI)
+    needs: [build-wheels, build-sdist]
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.dry_run == 'true' && github.event.inputs.skip_python != 'true'
+    environment:
+      name: testpypi
+      url: https://test.pypi.org/p/atomr-agents
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          pattern: "{wheels-*,sdist}"
+      - name: Flatten wheel + sdist artifacts
+        run: |
+          mkdir -p upload
+          find dist -type f \( -name "*.whl" -o -name "*.tar.gz" \) -exec cp {} upload/ \;
+          ls -la upload/
+      - name: Publish to TestPyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: upload
+          repository-url: https://test.pypi.org/legacy/
+          skip-existing: true
