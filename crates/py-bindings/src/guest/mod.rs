@@ -73,7 +73,7 @@ impl PyGuestHandle {
     }
 }
 
-fn register_kind(kind: &str, key: String, target: PyObject) -> PyGuestHandle {
+pub(crate) fn register_kind(kind: &str, key: String, target: PyObject) -> PyGuestHandle {
     GUESTS.insert((kind.to_string(), key.clone()), Arc::new(target));
     PyGuestHandle {
         kind: kind.to_string(),
