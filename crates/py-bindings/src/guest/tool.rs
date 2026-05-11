@@ -120,7 +120,7 @@ impl Tool for PyToolAdapter {
 
 #[pyfunction]
 #[pyo3(signature = (id, version, keys=None))]
-pub(super) fn build_guest_toolset(
+pub(crate) fn build_guest_toolset(
     id: String,
     version: &str,
     keys: Option<Vec<String>>,

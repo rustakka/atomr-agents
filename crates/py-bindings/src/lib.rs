@@ -45,6 +45,7 @@ mod eval;
 mod guest;
 mod harness;
 mod harness_adapters;
+mod inference;
 mod observability;
 mod parser;
 mod persona;

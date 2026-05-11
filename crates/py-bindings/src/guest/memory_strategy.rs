@@ -128,7 +128,7 @@ impl PyMemoryStrategyHandle {
 }
 
 #[pyfunction]
-pub(super) fn build_guest_memory_strategy(key: String) -> PyResult<PyMemoryStrategyHandle> {
+pub(crate) fn build_guest_memory_strategy(key: String) -> PyResult<PyMemoryStrategyHandle> {
     let entry = GUESTS
         .get(&("strategy:memory".to_string(), key.clone()))
         .ok_or_else(|| {

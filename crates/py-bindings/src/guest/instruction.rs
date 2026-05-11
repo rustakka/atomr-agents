@@ -99,7 +99,7 @@ impl PyInstruction {
 }
 
 #[pyfunction]
-pub(super) fn build_guest_instruction_strategy(key: String) -> PyResult<PyInstruction> {
+pub(crate) fn build_guest_instruction_strategy(key: String) -> PyResult<PyInstruction> {
     let entry = GUESTS
         .get(&("strategy:instruction".to_string(), key.clone()))
         .ok_or_else(|| {

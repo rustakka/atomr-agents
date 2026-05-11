@@ -87,7 +87,7 @@ impl PyPersona {
 }
 
 #[pyfunction]
-pub(super) fn build_guest_persona(key: String) -> PyResult<PyPersona> {
+pub(crate) fn build_guest_persona(key: String) -> PyResult<PyPersona> {
     let entry = GUESTS
         .get(&("persona".to_string(), key.clone()))
         .ok_or_else(|| {

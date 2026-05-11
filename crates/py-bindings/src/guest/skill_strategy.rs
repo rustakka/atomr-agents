@@ -109,7 +109,7 @@ impl PySkillStrategyHandle {
 }
 
 #[pyfunction]
-pub(super) fn build_guest_skill_strategy(key: String) -> PyResult<PySkillStrategyHandle> {
+pub(crate) fn build_guest_skill_strategy(key: String) -> PyResult<PySkillStrategyHandle> {
     let entry = GUESTS
         .get(&("strategy:skill".to_string(), key.clone()))
         .ok_or_else(|| {

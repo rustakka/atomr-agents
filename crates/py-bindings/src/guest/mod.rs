@@ -53,6 +53,16 @@ pub use memory_strategy::PyMemoryStrategyHandle;
 pub use persona::PyPersona;
 pub use skill_strategy::PySkillStrategyHandle;
 
+// Crate-internal re-exports of the strategy builders so sibling
+// modules (notably `crate::agent::PyAgent::from_spec`) can construct
+// strategies from registered guest keys without re-implementing the
+// adapter wiring.
+pub(crate) use instruction::build_guest_instruction_strategy;
+pub(crate) use memory_strategy::build_guest_memory_strategy;
+pub(crate) use persona::build_guest_persona;
+pub(crate) use skill_strategy::build_guest_skill_strategy;
+pub(crate) use tool::build_guest_toolset;
+
 use registry::{ToolEntry, GUESTS, TOOLS};
 
 /// Shared handle returned to Python after registration. Holds the
