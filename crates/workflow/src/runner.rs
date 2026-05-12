@@ -47,6 +47,14 @@ pub struct WorkflowRunner {
 }
 
 impl WorkflowRunner {
+    /// Construct a runner from its three pieces. Equivalent to the
+    /// struct literal but exposed as a stable constructor for callers
+    /// (notably the Python wrapper) that don't have access to crate-
+    /// private types.
+    pub fn new(id: WorkflowId, dag: Dag<Step>, journal: Arc<dyn Journal>) -> Self {
+        Self { id, dag, journal }
+    }
+
     pub async fn run(&self, input: Value) -> Result<Value> {
         // Resume from journal if state exists.
         let history = self.journal.replay(&self.id).await?;
@@ -221,6 +229,20 @@ mod tests {
             let s = state.clone();
             async move { Ok(serde_json::json!(s.fetch_add(1, Ordering::SeqCst))) }
         }))
+    }
+
+    #[tokio::test]
+    async fn new_constructor_builds_runner() {
+        let dag: Dag<Step> = Dag::builder("a")
+            .step("a", Step::invoke(echo_callable()))
+            .build();
+        let r = WorkflowRunner::new(
+            WorkflowId::from("wf-new"),
+            dag,
+            Arc::new(InMemoryJournal::new()),
+        );
+        let out = r.run(serde_json::json!({"k": 7})).await.unwrap();
+        assert_eq!(out, serde_json::json!({"k": 7}));
     }
 
     #[tokio::test]

@@ -7,6 +7,7 @@ use atomr_agents_core::{Result, Value};
 use serde::{Deserialize, Serialize};
 
 use crate::judge::JudgeModel;
+use crate::scorer::{AsyncScorer, ScorerOutcome};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
@@ -47,6 +48,38 @@ impl PairwiseScorer {
         };
         let note = reply.lines().nth(1).unwrap_or("").trim().to_string();
         Ok((pc, note))
+    }
+}
+
+#[async_trait]
+impl AsyncScorer for PairwiseScorer {
+    /// Treat `expected` as Response A and `actual` as Response B and
+    /// run a pairwise judgment. The criterion label doubles as the
+    /// task prompt context — sufficient for cases where the comparison
+    /// criterion is fully described by `criteria_label`. Callers
+    /// needing a richer prompt should use `compare()` directly.
+    ///
+    /// Score mapping:
+    /// - A wins → score 1.0, passed=true
+    /// - tie    → score 0.5, passed=true
+    /// - B wins → score 0.0, passed=false
+    async fn score(&self, expected: &Value, actual: &Value) -> ScorerOutcome {
+        let prompt = self.criteria_label.clone();
+        match self.compare(&prompt, expected, actual).await {
+            Ok((choice, note)) => {
+                let (passed, score) = match choice {
+                    PairwiseChoice::A => (true, 1.0),
+                    PairwiseChoice::Tie => (true, 0.5),
+                    PairwiseChoice::B => (false, 0.0),
+                };
+                ScorerOutcome { passed, score, note }
+            }
+            Err(e) => ScorerOutcome {
+                passed: false,
+                score: 0.0,
+                note: format!("pairwise error: {e}"),
+            },
+        }
     }
 }
 
@@ -94,6 +127,55 @@ mod tests {
             .unwrap();
         assert_eq!(c, PairwiseChoice::A);
         assert!(note.contains("clearer"));
+    }
+
+    #[tokio::test]
+    async fn async_scorer_picks_a_as_pass_with_score_one() {
+        let m = Arc::new(ScriptedJudge {
+            replies: Mutex::new(vec!["A\nclearer".into()]),
+        });
+        let s = PairwiseScorer::new(m, "helpfulness");
+        let out = AsyncScorer::score(
+            &s,
+            &Value::String("expected".into()),
+            &Value::String("actual".into()),
+        )
+        .await;
+        assert!(out.passed);
+        assert!((out.score - 1.0).abs() < 1e-6);
+        assert!(out.note.contains("clearer"));
+    }
+
+    #[tokio::test]
+    async fn async_scorer_b_choice_fails_with_score_zero() {
+        let m = Arc::new(ScriptedJudge {
+            replies: Mutex::new(vec!["B\nbetter".into()]),
+        });
+        let s = PairwiseScorer::new(m, "quality");
+        let out = AsyncScorer::score(
+            &s,
+            &Value::String("expected".into()),
+            &Value::String("actual".into()),
+        )
+        .await;
+        assert!(!out.passed);
+        assert!((out.score - 0.0).abs() < 1e-6);
+    }
+
+    #[tokio::test]
+    async fn async_scorer_tie_passes_with_half_score() {
+        let m = Arc::new(ScriptedJudge {
+            replies: Mutex::new(vec!["TIE\nequal".into()]),
+        });
+        let s = PairwiseScorer::new(m, "quality");
+        let out = AsyncScorer::score(
+            &s,
+            &Value::String("expected".into()),
+            &Value::String("actual".into()),
+        )
+        .await;
+        assert!(out.passed);
+        assert!((out.score - 0.5).abs() < 1e-6);
     }
 
     #[test]

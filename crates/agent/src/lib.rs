@@ -2,8 +2,9 @@
 //!
 //! The agent holds an `InferenceClient` (an abstraction over a
 //! `ModelRunner` from atomr-infer); strategies are generic so the
-//! hot path is monomorphized. A `BoxedAgent` form is provided for
-//! config-driven instantiation.
+//! hot path is monomorphized. [`BoxedAgent`] (object-erased form)
+//! and [`AgentRef`] (Arc-wrapped handle) provide config-driven
+//! instantiation; see [`AgentSpec::into_agent`].
 
 mod boxed;
 mod inference;
@@ -12,14 +13,14 @@ mod pipeline;
 mod spec;
 mod r#trait;
 
-pub use boxed::{BoxedAgent, BoxedInstruction, BoxedMemory, BoxedSkills, BoxedTools};
+pub use boxed::BoxedAgent;
 pub use inference::{InferenceClient, LocalRunnerClient, TurnResult};
 pub use middleware::{
     AgentMiddleware, LoggingMiddleware, MiddlewareStack, RateLimitMiddleware, RedactionMiddleware,
     ToolErrorRecoveryMiddleware,
 };
-pub use pipeline::{Agent, AgentBudgets};
-pub use r#trait::{AgentDispatch, AgentRef};
+pub use pipeline::Agent;
+pub use r#trait::AgentRef;
 pub use spec::AgentSpec;
 
 pub use atomr_agents_tool::Provider;

@@ -46,6 +46,8 @@ mod errors;
 mod eval;
 mod guest;
 mod harness;
+mod harness_adapters;
+mod inference;
 mod ingest;
 mod instruction;
 mod memory;
@@ -97,6 +99,10 @@ fn _native(py: Python<'_>, m: &Bound<'_, PyModule>) -> PyResult<()> {
     harness::register(py, m)?;
     eval::register(py, m)?;
     guest::register(py, m)?;
+    // PyHarness + loop_strategy / termination guest registration helpers
+    // depend on `harness::register` and `guest::register` having created
+    // their submodules first; attach into them.
+    harness_adapters::register_into(py, m)?;
     stt::register(py, m)?;
     tts::register(py, m)?;
     voice::register(py, m)?;

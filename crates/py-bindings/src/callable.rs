@@ -22,7 +22,7 @@ use pyo3::types::{PyDict, PyList, PyTuple};
 
 use crate::conv::{callctx_from_pydict, callctx_to_pydict, json_to_py, py_to_json};
 use crate::errors;
-use crate::guest::lookup;
+use crate::guest::lookup_guest as lookup;
 
 /// Universal handle wrapping `Arc<dyn Callable>`. Python sees one
 /// class; the underlying Rust type may be a pipeline, decorator,

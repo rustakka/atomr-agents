@@ -48,200 +48,238 @@ where
     /// One full agent turn. Drives the per-turn pipeline (memory +
     /// skill + tool resolution → instruction render → context
     /// assembly → inference → tool-call loop → memory store).
+    ///
+    /// Thin wrapper around [`run_turn_impl`]; the typed `Agent<I,T,Ms,Sk>`
+    /// stays monomorphic at the call site, only crossing into
+    /// dyn-dispatch at the `run_turn_impl` boundary.
     pub async fn run_turn(&self, user: String, budgets: AgentBudgets) -> Result<TurnResult> {
-        let start = Instant::now();
-        let agent_ctx = AgentContext::for_agent(
-            self.id.clone(),
-            TurnInput {
-                user: user.clone(),
-                history: vec![],
-            },
-        );
-        let AgentBudgets {
-            mut tokens,
-            time,
-            money,
-            mut iterations,
-        } = budgets;
-
-        // 1. Parallel strategy resolution.
-        let mut subs = tokens.split(3);
-        let (mut bm, mut bs, mut bt) = (subs.remove(0), subs.remove(0), subs.remove(0));
-        let bm0 = bm.remaining;
-        let bs0 = bs.remaining;
-        let bt0 = bt.remaining;
-        let (mem, skills, tool_refs) = tokio::join!(
-            self.memory.retrieve(&agent_ctx, &mut bm),
-            self.skills.applicable(&agent_ctx, &mut bs),
-            self.tools.select(&agent_ctx, &mut bt),
-        );
-        let mem = mem?;
-        let _skills = skills?;
-        let tool_refs = tool_refs?;
-        let consumed = bm0.saturating_sub(bm.remaining)
-            + bs0.saturating_sub(bs.remaining)
-            + bt0.saturating_sub(bt.remaining);
-        tokens.consume(consumed.min(tokens.remaining)).ok();
-
-        // 2. Render instructions.
-        let mut instr_budget = tokens.split(2).remove(0);
-        let r_instr = self.instructions.render(&agent_ctx, &mut instr_budget).await?;
-        tokens
-            .consume(r_instr.estimated_tokens.min(tokens.remaining))
-            .ok();
-
-        // 3. Assemble final context (system prompt + recalled memory).
-        let mut frags = vec![ContextFragment {
-            source: "system",
-            priority: 9,
-            estimated_tokens: r_instr.estimated_tokens,
-            text: r_instr.system_prompt.clone(),
-        }];
-        for c in &mem {
-            frags.push(ContextFragment {
-                source: "memory",
-                priority: 5,
-                estimated_tokens: c.estimated_tokens,
-                text: c.text.clone(),
-            });
-        }
-        let assembled = ContextAssembler::assemble(frags, &mut tokens)?;
-
-        // 4. Build initial messages.
-        let mut messages: Vec<InferMsg> = Vec::new();
-        messages.push(InferMsg {
-            role: Role::System,
-            content: MessageContent::Text(assembled.join("\n\n")),
-        });
-        messages.push(InferMsg {
-            role: Role::User,
-            content: MessageContent::Text(user.clone()),
-        });
-
-        // 5. Tool-call loop.
-        let mut final_text = String::new();
-        let mut final_usage = atomr_infer_core::tokens::TokenUsage::default();
-        let mut final_finish = None;
-        let mut all_tool_calls: Vec<atomr_agents_tool::ParsedToolCall> = Vec::new();
-        for iter in 0..self.max_tool_iterations.max(1) {
-            iterations.consume_one()?;
-            let batch = ExecuteBatch {
-                request_id: format!("turn-{}", uuid_str()),
-                model: self.model.clone(),
-                messages: messages.clone(),
-                sampling: SamplingParams::default(),
-                stream: true,
-                estimated_tokens: tokens.remaining,
-            };
-            let r = self.inference.run(batch).await?;
-            final_text = r.text.clone();
-            final_usage.add(r.usage);
-            final_finish = r.finish_reason;
-            // Surface every streamed tool call to observers before
-            // dispatch — distinct from the post-call ToolInvoked event.
-            for call in &r.tool_calls {
-                let args = call.arguments().unwrap_or(Json::Value::Null);
-                self.bus.emit(Event::ToolCallStreamed {
-                    agent_id: self.id.clone(),
-                    tool_name: call.name.clone(),
-                    arguments_hash: hash_value(&args),
-                    iteration: iter,
-                });
-            }
-            all_tool_calls.extend(r.tool_calls.iter().cloned());
-            // Stop conditions.
-            if r.tool_calls.is_empty()
-                || r.finish_reason != Some(atomr_infer_core::tokens::FinishReason::ToolCalls)
-            {
-                break;
-            }
-            // Append the assistant's tool-call turn (for provider
-            // history coherence) and dispatch each tool — concurrently
-            // when multiple are emitted, order-preserved on aggregation.
-            messages.push(InferMsg {
-                role: Role::Assistant,
-                content: MessageContent::Text(r.text.clone()),
-            });
-            let mut handles: Vec<tokio::task::JoinHandle<Result<(usize, String, Json::Value, u64, u64)>>> =
-                Vec::with_capacity(r.tool_calls.len());
-            for (idx, call) in r.tool_calls.iter().enumerate() {
-                let tool_ref = tool_refs
-                    .iter()
-                    .find(|t| t.name == call.name)
-                    .ok_or_else(|| AgentError::Tool(format!("unknown tool: {}", call.name)))?;
-                let args = call.arguments().unwrap_or(Json::Value::Null);
-                let invoke_ctx = CallCtx {
-                    agent_id: Some(self.id.clone()),
-                    tokens,
-                    time,
-                    money,
-                    iterations,
-                    trace: vec![format!("tool:{}", call.name)],
-                };
-                let handle = tool_ref.handle.clone();
-                let name = call.name.clone();
-                let args_for_task = args.clone();
-                handles.push(tokio::spawn(async move {
-                    let t0 = Instant::now();
-                    let result = handle.call(args_for_task.clone(), invoke_ctx).await?;
-                    Ok::<_, AgentError>((
-                        idx,
-                        name,
-                        result,
-                        hash_value(&args_for_task),
-                        t0.elapsed().as_millis() as u64,
-                    ))
-                }));
-            }
-            let mut results: Vec<(usize, String, Json::Value, u64, u64)> = Vec::with_capacity(handles.len());
-            for h in handles {
-                let pair = h.await.map_err(|e| AgentError::Internal(e.to_string()))??;
-                results.push(pair);
-            }
-            results.sort_by_key(|(i, _, _, _, _)| *i);
-            for (_, name, result, args_hash, elapsed_ms) in results {
-                self.bus.emit(Event::ToolInvoked {
-                    tool_id: ToolId::from(name.as_str()),
-                    args_hash,
-                    elapsed_ms,
-                    ok: true,
-                });
-                messages.push(InferMsg {
-                    role: Role::Tool,
-                    content: MessageContent::Text(serde_json::to_string(&result).unwrap_or_default()),
-                });
-            }
-        }
-
-        // 6. Memory store.
-        let item = MemoryItem {
-            id: format!("turn-{}", uuid_str()),
-            kind: MemoryKind::Episodic,
-            namespace: MemoryNamespace::Agent(self.id.clone()),
-            payload: serde_json::json!({"user": user, "assistant": final_text}),
-            timestamp_ms: chrono::Utc::now().timestamp_millis(),
-            tags: vec![],
-        };
-        self.memory.store(item).await.ok();
-
-        // 7. Emit AgentTurn event.
-        self.bus.emit(Event::AgentTurn {
-            agent_id: self.id.clone(),
-            input_tokens: final_usage.input_tokens,
-            output_tokens: final_usage.output_tokens,
-            reasoning_tokens: final_usage.reasoning_tokens,
-            cached_tokens: final_usage.cached_tokens,
-            finish_reason: final_finish,
-            elapsed_ms: start.elapsed().as_millis() as u64,
-        });
-
-        Ok(TurnResult {
-            text: final_text,
-            usage: final_usage,
-            finish_reason: final_finish,
-            tool_calls: all_tool_calls,
-        })
+        run_turn_impl(
+            &self.id,
+            &self.model,
+            &self.instructions,
+            &self.tools,
+            &self.memory,
+            &self.skills,
+            &self.inference,
+            &self.bus,
+            self.max_tool_iterations,
+            user,
+            budgets,
+        )
+        .await
     }
+}
+
+/// Shared per-turn pipeline body. Both the typed [`Agent`] and the
+/// fully-erased [`crate::BoxedAgent`] dispatch through this. The
+/// `&dyn` references mean each strategy method becomes an indirect
+/// call — fine here since strategies are invoked O(1) times per turn
+/// (not in a hot loop).
+pub(crate) async fn run_turn_impl(
+    id: &AgentId,
+    model: &str,
+    instructions: &dyn InstructionStrategy,
+    tools: &dyn ToolStrategy,
+    memory: &dyn MemoryStrategy,
+    skills: &dyn SkillStrategy,
+    inference: &Arc<dyn InferenceClient>,
+    bus: &EventBus,
+    max_tool_iterations: u32,
+    user: String,
+    budgets: AgentBudgets,
+) -> Result<TurnResult> {
+    let start = Instant::now();
+    let agent_ctx = AgentContext::for_agent(
+        id.clone(),
+        TurnInput {
+            user: user.clone(),
+            history: vec![],
+        },
+    );
+    let AgentBudgets {
+        mut tokens,
+        time,
+        money,
+        mut iterations,
+    } = budgets;
+
+    // 1. Parallel strategy resolution.
+    let mut subs = tokens.split(3);
+    let (mut bm, mut bs, mut bt) = (subs.remove(0), subs.remove(0), subs.remove(0));
+    let bm0 = bm.remaining;
+    let bs0 = bs.remaining;
+    let bt0 = bt.remaining;
+    let (mem, sk_res, tool_refs) = tokio::join!(
+        memory.retrieve(&agent_ctx, &mut bm),
+        skills.applicable(&agent_ctx, &mut bs),
+        tools.select(&agent_ctx, &mut bt),
+    );
+    let mem = mem?;
+    let _skills = sk_res?;
+    let tool_refs = tool_refs?;
+    let consumed = bm0.saturating_sub(bm.remaining)
+        + bs0.saturating_sub(bs.remaining)
+        + bt0.saturating_sub(bt.remaining);
+    tokens.consume(consumed.min(tokens.remaining)).ok();
+
+    // 2. Render instructions.
+    let mut instr_budget = tokens.split(2).remove(0);
+    let r_instr = instructions.render(&agent_ctx, &mut instr_budget).await?;
+    tokens
+        .consume(r_instr.estimated_tokens.min(tokens.remaining))
+        .ok();
+
+    // 3. Assemble final context (system prompt + recalled memory).
+    let mut frags = vec![ContextFragment {
+        source: "system",
+        priority: 9,
+        estimated_tokens: r_instr.estimated_tokens,
+        text: r_instr.system_prompt.clone(),
+    }];
+    for c in &mem {
+        frags.push(ContextFragment {
+            source: "memory",
+            priority: 5,
+            estimated_tokens: c.estimated_tokens,
+            text: c.text.clone(),
+        });
+    }
+    let assembled = ContextAssembler::assemble(frags, &mut tokens)?;
+
+    // 4. Build initial messages.
+    let mut messages: Vec<InferMsg> = Vec::new();
+    messages.push(InferMsg {
+        role: Role::System,
+        content: MessageContent::Text(assembled.join("\n\n")),
+    });
+    messages.push(InferMsg {
+        role: Role::User,
+        content: MessageContent::Text(user.clone()),
+    });
+
+    // 5. Tool-call loop.
+    let mut final_text = String::new();
+    let mut final_usage = atomr_infer_core::tokens::TokenUsage::default();
+    let mut final_finish = None;
+    let mut all_tool_calls: Vec<atomr_agents_tool::ParsedToolCall> = Vec::new();
+    for iter in 0..max_tool_iterations.max(1) {
+        iterations.consume_one()?;
+        let batch = ExecuteBatch {
+            request_id: format!("turn-{}", uuid_str()),
+            model: model.to_string(),
+            messages: messages.clone(),
+            sampling: SamplingParams::default(),
+            stream: true,
+            estimated_tokens: tokens.remaining,
+        };
+        let r = inference.run(batch).await?;
+        final_text = r.text.clone();
+        final_usage.add(r.usage);
+        final_finish = r.finish_reason;
+        // Surface every streamed tool call to observers before
+        // dispatch — distinct from the post-call ToolInvoked event.
+        for call in &r.tool_calls {
+            let args = call.arguments().unwrap_or(Json::Value::Null);
+            bus.emit(Event::ToolCallStreamed {
+                agent_id: id.clone(),
+                tool_name: call.name.clone(),
+                arguments_hash: hash_value(&args),
+                iteration: iter,
+            });
+        }
+        all_tool_calls.extend(r.tool_calls.iter().cloned());
+        // Stop conditions.
+        if r.tool_calls.is_empty()
+            || r.finish_reason != Some(atomr_infer_core::tokens::FinishReason::ToolCalls)
+        {
+            break;
+        }
+        // Append the assistant's tool-call turn (for provider
+        // history coherence) and dispatch each tool — concurrently
+        // when multiple are emitted, order-preserved on aggregation.
+        messages.push(InferMsg {
+            role: Role::Assistant,
+            content: MessageContent::Text(r.text.clone()),
+        });
+        let mut handles: Vec<tokio::task::JoinHandle<Result<(usize, String, Json::Value, u64, u64)>>> =
+            Vec::with_capacity(r.tool_calls.len());
+        for (idx, call) in r.tool_calls.iter().enumerate() {
+            let tool_ref = tool_refs
+                .iter()
+                .find(|t| t.name == call.name)
+                .ok_or_else(|| AgentError::Tool(format!("unknown tool: {}", call.name)))?;
+            let args = call.arguments().unwrap_or(Json::Value::Null);
+            let invoke_ctx = CallCtx {
+                agent_id: Some(id.clone()),
+                tokens,
+                time,
+                money,
+                iterations,
+                trace: vec![format!("tool:{}", call.name)],
+            };
+            let handle = tool_ref.handle.clone();
+            let name = call.name.clone();
+            let args_for_task = args.clone();
+            handles.push(tokio::spawn(async move {
+                let t0 = Instant::now();
+                let result = handle.call(args_for_task.clone(), invoke_ctx).await?;
+                Ok::<_, AgentError>((
+                    idx,
+                    name,
+                    result,
+                    hash_value(&args_for_task),
+                    t0.elapsed().as_millis() as u64,
+                ))
+            }));
+        }
+        let mut results: Vec<(usize, String, Json::Value, u64, u64)> = Vec::with_capacity(handles.len());
+        for h in handles {
+            let pair = h.await.map_err(|e| AgentError::Internal(e.to_string()))??;
+            results.push(pair);
+        }
+        results.sort_by_key(|(i, _, _, _, _)| *i);
+        for (_, name, result, args_hash, elapsed_ms) in results {
+            bus.emit(Event::ToolInvoked {
+                tool_id: ToolId::from(name.as_str()),
+                args_hash,
+                elapsed_ms,
+                ok: true,
+            });
+            messages.push(InferMsg {
+                role: Role::Tool,
+                content: MessageContent::Text(serde_json::to_string(&result).unwrap_or_default()),
+            });
+        }
+    }
+
+    // 6. Memory store.
+    let item = MemoryItem {
+        id: format!("turn-{}", uuid_str()),
+        kind: MemoryKind::Episodic,
+        namespace: MemoryNamespace::Agent(id.clone()),
+        payload: serde_json::json!({"user": user, "assistant": final_text}),
+        timestamp_ms: chrono::Utc::now().timestamp_millis(),
+        tags: vec![],
+    };
+    memory.store(item).await.ok();
+
+    // 7. Emit AgentTurn event.
+    bus.emit(Event::AgentTurn {
+        agent_id: id.clone(),
+        input_tokens: final_usage.input_tokens,
+        output_tokens: final_usage.output_tokens,
+        reasoning_tokens: final_usage.reasoning_tokens,
+        cached_tokens: final_usage.cached_tokens,
+        finish_reason: final_finish,
+        elapsed_ms: start.elapsed().as_millis() as u64,
+    });
+
+    Ok(TurnResult {
+        text: final_text,
+        usage: final_usage,
+        finish_reason: final_finish,
+        tool_calls: all_tool_calls,
+    })
 }
 
 #[async_trait]
