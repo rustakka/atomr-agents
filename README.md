@@ -21,15 +21,20 @@ let pipeline = Pipeline::from(prompt)
 let answer = pipeline.call(input, ctx).await?;
 ```
 
-## Python parity wave
+## Python parity
 
-The Python facade in 0.3 catches up to the Rust surface. The native
-extension `atomr_agents._native` is now split into hierarchical
-submodules — `errors`, `core`, `observability`, `registry`, `tool`,
-`skill`, `persona`, `agent`, `workflow`, `harness`, `eval`, `guest` —
-mirroring `atomr-infer/inference-py-bindings`. The top-level package
-re-exports the full surface, ships a PEP 561 `py.typed` marker, and
-exposes async coroutines / async iterators over `pyo3-async-runtimes`.
+The Python facade ships every Rust capability. The native extension
+`atomr_agents._native` is split into 28 hierarchical submodules:
+**foundational** (`errors`, `core`, `callable_`, `strategy`,
+`instruction`, `context`, `state`, `observability`, `cache`,
+`parser`, `registry`); **tool / skill / memory / retrieval / ingest**
+(`tool`, `skill`, `memory`, `embed`, `retriever`, `ingest`,
+`persona`); **agent / workflow / harness / org / eval** (`agent`,
+`workflow`, `harness`, `org`, `eval`); **voice** (`stt`, `tts`,
+`voice`, `voice_extras`); plus the **`guest`** registry. The
+top-level package re-exports the most-used classes, ships a PEP 561
+`py.typed` marker, and exposes async coroutines / async iterators
+over `pyo3-async-runtimes`.
 
 ### Install
 
@@ -111,8 +116,43 @@ class Add:
         return {"sum": args["a"] + args["b"]}
 ```
 
-Mirror decorators are available for `@strategy`, `@persona`,
-`@skill`, `@parser`, `@scorer`, `@memory_store`, and `@embedder`.
+Mirror decorators are available for the full set of 24 Rust traits:
+`@strategy(kind=...)`, `@persona`, `@skill`, `@parser`, `@scorer`,
+`@memory_store`, `@embedder`, `@callable_`, `@retriever`, `@loader`,
+`@splitter`, `@kv_cache`, `@long_store`, `@tracer`,
+`@conversation_agent`, `@diarizer`, `@vad`, `@phonemizer`,
+`@journal`, `@repair_model`, `@persona_reconciler`,
+`@inference_client`, `@ann_index`. Each pairs with an
+`atomr_agents.<module>.*_from_factory(key)` builder that
+materialises the registered Python target as a Rust dyn handle.
+
+### Host-mode agent runtime
+
+`AgentBuilder` assembles strategy slots into a runnable `AgentRef`
+that implements `Callable`, so an agent composes with the same
+decorators and pipeline operators as any other unit:
+
+```python
+from atomr_agents.agent import AgentBuilder
+from atomr_agents.harness import Harness, iteration_cap, loop_strategy_from_callable
+from atomr_agents.workflow import Dag, Step, WorkflowRunner
+
+# Strategy slots come from in-process factories or Python guests.
+builder = AgentBuilder("research-agent", "gpt-4o-mini")
+builder.with_instructions(instructions)
+builder.with_tools(tool_strategy)
+builder.with_memory(memory_strategy)
+builder.with_skills(skill_strategy)
+builder.with_inference(inference_client)
+agent_ref = builder.build()
+result = await agent_ref.run_turn("What's the GDP of France?")
+
+# The agent is itself a Callable — drop it into a workflow.
+dag = Dag("plan")
+dag.add_step("plan", Step.invoke(agent_ref.as_callable()))
+runner = WorkflowRunner("research-wf", dag.build())
+await runner.run({"user": "..."})
+```
 
 ### Where things live
 
@@ -131,17 +171,17 @@ from atomr_agents.registry import Registry
 The top-level package keeps the 0.2.x convenience names — so
 `from atomr_agents import EventBus, Registry` still works.
 
-### Roadmap
+### Runtime coverage
 
-`Agent.run_turn`, `Harness.run`, and `WorkflowRunner.run` are not
-yet exposed as Python coroutines. The Rust types are generic over
-four-plus strategy traits, so PyO3 cannot construct them from a
-stable `#[pyclass]` shape; they need a `Boxed*` adapter
-(`BoxedAgent` / `BoxedHarness` / `BoxedWorkflow`) under
-`crates/agent` / `crates/harness` / `crates/workflow`. Until that
-adapter lands, host code drives the loop in Rust and observes
-progress over the (already async-iterable) `EventBus`. See
-[`docs/python-api.md`](docs/python-api.md) for the full module map.
+`AgentRef.run_turn`, `Harness.run`, `WorkflowRunner.run`, and
+`Conversation` are all callable from Python. The Rust runtimes are
+type-erased through `BoxedAgent` (in `crates/agent`) and `Box<dyn
+LoopStrategy>` / `Box<dyn TerminationStrategy>` (in
+`crates/harness`); the blanket `impl Trait for Box<dyn Trait>` impls
+live in their respective trait crates so the composition contract
+holds regardless of whether a strategy is monomorphic or boxed. See
+[`docs/python-api.md`](docs/python-api.md) for the full module map
+and async-surface table.
 
 ## Why an agentic framework, in Rust, on actors
 
@@ -228,7 +268,7 @@ overhead beyond what the actor crate already pays.
 | `atomr-agents-stt-diarize-sherpa` | `Diarizer` trait, `MockDiarizer`, sherpa-onnx-backed `SherpaDiarizer` (gated behind `sherpa-onnx`), `apply_to_transcript` stitching |
 | `atomr-agents-stt-voice` | `VoiceSession` (`Live` vs `TurnBased { silence_ms }`), `Vad` trait + `EnergyVad`/`SileroVad`, `pump_mic_to_stream` glue |
 | `atomr-agents-stt-tool` | `TranscribeTool` (a `Tool` the model can call) and `voice_input_skill(stt) -> (Skill, DynTool)` for declarative agent integration |
-| `atomr-agents-py-bindings` | `atomr_agents._native` PyO3 module — `Event` / `EventBus` / `Registry` / `stt.SpeechToText` / `voice.VoiceSession` exposed to Python |
+| `atomr-agents-py-bindings` | `atomr_agents._native` PyO3 module — 28 hierarchical submodules exposing every framework capability to Python (callable composition, strategies, instruction templates, memory + retriever zoo + ingest, agent / workflow / harness runtimes via `BoxedAgent`, eval, tracers, voice + conversation, 24 guest-trait decorators) |
 | `atomr-agents-cli` | `atomr-agents` binary with `eval` / `registry` / `harness` / `serve` (Studio-style read+resume inspector) subcommands |
 | `atomr-agents-testkit` | Stub crate today. For tests, depend on `atomr-infer-testkit` (re-exports `MockRunner` / `MockScript`) directly — that's what `crates/agent` tests use. |
 

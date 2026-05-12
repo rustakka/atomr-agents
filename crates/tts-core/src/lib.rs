@@ -34,6 +34,7 @@
 mod capabilities;
 mod kinds;
 mod mock;
+mod phonemize;
 mod realtime;
 mod request;
 mod stream;
@@ -45,6 +46,7 @@ pub use capabilities::{
 };
 pub use kinds::BackendKind;
 pub use mock::MockTextToSpeech;
+pub use phonemize::{DynPhonemizer, MockPhonemizer, PhonemizedText, Phonemizer};
 pub use realtime::{RealtimeEvent, RealtimeOptions, RealtimeSession};
 pub use request::{DialogueTurn, SpeakerVoice, SynthOptions, SynthesisRequest};
 pub use stream::{AudioChunk, SynthesisStream};

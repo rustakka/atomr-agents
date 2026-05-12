@@ -4,8 +4,8 @@ mod decorators;
 mod pipeline;
 
 pub use decorators::{
-    with_config, with_fallbacks, with_retry, with_timeout, Branch, Lambda, WithConfig, WithFallbacks,
-    WithRetry, WithTimeout,
+    with_config, with_fallbacks, with_retry, with_timeout, Branch, Lambda, RetryPolicy, RunConfig,
+    WithConfig, WithFallbacks, WithRetry, WithTimeout,
 };
 pub use pipeline::{fan_out, Pipeline};
 

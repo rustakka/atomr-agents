@@ -26,7 +26,10 @@ the Python wrapper from `python/atomr_agents/`.
 
 Host mode is the *Python-drives-Rust* pattern: Python constructs
 objects, kicks off runs, and reads results back. The native module
-exposes `EventBus` and `Registry`:
+exposes the full framework surface — composition (`Callable`,
+`Pipeline`, decorators), agent / workflow / harness runtimes,
+retrievers, ingest pipelines, eval suites, conversation sessions,
+plus the foundational `EventBus` and `Registry`:
 
 ```python
 from atomr_agents import EventBus, Registry
@@ -54,11 +57,37 @@ except RuntimeError as e:
     print("blocked:", e)
 ```
 
-The architecture's "host mode" maps to `Harness.load(...).run(...)` in
-the long-term plan; today the surface exposes the registry and event
-bus, which are the load-bearing host-mode types. Full harness
-loading from Python ships when an upstream consumer needs it (the
-Rust side is ready).
+The agent / harness / workflow runtimes are callable from Python via
+`AgentBuilder`, `Harness`, and `WorkflowRunner`:
+
+```python
+from atomr_agents.agent import AgentBuilder
+from atomr_agents.harness import Harness, iteration_cap, loop_strategy_from_callable
+from atomr_agents.workflow import Dag, Step, WorkflowRunner
+
+builder = AgentBuilder("agent-1", "gpt-4o-mini")
+builder.with_instructions(instr_strategy)
+builder.with_tools(tool_strategy)
+builder.with_memory(mem_strategy)
+builder.with_skills(skill_strategy)
+builder.with_inference(inference_client)
+ref = builder.build()
+result = await ref.run_turn("hello")
+
+# Workflow runner — every step accepts any Callable, including agents.
+dag = Dag("entry")
+dag.add_step("entry", Step.invoke(ref.as_callable()))
+runner = WorkflowRunner("wf-1", dag.build())
+await runner.run({"user": "hello"})
+
+# Harness loop driven by a Callable that emits {"done": value} to exit.
+loop = loop_strategy_from_callable(some_callable)
+term = iteration_cap(10)
+h = Harness(spec, loop, term)
+await h.run()
+```
+
+See [`python-api.md`](python-api.md) for the full submodule map.
 
 ## Guest mode
 

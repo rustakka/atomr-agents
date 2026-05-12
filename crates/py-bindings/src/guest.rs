@@ -69,6 +69,24 @@ fn register_kind(kind: &str, key: String, target: PyObject) -> PyGuestHandle {
     }
 }
 
+/// Look up a registered guest target by `(kind, key)`. Returns the
+/// shared `Arc<PyObject>` if registered. Used by per-domain submodules
+/// to materialise adapters on demand.
+pub fn lookup(kind: &str, key: &str) -> Option<Arc<PyObject>> {
+    GUESTS
+        .get(&(kind.to_string(), key.to_string()))
+        .map(|e| e.value().clone())
+}
+
+/// Look up a registered guest target or return an error.
+pub fn must_lookup(kind: &str, key: &str) -> PyResult<Arc<PyObject>> {
+    lookup(kind, key).ok_or_else(|| {
+        pyo3::exceptions::PyKeyError::new_err(format!(
+            "no guest factory registered under ({kind:?}, {key:?})"
+        ))
+    })
+}
+
 #[pyfunction]
 #[pyo3(signature = (key, target, descriptor=None))]
 fn register_tool_factory(
@@ -126,6 +144,88 @@ fn register_memory_factory(key: String, target: PyObject) -> PyGuestHandle {
 #[pyfunction]
 fn register_embedder_factory(key: String, target: PyObject) -> PyGuestHandle {
     register_kind("embedder", key, target)
+}
+
+// ----- New factory registrations (Phase 0 stubs) ----------------------------
+
+#[pyfunction]
+fn register_callable_factory(key: String, target: PyObject) -> PyGuestHandle {
+    register_kind("callable", key, target)
+}
+
+#[pyfunction]
+fn register_retriever_factory(key: String, target: PyObject) -> PyGuestHandle {
+    register_kind("retriever", key, target)
+}
+
+#[pyfunction]
+fn register_loader_factory(key: String, target: PyObject) -> PyGuestHandle {
+    register_kind("loader", key, target)
+}
+
+#[pyfunction]
+fn register_splitter_factory(key: String, target: PyObject) -> PyGuestHandle {
+    register_kind("splitter", key, target)
+}
+
+#[pyfunction]
+fn register_kv_cache_factory(key: String, target: PyObject) -> PyGuestHandle {
+    register_kind("kv_cache", key, target)
+}
+
+#[pyfunction]
+fn register_long_store_factory(key: String, target: PyObject) -> PyGuestHandle {
+    register_kind("long_store", key, target)
+}
+
+#[pyfunction]
+fn register_tracer_factory(key: String, target: PyObject) -> PyGuestHandle {
+    register_kind("tracer", key, target)
+}
+
+#[pyfunction]
+fn register_conversation_agent_factory(key: String, target: PyObject) -> PyGuestHandle {
+    register_kind("conversation_agent", key, target)
+}
+
+#[pyfunction]
+fn register_diarizer_factory(key: String, target: PyObject) -> PyGuestHandle {
+    register_kind("diarizer", key, target)
+}
+
+#[pyfunction]
+fn register_vad_factory(key: String, target: PyObject) -> PyGuestHandle {
+    register_kind("vad", key, target)
+}
+
+#[pyfunction]
+fn register_phonemizer_factory(key: String, target: PyObject) -> PyGuestHandle {
+    register_kind("phonemizer", key, target)
+}
+
+#[pyfunction]
+fn register_journal_factory(key: String, target: PyObject) -> PyGuestHandle {
+    register_kind("journal", key, target)
+}
+
+#[pyfunction]
+fn register_repair_model_factory(key: String, target: PyObject) -> PyGuestHandle {
+    register_kind("repair_model", key, target)
+}
+
+#[pyfunction]
+fn register_persona_reconciler_factory(key: String, target: PyObject) -> PyGuestHandle {
+    register_kind("persona_reconciler", key, target)
+}
+
+#[pyfunction]
+fn register_inference_client_factory(key: String, target: PyObject) -> PyGuestHandle {
+    register_kind("inference_client", key, target)
+}
+
+#[pyfunction]
+fn register_ann_index_factory(key: String, target: PyObject) -> PyGuestHandle {
+    register_kind("ann_index", key, target)
 }
 
 #[pyfunction]
@@ -323,6 +423,22 @@ pub fn register(py: Python<'_>, parent: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(register_scorer_factory, &m)?)?;
     m.add_function(wrap_pyfunction!(register_memory_factory, &m)?)?;
     m.add_function(wrap_pyfunction!(register_embedder_factory, &m)?)?;
+    m.add_function(wrap_pyfunction!(register_callable_factory, &m)?)?;
+    m.add_function(wrap_pyfunction!(register_retriever_factory, &m)?)?;
+    m.add_function(wrap_pyfunction!(register_loader_factory, &m)?)?;
+    m.add_function(wrap_pyfunction!(register_splitter_factory, &m)?)?;
+    m.add_function(wrap_pyfunction!(register_kv_cache_factory, &m)?)?;
+    m.add_function(wrap_pyfunction!(register_long_store_factory, &m)?)?;
+    m.add_function(wrap_pyfunction!(register_tracer_factory, &m)?)?;
+    m.add_function(wrap_pyfunction!(register_conversation_agent_factory, &m)?)?;
+    m.add_function(wrap_pyfunction!(register_diarizer_factory, &m)?)?;
+    m.add_function(wrap_pyfunction!(register_vad_factory, &m)?)?;
+    m.add_function(wrap_pyfunction!(register_phonemizer_factory, &m)?)?;
+    m.add_function(wrap_pyfunction!(register_journal_factory, &m)?)?;
+    m.add_function(wrap_pyfunction!(register_repair_model_factory, &m)?)?;
+    m.add_function(wrap_pyfunction!(register_persona_reconciler_factory, &m)?)?;
+    m.add_function(wrap_pyfunction!(register_inference_client_factory, &m)?)?;
+    m.add_function(wrap_pyfunction!(register_ann_index_factory, &m)?)?;
     m.add_function(wrap_pyfunction!(list_factories, &m)?)?;
     m.add_function(wrap_pyfunction!(clear_factories, &m)?)?;
     m.add_function(wrap_pyfunction!(build_guest_toolset, &m)?)?;

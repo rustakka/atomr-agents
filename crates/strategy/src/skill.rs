@@ -15,3 +15,10 @@ pub struct SkillRef {
 pub trait SkillStrategy: Send + Sync + 'static {
     async fn applicable(&self, ctx: &AgentContext, budget: &mut TokenBudget) -> Result<Vec<SkillRef>>;
 }
+
+#[async_trait]
+impl SkillStrategy for Box<dyn SkillStrategy> {
+    async fn applicable(&self, ctx: &AgentContext, budget: &mut TokenBudget) -> Result<Vec<SkillRef>> {
+        (**self).applicable(ctx, budget).await
+    }
+}

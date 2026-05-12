@@ -5,19 +5,21 @@
 //! hot path is monomorphized. A `BoxedAgent` form is provided for
 //! config-driven instantiation.
 
+mod boxed;
 mod inference;
 mod middleware;
 mod pipeline;
 mod spec;
 mod r#trait;
 
+pub use boxed::{BoxedAgent, BoxedInstruction, BoxedMemory, BoxedSkills, BoxedTools};
 pub use inference::{InferenceClient, LocalRunnerClient, TurnResult};
 pub use middleware::{
     AgentMiddleware, LoggingMiddleware, MiddlewareStack, RateLimitMiddleware, RedactionMiddleware,
     ToolErrorRecoveryMiddleware,
 };
-pub use pipeline::Agent;
-pub use r#trait::AgentRef;
+pub use pipeline::{Agent, AgentBudgets};
+pub use r#trait::{AgentDispatch, AgentRef};
 pub use spec::AgentSpec;
 
 pub use atomr_agents_tool::Provider;

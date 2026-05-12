@@ -6,6 +6,146 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+### Added — full Python binding parity (Phase 1–5)
+
+The Python surface (`atomr_agents._native` + `python/atomr_agents/`)
+now mirrors the entire Rust workspace. Twenty-eight hierarchical
+submodules; 24 guest-trait decorators; `AgentBuilder` /
+`WorkflowRunner` / `Harness` / `Conversation` runtimes callable
+directly from Python.
+
+- **`callable`** (new) — universal `Callable` dyn handle wrapping
+  `Arc<dyn Callable>`; `Pipeline` builder; free decorators
+  `with_retry`, `with_timeout`, `with_fallbacks`, `with_config`,
+  `fan_out`, `branch`, `lambda_`, `passthrough`. Generic Rust
+  composition types (`WithRetry<T>`, `Pipeline<…>`) never leak
+  their type parameters across the FFI boundary.
+- **`strategy`** (new) — value types (`Termination`, `RoutingTarget`,
+  `SkillRef`, `ToolRef`, `Policy`, `PolicyDecision`) and dyn
+  handles for `MemoryStrategy`, `SkillStrategy`, `ToolStrategy`,
+  `RoutingStrategy`, `PolicyStrategy`.
+- **`instruction`** (new) — `ChatPromptTemplate`(+Builder),
+  `FewShotChatTemplate`, `MessageTemplate`, `MessagesPlaceholder`,
+  `StringTemplate`, `Example`, `LengthBasedSelector`,
+  `SemanticSimilaritySelector`; `InstructionStrategy` /
+  `TaskStrategy` / `BehaviorStrategy` dyn handles; `task_static`,
+  `behavior_static`, `*_from_factory`.
+- **`memory`** (new — was partial in `core`) — `MemoryStore` /
+  `LongStore` dyn handles, `Namespace`, `StoreItem`,
+  `in_memory_store`, `in_memory_long_store`,
+  `recency_memory_strategy`, `summarizing_memory_strategy`,
+  `chained_memory_strategy`.
+- **`embed`** (new) — `Embedder` / `AnnIndex` dyn handles;
+  `mock_embedder`, `in_memory_ann_index`,
+  `embedding_tool_strategy`.
+- **`retriever`** (new) — `Document`, `Retriever` dyn handle; 8
+  concrete retrievers (`bm25_retriever`, `vector_retriever`,
+  `multi_query_retriever`, `contextual_compression_retriever`,
+  `parent_document_retriever`, `ensemble_retriever`,
+  `self_query_retriever`, `time_weighted_retriever`).
+- **`ingest`** (new) — `Loader` / `Splitter` / `KvCache` dyn
+  handles, `CodeLang` enum, fluent `IngestPipeline` builder
+  (`.loader().splitter().cache().embedder().long_store().build()
+  -> Callable`); `text_loader`, `markdown_loader`, `csv_loader`,
+  `json_loader`, `recursive_character_splitter`, `token_splitter`,
+  `markdown_header_splitter`, `code_splitter`, `semantic_splitter`,
+  `in_memory_kv_cache`, `cached_embedder`, `ingest(...)`.
+- **`org`** (new) — `Org`, `Department`, `Team` builders;
+  `round_robin_router`, `load_aware_router`,
+  `capability_match_router`, `namespaced_memory`, `swarm_loop`,
+  `ActiveAgent`.
+- **`agent`** (expanded) — `AgentBuilder`, `AgentRef` (callable +
+  runnable), `InferenceClient` dyn handle with
+  `inference_client_from_factory(key, provider)`,
+  `AgentMiddleware` handle plus `logging_middleware`,
+  `tool_error_recovery_middleware`, `redaction_middleware`,
+  `rate_limit_middleware`. Built on the new upstream `BoxedAgent`.
+- **`workflow`** (expanded) — `StepId`, `Step` with six
+  classmethods (`invoke`/`branch`/`parallel`/`loop_`/`map`/`human`),
+  `Dag`/`DagHandle`, `WorkflowRunner`, `WorkflowState`, `Journal`
+  dyn handle + `in_memory_journal`, `fan_out_dispatch`.
+- **`harness`** (expanded) — `Harness`, `HarnessState`, `StepEvent`,
+  `LoopStrategy` / `TerminationStrategy` dyn handles, `iteration_cap`,
+  `loop_strategy_from_callable`, `*_from_factory`.
+- **`eval`** (expanded) — `RubricCriterion`, `JudgeModel`,
+  `EvalCase`/`EvalResult`/`EvalRun`/`EvalSuite`, `Scorer` /
+  `PairwiseScorer` / `AnnotationQueue` dyn handles, `rubric_scorer`,
+  `llm_judge_scorer`, `pairwise_scorer`,
+  `in_memory_annotation_queue`, `regression_gate`.
+- **`persona`** (expanded) — `MbtiType`, `Archetype`,
+  `CognitiveFunction`, `CognitiveStack` enums; `static_persona_strategy`,
+  `mbti_persona_strategy`, `jungian_archetype_strategy`,
+  `big_five_persona_strategy`, `composite_persona_strategy`,
+  `static_emphasis`, `task_adaptive`, `audience_adaptive`,
+  `goal_conditioned`, `mood_state`; `PersonaReconciler` dyn handle.
+- **`observability`** (expanded) — `Tracer` dyn handle;
+  `jsonl_tracer`, `lang_smith_tracer`, `stdout_tracer`;
+  `EventBus.attach_tracer(...)`.
+- **`parser`** (expanded) — `Parser` unified dyn handle;
+  `output_fixing_parser`, `retry_with_error_parser`, `enum_parser`,
+  `schema_parser`; `RepairModel` dyn handle + adapter.
+- **`tool`** / **`skill`** (expanded) — `HandoffTool`, `RichTool`,
+  `ToolControl`, `ToolReturn`, `PermissionSpec`;
+  `static_tool_strategy`, `keyword_tool_strategy`,
+  `static_skill_strategy`, `keyword_skill_strategy`;
+  `transcribe_tool`, `speak_tool`, `voice_input_skill`,
+  `voice_speak_skill`, `voice_response_skill`.
+- **`voice`** (expanded) — `ConversationMode`, `ConversationOptions`,
+  `ConversationAgent` dyn handle, `Conversation` with push-model
+  `feed(pcm_bytes)` + async `events()` iterator,
+  `InboundTranscript`, `ConversationEvent`, `noop_agent`.
+- **`voice_extras`** (new) — `Diarizer`, `Vad`, `Phonemizer` dyn
+  handles + adapters; `mock_diarizer`, `sherpa_diarizer` (feature
+  `stt-diarize-sherpa-onnx`), `energy_vad`, `silero_vad` (feature
+  `stt-vad-silero`), `mock_phonemizer`.
+- **`cache`** (expanded) — `LlmCache` dyn handle;
+  `semantic_llm_cache`; feature-gated `sqlite_llm_cache`,
+  `redis_llm_cache`.
+- **`state`** (expanded) — `Checkpointer` dyn handle;
+  `in_memory_checkpointer`; feature-gated `sqlite_checkpointer`,
+  `postgres_checkpointer`.
+- **`guest`** (expanded) — 16 new `register_X_factory` entry points:
+  `register_callable_factory`, `register_retriever_factory`,
+  `register_loader_factory`, `register_splitter_factory`,
+  `register_kv_cache_factory`, `register_long_store_factory`,
+  `register_tracer_factory`,
+  `register_conversation_agent_factory`,
+  `register_diarizer_factory`, `register_vad_factory`,
+  `register_phonemizer_factory`, `register_journal_factory`,
+  `register_repair_model_factory`,
+  `register_persona_reconciler_factory`,
+  `register_inference_client_factory`, `register_ann_index_factory`.
+  Each pairs with a `@callable_` / `@retriever` / `@loader` / …
+  Python decorator.
+
+### Added — `BoxedAgent` and `Box<dyn>` blanket impls
+
+The agent runtime is now constructible from `Box<dyn …>` strategy
+slots:
+
+- `atomr-agents-agent::BoxedAgent` wraps `Agent<Box<dyn
+  InstructionStrategy>, Box<dyn ToolStrategy>, Box<dyn
+  MemoryStrategy>, Box<dyn SkillStrategy>>` with an `into_ref()`
+  helper that produces an `AgentRef` (which already implements
+  `Callable`).
+- `atomr-agents-instruction::InstructionStrategy` gains a blanket
+  `impl InstructionStrategy for Box<dyn InstructionStrategy>`.
+- `atomr-agents-strategy` gains the same blanket impls for
+  `MemoryStrategy`, `SkillStrategy`, `ToolStrategy`.
+- `atomr-agents-harness` gains the same blanket impls for
+  `LoopStrategy` and `TerminationStrategy`.
+
+These are additive — every existing monomorphic call site continues
+to work.
+
+### Added — Cargo features on `atomr-agents-py-bindings`
+
+`provider-anthropic` / `provider-openai` / `provider-gemini`
+(forwarders to the agent crate); `cache-sqlite`, `cache-redis`,
+`state-sqlite`, `state-postgres`; `stt-diarize-sherpa-onnx` (in
+addition to existing `stt-whisper-cpp`, `stt-mic`,
+`stt-vad-silero`).
+
 ## [0.6.0] — 2026-05-08
 
 ### Added — text-to-speech capability
