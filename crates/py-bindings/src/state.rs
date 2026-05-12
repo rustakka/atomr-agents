@@ -5,9 +5,11 @@ use std::sync::Arc;
 
 use atomr_agents_core::{RunId, WorkflowId};
 use atomr_agents_state::{
-    AppendList, AppendMessages, CheckpointKey, CheckpointMeta, InMemoryCheckpointer, LastWriteWins,
-    MaxByTimestamp, MergeMap, Snapshot,
+    AppendList, AppendMessages, CheckpointKey, CheckpointMeta, Checkpointer, InMemoryCheckpointer,
+    LastWriteWins, MaxByTimestamp, MergeMap, Snapshot,
 };
+#[cfg(any(not(feature = "state-sqlite"), not(feature = "state-postgres")))]
+use pyo3::exceptions::PyNotImplementedError;
 use pyo3::prelude::*;
 
 use crate::conv::json_to_py;
@@ -165,6 +167,26 @@ reducer_marker!(PyAppendMessages, AppendMessages, "AppendMessages");
 reducer_marker!(PyMergeMap, MergeMap, "MergeMap");
 reducer_marker!(PyMaxByTimestamp, MaxByTimestamp, "MaxByTimestamp");
 
+// ----- PyCheckpointer dyn handle ------------------------------------------
+//
+// Shared Python-facing class that wraps any `Arc<dyn Checkpointer>`.
+// The concrete `InMemoryCheckpointer`, feature-gated `SqliteCheckpointer`,
+// and feature-gated `PostgresCheckpointer` all return instances of this
+// class via the module-level factory functions below.
+
+#[pyclass(name = "Checkpointer", module = "atomr_agents._native.state")]
+#[derive(Clone)]
+pub struct PyCheckpointer {
+    pub(crate) inner: Arc<dyn Checkpointer>,
+}
+
+#[pymethods]
+impl PyCheckpointer {
+    fn __repr__(&self) -> String {
+        "Checkpointer(handle)".into()
+    }
+}
+
 #[pyclass(name = "InMemoryCheckpointer", module = "atomr_agents._native.state")]
 pub struct PyInMemoryCheckpointer {
     pub(crate) _inner: Arc<InMemoryCheckpointer>,
@@ -192,6 +214,71 @@ impl PyInMemoryCheckpointer {
     }
 }
 
+// ----- Factory functions --------------------------------------------------
+
+/// In-memory checkpointer, returned as the shared `Checkpointer` dyn
+/// handle so it interoperates with the sqlite/postgres variants below.
+#[pyfunction]
+fn in_memory_checkpointer() -> PyCheckpointer {
+    PyCheckpointer {
+        inner: Arc::new(InMemoryCheckpointer::new()),
+    }
+}
+
+/// SQLite-backed checkpointer.
+///
+/// Requires building atomr-agents-py-bindings with `--features state-sqlite`,
+/// which forwards to `atomr-agents-state/sqlite`. Without the feature, this
+/// raises `NotImplementedError`.
+#[pyfunction]
+fn sqlite_checkpointer(path: String) -> PyResult<PyCheckpointer> {
+    #[cfg(feature = "state-sqlite")]
+    {
+        use atomr_agents_state::SqliteCheckpointer;
+        let c = crate::runtime::shared()
+            .block_on(async move { SqliteCheckpointer::connect(path).await })
+            .map_err(crate::errors::map)?;
+        Ok(PyCheckpointer {
+            inner: Arc::new(c),
+        })
+    }
+    #[cfg(not(feature = "state-sqlite"))]
+    {
+        let _ = path;
+        Err(PyNotImplementedError::new_err(
+            "sqlite_checkpointer requires building atomr-agents-py-bindings with \
+             --features state-sqlite",
+        ))
+    }
+}
+
+/// Postgres-backed checkpointer.
+///
+/// Requires building atomr-agents-py-bindings with `--features state-postgres`,
+/// which forwards to `atomr-agents-state/postgres`. Without the feature, this
+/// raises `NotImplementedError`.
+#[pyfunction]
+fn postgres_checkpointer(dsn: String) -> PyResult<PyCheckpointer> {
+    #[cfg(feature = "state-postgres")]
+    {
+        use atomr_agents_state::PostgresCheckpointer;
+        let c = crate::runtime::shared()
+            .block_on(async move { PostgresCheckpointer::connect(dsn).await })
+            .map_err(crate::errors::map)?;
+        Ok(PyCheckpointer {
+            inner: Arc::new(c),
+        })
+    }
+    #[cfg(not(feature = "state-postgres"))]
+    {
+        let _ = dsn;
+        Err(PyNotImplementedError::new_err(
+            "postgres_checkpointer requires building atomr-agents-py-bindings with \
+             --features state-postgres",
+        ))
+    }
+}
+
 pub fn register(py: Python<'_>, parent: &Bound<'_, PyModule>) -> PyResult<()> {
     let m = PyModule::new_bound(py, "state")?;
     m.add_class::<PyCheckpointKey>()?;
@@ -202,7 +289,11 @@ pub fn register(py: Python<'_>, parent: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<PyAppendMessages>()?;
     m.add_class::<PyMergeMap>()?;
     m.add_class::<PyMaxByTimestamp>()?;
+    m.add_class::<PyCheckpointer>()?;
     m.add_class::<PyInMemoryCheckpointer>()?;
+    m.add_function(wrap_pyfunction!(in_memory_checkpointer, &m)?)?;
+    m.add_function(wrap_pyfunction!(sqlite_checkpointer, &m)?)?;
+    m.add_function(wrap_pyfunction!(postgres_checkpointer, &m)?)?;
     parent.add_submodule(&m)?;
     Ok(())
 }

@@ -24,8 +24,16 @@ use pyo3::prelude::*;
 use pyo3::types::PyBytes;
 use tokio::sync::Mutex as AsyncMutex;
 
+use atomr_agents_tool::Tool;
+use atomr_agents_tts_tool::{
+    voice_response_skill as build_voice_response_skill,
+    voice_speak_skill as build_voice_speak_skill, SpeakTool,
+};
+
 use crate::conv::{json_to_py, py_to_json};
-use crate::stt::PyAudioInput;
+use crate::skill::PySkill;
+use crate::stt::{PyAudioInput, PySpeechToText};
+use crate::tool::PyToolDescriptor;
 
 // ----- Capabilities ---------------------------------------------------------
 
@@ -830,6 +838,54 @@ pub fn tts_xtts(
 #[allow(dead_code)]
 fn _unused_marker(_a: AudioInput, _b: BackendKind, _v: PyValueError) {}
 
+// ----- Tool + Skill factories ----------------------------------------------
+
+/// `speak_tool(tts_handle, options=None) -> ToolDescriptor`.
+///
+/// Wraps a `tts-tool::SpeakTool` and returns its `ToolDescriptor`. The
+/// underlying tool writes synthesised audio to a WAV file under the
+/// system temp dir and returns `{path, duration_secs, voice, ...}`.
+///
+/// `options` is currently a placeholder for future configuration
+/// (custom output dir, default voice, …). Pass `None`. Like
+/// `transcribe_tool`, this returns a descriptor-only handle today —
+/// invoking via the harness still requires the guest-tool factory
+/// pathway, which will be lifted onto native tool handles in a later
+/// step.
+#[pyfunction]
+#[pyo3(signature = (tts_handle, options=None))]
+pub fn speak_tool(
+    tts_handle: PyTextToSpeech,
+    options: Option<&Bound<'_, PyAny>>,
+) -> PyToolDescriptor {
+    let _ = options; // accepted for forward compat; see doc comment
+    let tool = SpeakTool::new(tts_handle.inner);
+    PyToolDescriptor {
+        inner: Tool::descriptor(&tool).clone(),
+    }
+}
+
+/// `voice_speak_skill(tts_handle) -> Skill`.
+///
+/// Mirrors `tts-tool::voice_speak_skill`: instruction fragment +
+/// `speak_text` tool overlay.
+#[pyfunction]
+pub fn voice_speak_skill(tts_handle: PyTextToSpeech) -> PySkill {
+    let (skill, _tool) = build_voice_speak_skill(tts_handle.inner);
+    PySkill { inner: skill }
+}
+
+/// `voice_response_skill(stt, tts) -> Skill`.
+///
+/// Mirrors `tts-tool::voice_response_skill`: instruction fragment that
+/// opts the agent into voice-driven I/O plus a two-tool overlay
+/// (`speak_text` and `transcribe_audio`).
+#[pyfunction]
+pub fn voice_response_skill(stt: PySpeechToText, tts: PyTextToSpeech) -> PySkill {
+    let (skill, _tools) = build_voice_response_skill(stt.inner, tts.inner);
+    PySkill { inner: skill }
+}
+
 // ----- Module registration --------------------------------------------------
 
 pub fn register(py: Python<'_>, parent: &Bound<'_, PyModule>) -> PyResult<()> {
@@ -860,6 +916,9 @@ pub fn register(py: Python<'_>, parent: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(tts_kokoro, &m)?)?;
     m.add_function(wrap_pyfunction!(tts_moss, &m)?)?;
     m.add_function(wrap_pyfunction!(tts_xtts, &m)?)?;
+    m.add_function(wrap_pyfunction!(speak_tool, &m)?)?;
+    m.add_function(wrap_pyfunction!(voice_speak_skill, &m)?)?;
+    m.add_function(wrap_pyfunction!(voice_response_skill, &m)?)?;
     parent.add_submodule(&m)?;
     Ok(())
 }

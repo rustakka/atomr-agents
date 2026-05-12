@@ -46,6 +46,22 @@ __all__ = [
     "scorer",
     "memory_store",
     "embedder",
+    "callable_",
+    "retriever",
+    "loader",
+    "splitter",
+    "kv_cache",
+    "long_store",
+    "tracer",
+    "conversation_agent",
+    "diarizer",
+    "vad",
+    "phonemizer",
+    "journal",
+    "repair_model",
+    "persona_reconciler",
+    "inference_client",
+    "ann_index",
     "list_factories",
     "clear_factories",
 ]
@@ -73,6 +89,22 @@ def _register(kind: str, key: str, target: Any) -> Any:
         "scorer": _guest.register_scorer_factory,
         "memory": _guest.register_memory_factory,
         "embedder": _guest.register_embedder_factory,
+        "callable": _guest.register_callable_factory,
+        "retriever": _guest.register_retriever_factory,
+        "loader": _guest.register_loader_factory,
+        "splitter": _guest.register_splitter_factory,
+        "kv_cache": _guest.register_kv_cache_factory,
+        "long_store": _guest.register_long_store_factory,
+        "tracer": _guest.register_tracer_factory,
+        "conversation_agent": _guest.register_conversation_agent_factory,
+        "diarizer": _guest.register_diarizer_factory,
+        "vad": _guest.register_vad_factory,
+        "phonemizer": _guest.register_phonemizer_factory,
+        "journal": _guest.register_journal_factory,
+        "repair_model": _guest.register_repair_model_factory,
+        "persona_reconciler": _guest.register_persona_reconciler_factory,
+        "inference_client": _guest.register_inference_client_factory,
+        "ann_index": _guest.register_ann_index_factory,
     }
     if kind in handle_fn:
         handle = handle_fn[kind](key, target)
@@ -84,6 +116,37 @@ def _register(kind: str, key: str, target: Any) -> Any:
     except Exception:  # noqa: BLE001
         pass
     return target
+
+
+def _decorator(kind: str):
+    """Build a `@kind(name=…)` decorator for the given guest kind."""
+
+    def factory(name: str | None = None):
+        def _wrap(target: Any) -> Any:
+            key = name or getattr(target, "__name__", "anonymous")
+            return _register(kind, key, target)
+
+        return _wrap
+
+    return factory
+
+
+callable_ = _decorator("callable")
+retriever = _decorator("retriever")
+loader = _decorator("loader")
+splitter = _decorator("splitter")
+kv_cache = _decorator("kv_cache")
+long_store = _decorator("long_store")
+tracer = _decorator("tracer")
+conversation_agent = _decorator("conversation_agent")
+diarizer = _decorator("diarizer")
+vad = _decorator("vad")
+phonemizer = _decorator("phonemizer")
+journal = _decorator("journal")
+repair_model = _decorator("repair_model")
+persona_reconciler = _decorator("persona_reconciler")
+inference_client = _decorator("inference_client")
+ann_index = _decorator("ann_index")
 
 
 def tool(toolset: str | None = None) -> Callable[[Any], Any]:

@@ -18,3 +18,10 @@ pub enum StepOutcome {
 pub trait LoopStrategy: Send + Sync + 'static {
     async fn step(&self, state: &mut HarnessState) -> Result<StepOutcome>;
 }
+
+#[async_trait]
+impl LoopStrategy for Box<dyn LoopStrategy> {
+    async fn step(&self, state: &mut HarnessState) -> Result<StepOutcome> {
+        (**self).step(state).await
+    }
+}

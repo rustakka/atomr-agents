@@ -15,3 +15,10 @@ pub struct ToolRef {
 pub trait ToolStrategy: Send + Sync + 'static {
     async fn select(&self, ctx: &AgentContext, budget: &mut TokenBudget) -> Result<Vec<ToolRef>>;
 }
+
+#[async_trait]
+impl ToolStrategy for Box<dyn ToolStrategy> {
+    async fn select(&self, ctx: &AgentContext, budget: &mut TokenBudget) -> Result<Vec<ToolRef>> {
+        (**self).select(ctx, budget).await
+    }
+}

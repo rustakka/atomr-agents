@@ -37,26 +37,35 @@ use pyo3::prelude::*;
 
 mod agent;
 mod cache;
+mod callable;
 mod context;
 mod conv;
 mod core;
+mod embed;
 mod errors;
 mod eval;
 mod guest;
 mod harness;
 mod harness_adapters;
 mod inference;
+mod ingest;
+mod instruction;
+mod memory;
 mod observability;
+mod org;
 mod parser;
 mod persona;
 mod registry;
+mod retriever;
 mod runtime;
 mod skill;
 mod state;
+mod strategy;
 mod stt;
 mod tool;
 mod tts;
 mod voice;
+mod voice_extras;
 mod workflow;
 
 /// Module init. Exposed as `atomr_agents._native`.
@@ -68,10 +77,18 @@ fn _native(py: Python<'_>, m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add("__version__", env!("CARGO_PKG_VERSION"))?;
     errors::register(py, m)?;
     core::register(py, m)?;
+    callable::register(py, m)?;
+    strategy::register(py, m)?;
+    embed::register(py, m)?;
+    memory::register(py, m)?;
+    instruction::register(py, m)?;
     context::register(py, m)?;
     state::register(py, m)?;
     observability::register(py, m)?;
+    org::register(py, m)?;
     registry::register(py, m)?;
+    retriever::register(py, m)?;
+    ingest::register(py, m)?;
     tool::register(py, m)?;
     skill::register(py, m)?;
     persona::register(py, m)?;
@@ -89,5 +106,6 @@ fn _native(py: Python<'_>, m: &Bound<'_, PyModule>) -> PyResult<()> {
     stt::register(py, m)?;
     tts::register(py, m)?;
     voice::register(py, m)?;
+    voice_extras::register(py, m)?;
     Ok(())
 }

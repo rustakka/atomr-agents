@@ -27,6 +27,15 @@ pub trait InstructionStrategy: Send + Sync + 'static {
     async fn render(&self, ctx: &AgentContext, budget: &mut TokenBudget) -> Result<RenderedInstructions>;
 }
 
+// Blanket impl so `Box<dyn InstructionStrategy>` can stand in for any
+// generic `I: InstructionStrategy`. Used by `BoxedAgent`.
+#[async_trait]
+impl InstructionStrategy for Box<dyn InstructionStrategy> {
+    async fn render(&self, ctx: &AgentContext, budget: &mut TokenBudget) -> Result<RenderedInstructions> {
+        (**self).render(ctx, budget).await
+    }
+}
+
 /// Resolves `task` for `ComposedInstructionStrategy`.
 #[async_trait]
 pub trait TaskStrategy: Send + Sync + 'static {

@@ -7,3 +7,13 @@ pub trait MemoryStrategy: Send + Sync + 'static {
 
     async fn store(&self, item: MemoryItem) -> Result<()>;
 }
+
+#[async_trait]
+impl MemoryStrategy for Box<dyn MemoryStrategy> {
+    async fn retrieve(&self, ctx: &AgentContext, budget: &mut TokenBudget) -> Result<Vec<MemoryChunk>> {
+        (**self).retrieve(ctx, budget).await
+    }
+    async fn store(&self, item: MemoryItem) -> Result<()> {
+        (**self).store(item).await
+    }
+}

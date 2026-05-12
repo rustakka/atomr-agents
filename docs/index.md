@@ -114,9 +114,20 @@ dispatchers, persistence, sharding) is carried through unchanged.
   dep.
 - **Versioned registry** — `(kind, id, version)` keys,
   `publish_gated` for eval-regression blocking.
-- **Python bindings** — `atomr_agents._native` exposes `EventBus` and
-  `Registry`; guest-mode `@tool` / `@strategy` / `@persona`
-  decorators ride on atomr's `python-subinterpreter-pool` dispatcher.
+- **Python bindings — full surface** — `atomr_agents._native`
+  ships 28 hierarchical submodules covering the entire framework:
+  `Callable` + `Pipeline` composition, strategy dyn handles,
+  prompt templates, `Embedder` / `AnnIndex`, short + long memory
+  stores, the retriever zoo, ingest pipeline, `AgentBuilder` /
+  `Harness` / `WorkflowRunner` runtimes (built on type-erased
+  `BoxedAgent` / `Box<dyn LoopStrategy>` / `Box<dyn
+  TerminationStrategy>`), `Org` / `Department` / `Team`, eval
+  suites + scorers + `RegressionGate`, `Tracer` family, parser
+  fixers, bidirectional `Conversation`, diarizer / VAD /
+  phonemizer, and feature-gated SQLite / Redis / Postgres
+  backends. Twenty-four guest decorators (`@tool`, `@strategy`,
+  `@retriever`, `@loader`, `@callable_`, `@inference_client`, …)
+  register Python implementations as Rust trait objects.
 
 ## Getting started
 

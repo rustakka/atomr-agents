@@ -246,12 +246,32 @@ step` until `TerminationStrategy::should_terminate` reports
 
 ### Python
 
-`atomr_agents._native` (PyO3) exposes `EventBus` and `Registry` for
-host-mode use. Guest-mode `@tool` / `@strategy` / `@persona`
-decorators register Python factories that produce `Box<dyn>`
-strategies running on atomr pycore's `python-subinterpreter-pool`
-dispatcher — so the GIL never crosses the Rust scheduler hot path.
-See [`python.md`](python.md).
+`atomr_agents._native` (PyO3) exposes the full framework surface
+through 28 hierarchical submodules. The universal-currency type is
+`Callable` (a PyO3 wrapper around `Arc<dyn Callable>`): agents,
+workflows, harnesses, retrievers, ingest pipelines, and tools all
+project as a `Callable` so generic Rust types never leak their type
+parameters across the FFI boundary. The agent / harness runtimes
+plug type-erased into the framework via `BoxedAgent` and `Box<dyn
+LoopStrategy/TerminationStrategy>`; the necessary blanket
+`impl Trait for Box<dyn Trait>` impls live alongside their trait
+definitions (in `atomr-agents-instruction`, `atomr-agents-strategy`,
+`atomr-agents-harness`).
+
+Guest-mode decorators (`@tool`, `@strategy`, `@retriever`,
+`@embedder`, `@callable_`, `@inference_client`, `@loader`,
+`@splitter`, `@tracer`, `@conversation_agent`, `@diarizer`, `@vad`,
+`@phonemizer`, `@journal`, `@repair_model`, `@persona_reconciler`,
+`@ann_index`, plus `@persona`, `@skill`, `@parser`, `@scorer`,
+`@memory_store`, `@long_store`, `@kv_cache`) register Python
+factories with a process-wide DashMap; the matching Rust adapter
+(`PyToolAdapter`, `PyRetrieverAdapter`, …) wraps the registered
+`PyObject` and dispatches the trait methods via GIL acquisition +
+`pyo3-async-runtimes::tokio::into_future` for coroutine returns.
+The current dispatcher is in-process; an
+`atomr-pycore`-subinterpreter-pool variant is a follow-up.
+
+See [`python.md`](python.md) and [`python-api.md`](python-api.md).
 
 ### Backend feature flags
 

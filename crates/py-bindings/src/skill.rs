@@ -1,12 +1,16 @@
 //! Skills — instruction fragments + tool overlays.
 
+use std::sync::Arc;
+
 use atomr_agents_core::{SkillId, ToolId};
-use atomr_agents_skill::{Skill, SkillSet};
+use atomr_agents_skill::{KeywordSkillStrategy, Skill, SkillSet, StaticSkillStrategy};
 use pyo3::prelude::*;
+use pyo3::types::PyDict;
 use semver::Version;
 
 use crate::conv::parse_version;
 use crate::core::PyMemoryNamespace;
+use crate::strategy::PySkillStrategy;
 
 #[pyclass(name = "Skill", module = "atomr_agents._native.skill")]
 #[derive(Clone)]
@@ -127,10 +131,50 @@ impl PySkillSet {
     }
 }
 
+// ----- Strategy factories --------------------------------------------------
+
+/// Build a `SkillStrategy` that always reports the same fixed set of
+/// skills as applicable.
+#[pyfunction]
+fn static_skill_strategy(skills: Vec<PySkill>) -> PySkillStrategy {
+    let skills: Vec<Skill> = skills.into_iter().map(|s| s.inner).collect();
+    PySkillStrategy {
+        inner: Arc::new(StaticSkillStrategy::new(skills)),
+    }
+}
+
+/// Build a `SkillStrategy` that selects skills whose configured
+/// trigger keywords appear in the user turn.
+///
+/// `keywords` maps `skill_name -> [trigger_word, ...]`. Entries in
+/// the dict replace any keywords already attached to the skill; a
+/// skill missing from the dict falls back to its own
+/// `Skill.keywords` list.
+#[pyfunction]
+fn keyword_skill_strategy(
+    skills: Vec<PySkill>,
+    keywords: &Bound<'_, PyDict>,
+) -> PyResult<PySkillStrategy> {
+    let mut merged: Vec<Skill> = Vec::with_capacity(skills.len());
+    for s in skills {
+        let mut skill = s.inner;
+        if let Some(v) = keywords.get_item(&skill.name)? {
+            let words: Vec<String> = v.extract()?;
+            skill.keywords = words;
+        }
+        merged.push(skill);
+    }
+    Ok(PySkillStrategy {
+        inner: Arc::new(KeywordSkillStrategy::new(merged)),
+    })
+}
+
 pub fn register(py: Python<'_>, parent: &Bound<'_, PyModule>) -> PyResult<()> {
     let m = PyModule::new_bound(py, "skill")?;
     m.add_class::<PySkill>()?;
     m.add_class::<PySkillSet>()?;
+    m.add_function(wrap_pyfunction!(static_skill_strategy, &m)?)?;
+    m.add_function(wrap_pyfunction!(keyword_skill_strategy, &m)?)?;
     parent.add_submodule(&m)?;
     Ok(())
 }

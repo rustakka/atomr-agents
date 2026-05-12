@@ -7,9 +7,13 @@
 //! `EventStream` that can be `async for`'d — the Python parity-wave
 //! analogue of atomr-infer's `TokenStream`.
 
+use std::path::PathBuf;
 use std::sync::Arc;
 
-use atomr_agents_core::{AgentId, Event, EventEnvelope, RunId, ToolId, WorkflowId};
+use async_trait::async_trait;
+use atomr_agents_core::{
+    AgentError, AgentId, Event, EventEnvelope, Result as AgentResult, RunId, ToolId, WorkflowId,
+};
 use atomr_agents_observability::EventBus;
 use parking_lot::Mutex;
 use pyo3::exceptions::{PyRuntimeError, PyStopAsyncIteration};
@@ -17,6 +21,7 @@ use pyo3::prelude::*;
 use tokio::sync::mpsc;
 
 use crate::conv::json_to_py;
+use crate::strategy::await_if_coro;
 
 // ----- PyEvent --------------------------------------------------------------
 
@@ -84,8 +89,17 @@ impl PyEvent {
 // ----- PyEventBus -----------------------------------------------------------
 
 #[pyclass(name = "EventBus", module = "atomr_agents._native.observability")]
+#[derive(Clone)]
 pub struct PyEventBus {
     pub(crate) inner: EventBus,
+}
+
+impl PyEventBus {
+    pub(crate) fn new_default() -> Self {
+        Self {
+            inner: EventBus::new(),
+        }
+    }
 }
 
 #[pymethods]
@@ -184,6 +198,44 @@ impl PyEventBus {
         Ok(())
     }
 
+    /// Attach a tracer to this bus. The tracer's `on_event` is invoked
+    /// for every subsequent emitted event, and the tracer's
+    /// `RunTreeBuilder` (when present) is auto-attached so the run
+    /// tree is fed by the same bus. Call `await tracer.flush()` from
+    /// Python when the run is complete to drain accumulated nodes to
+    /// the tracer's sink.
+    fn attach_tracer(&self, tracer: &PyTracer) {
+        if let Some(builder) = tracer.builder.clone() {
+            builder.attach(&self.inner);
+        }
+        let inner = tracer.inner.clone();
+        self.inner.subscribe(move |env: &EventEnvelope| {
+            let tracer = inner.clone();
+            let env = env.clone();
+            // The `Tracer::on_event` future is `Send`, so spawn it on
+            // the current tokio runtime when one is available.
+            // Otherwise fall back to a one-shot current-thread runtime
+            // so sync callers (tests) still see `on_event` fire.
+            match tokio::runtime::Handle::try_current() {
+                Ok(handle) => {
+                    handle.spawn(async move {
+                        let _ = tracer.on_event(&env).await;
+                    });
+                }
+                Err(_) => {
+                    if let Ok(rt) = tokio::runtime::Builder::new_current_thread()
+                        .enable_all()
+                        .build()
+                    {
+                        rt.block_on(async move {
+                            let _ = tracer.on_event(&env).await;
+                        });
+                    }
+                }
+            }
+        });
+    }
+
     #[pyo3(signature = (event_kind, run_id=None, parent_run_id=None))]
     fn emit_run(
         &self,
@@ -249,7 +301,7 @@ impl PyEventStream {
 
 use atomr_agents_observability::{
     JsonlTracer as RustJsonlTracer, LangSmithTracer as RustLangSmithTracer, RunTreeBuilder,
-    StdoutTracer as RustStdoutTracer, Tracer,
+    StdoutTracer as RustStdoutTracer, Tracer, TracerSink,
 };
 
 #[pyclass(name = "RunTreeBuilder", module = "atomr_agents._native.observability")]
@@ -319,6 +371,214 @@ impl PyRunTreeBuilder {
 #[allow(dead_code)]
 fn _mutex_keepalive(_: Mutex<()>) {}
 
+// ----- PyTracer dyn handle --------------------------------------------------
+//
+// `Tracer` is `Send + Sync + 'static` in the Rust crate, so we hold it
+// behind an `Arc`. Stock tracers are produced by the factories below.
+// Python-defined tracers register through
+// `guest.register_tracer_factory(key, target)` and are materialised
+// via `tracer_from_factory(key)`, which wraps the Python target in
+// `PyTracerAdapter`.
+//
+// Limitations:
+//   * `jsonl_tracer(path)` creates a fresh `RunTreeBuilder` per tracer
+//     and writes via a local `FileLineSink`. Callers that want to
+//     share the builder with their own `RunTreeBuilder` should use
+//     `RunTreeBuilder.flush_jsonl()` instead.
+//   * `lang_smith_tracer(api_key, project)` currently ignores
+//     `api_key` — the upstream Rust `LangSmithTracer` writes to a
+//     generic `TracerSink` and no HTTP sink is shipped yet, so this
+//     factory uses an in-memory sink suitable for offline import or
+//     mock-server integration tests. For real LangSmith ingestion,
+//     register a Python tracer via `guest.register_tracer_factory`.
+
+/// Append-one-line-per-emit file sink. The observability crate's own
+/// `FileSink` is not re-exported, so we ship a local copy with the
+/// same semantics.
+struct FileLineSink {
+    path: PathBuf,
+}
+
+impl FileLineSink {
+    fn new(path: impl Into<PathBuf>) -> Self {
+        Self { path: path.into() }
+    }
+}
+
+#[async_trait]
+impl TracerSink for FileLineSink {
+    async fn emit(&self, payload: &str) -> AgentResult<()> {
+        use tokio::io::AsyncWriteExt;
+        let mut f = tokio::fs::OpenOptions::new()
+            .create(true)
+            .append(true)
+            .open(&self.path)
+            .await
+            .map_err(|e| AgentError::Internal(format!("file sink open: {e}")))?;
+        f.write_all(payload.as_bytes())
+            .await
+            .map_err(|e| AgentError::Internal(format!("file sink write: {e}")))?;
+        f.write_all(b"\n")
+            .await
+            .map_err(|e| AgentError::Internal(format!("file sink newline: {e}")))?;
+        Ok(())
+    }
+}
+
+/// Python-facing `Tracer` handle. Wraps an `Arc<dyn Tracer>` plus the
+/// optional `RunTreeBuilder` it was constructed against so
+/// `PyEventBus::attach_tracer` can auto-attach the builder to the bus.
+#[pyclass(name = "Tracer", module = "atomr_agents._native.observability")]
+#[derive(Clone)]
+pub struct PyTracer {
+    pub(crate) inner: Arc<dyn Tracer>,
+    pub(crate) builder: Option<Arc<RunTreeBuilder>>,
+}
+
+#[pymethods]
+impl PyTracer {
+    /// Forward an `Event` through this tracer's `on_event` hook.
+    /// Mirrors the Rust trait method directly. Async.
+    fn on_event<'py>(&self, py: Python<'py>, event: &PyEvent) -> PyResult<Bound<'py, PyAny>> {
+        let inner = self.inner.clone();
+        let env = event.inner.clone();
+        pyo3_async_runtimes::tokio::future_into_py(py, async move {
+            inner.on_event(&env).await.map_err(crate::errors::map)?;
+            Ok(())
+        })
+    }
+
+    /// Flush accumulated runs through this tracer's sink. Async.
+    fn flush<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyAny>> {
+        let inner = self.inner.clone();
+        pyo3_async_runtimes::tokio::future_into_py(py, async move {
+            inner.flush().await.map_err(crate::errors::map)?;
+            Ok(())
+        })
+    }
+
+    fn __repr__(&self) -> String {
+        "Tracer(handle)".to_string()
+    }
+}
+
+// ----- PyTracerAdapter ------------------------------------------------------
+//
+// Adapts a Python object implementing `on_event` / `flush` (sync or
+// async) into a Rust `Tracer`. The target is looked up via
+// `crate::guest::must_lookup("tracer", &key)`.
+
+pub(crate) struct PyTracerAdapter {
+    pub(crate) target: Arc<PyObject>,
+}
+
+#[async_trait]
+impl Tracer for PyTracerAdapter {
+    async fn on_event(&self, env: &EventEnvelope) -> AgentResult<()> {
+        let target = self.target.clone();
+        let env_clone = env.clone();
+        let maybe_call = Python::with_gil(|py| -> PyResult<Option<PyObject>> {
+            let bound = target.bind(py);
+            let instance: Bound<'_, PyAny> = if bound.hasattr("on_event")? {
+                bound.clone()
+            } else if bound.is_callable() {
+                bound.call0()?
+            } else {
+                bound.clone()
+            };
+            if !instance.hasattr("on_event")? {
+                // Guest tracer opts out of per-event hooks: no-op.
+                return Ok(None);
+            }
+            let py_event = Py::new(py, PyEvent { inner: env_clone })?;
+            let r = instance.getattr("on_event")?.call1((py_event,))?;
+            Ok(Some(r.unbind()))
+        })
+        .map_err(|e| AgentError::Internal(format!("py tracer on_event: {e}")))?;
+        if let Some(value) = maybe_call {
+            let _ = await_if_coro(value).await?;
+        }
+        Ok(())
+    }
+
+    async fn flush(&self) -> AgentResult<()> {
+        let target = self.target.clone();
+        let coro_or_val = Python::with_gil(|py| -> PyResult<PyObject> {
+            let bound = target.bind(py);
+            let instance: Bound<'_, PyAny> = if bound.hasattr("flush")? {
+                bound.clone()
+            } else if bound.is_callable() {
+                bound.call0()?
+            } else {
+                bound.clone()
+            };
+            let r = instance.getattr("flush")?.call0()?;
+            Ok(r.unbind())
+        })
+        .map_err(|e| AgentError::Internal(format!("py tracer flush: {e}")))?;
+        let _ = await_if_coro(coro_or_val).await?;
+        Ok(())
+    }
+}
+
+// ----- Factory functions ----------------------------------------------------
+
+/// Build a JSONL tracer that appends one line per run node to `path`.
+/// The tracer owns a fresh `RunTreeBuilder`; attach it to a bus with
+/// `EventBus.attach_tracer(tracer)` and call `await tracer.flush()`
+/// once the run is done.
+#[pyfunction]
+fn jsonl_tracer(path: String) -> PyTracer {
+    let builder = Arc::new(RunTreeBuilder::new());
+    let sink: Arc<dyn TracerSink> = Arc::new(FileLineSink::new(path));
+    let tracer = RustJsonlTracer::new(builder.clone(), sink);
+    PyTracer {
+        inner: Arc::new(tracer),
+        builder: Some(builder),
+    }
+}
+
+/// Build a LangSmith-shaped tracer. `api_key` is accepted for API
+/// parity but currently unused — the upstream Rust tracer writes
+/// through a `TracerSink` and no HTTP transport is shipped yet, so
+/// this binding stages records into an in-memory sink. For real
+/// ingestion, register a Python tracer via
+/// `guest.register_tracer_factory`.
+#[pyfunction]
+fn lang_smith_tracer(_api_key: String, project: String) -> PyTracer {
+    let builder = Arc::new(RunTreeBuilder::new());
+    let (tracer, _sink) = RustLangSmithTracer::in_memory(builder.clone(), project);
+    PyTracer {
+        inner: Arc::new(tracer),
+        builder: Some(builder),
+    }
+}
+
+/// Build a stdout tracer that pretty-prints the accumulated run tree
+/// on `await tracer.flush()`.
+#[pyfunction]
+fn stdout_tracer() -> PyTracer {
+    let builder = Arc::new(RunTreeBuilder::new());
+    let tracer = RustStdoutTracer::new(builder.clone());
+    PyTracer {
+        inner: Arc::new(tracer),
+        builder: Some(builder),
+    }
+}
+
+/// Materialise a Python-registered tracer
+/// (`guest.register_tracer_factory(key, target)`). The adapter calls
+/// back into the target's `on_event` / `flush` methods; either may be
+/// sync or async.
+#[pyfunction]
+fn tracer_from_factory(key: String) -> PyResult<PyTracer> {
+    let target = crate::guest::must_lookup("tracer", &key)?;
+    Ok(PyTracer {
+        inner: Arc::new(PyTracerAdapter { target }),
+        builder: None,
+    })
+}
+
 // ----- Module registration --------------------------------------------------
 
 pub fn register(py: Python<'_>, parent: &Bound<'_, PyModule>) -> PyResult<()> {
@@ -327,6 +587,11 @@ pub fn register(py: Python<'_>, parent: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<PyEventBus>()?;
     m.add_class::<PyEventStream>()?;
     m.add_class::<PyRunTreeBuilder>()?;
+    m.add_class::<PyTracer>()?;
+    m.add_function(wrap_pyfunction!(jsonl_tracer, &m)?)?;
+    m.add_function(wrap_pyfunction!(lang_smith_tracer, &m)?)?;
+    m.add_function(wrap_pyfunction!(stdout_tracer, &m)?)?;
+    m.add_function(wrap_pyfunction!(tracer_from_factory, &m)?)?;
     parent.add_submodule(&m)?;
     Ok(())
 }

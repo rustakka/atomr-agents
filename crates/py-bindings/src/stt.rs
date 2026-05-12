@@ -24,7 +24,12 @@ use pyo3::prelude::*;
 use pyo3::types::PyBytes;
 use tokio::sync::Mutex as AsyncMutex;
 
+use atomr_agents_stt_tool::{voice_input_skill as build_voice_input_skill, TranscribeTool};
+use atomr_agents_tool::Tool;
+
 use crate::conv::{json_to_py, py_to_json};
+use crate::skill::PySkill;
+use crate::tool::PyToolDescriptor;
 
 // ----- Capabilities ---------------------------------------------------------
 
@@ -616,6 +621,46 @@ pub fn stt_whisper(
     })
 }
 
+// ----- Tool + Skill factories ----------------------------------------------
+
+/// `transcribe_tool(stt_handle, options=None) -> ToolDescriptor`.
+///
+/// Wraps an `stt-tool::TranscribeTool` and returns its `ToolDescriptor`
+/// so the result can flow through the rest of the Python tool surface
+/// (e.g. `static_tool_strategy([transcribe_tool(stt)])`). The returned
+/// descriptor is "descriptor-only" — wiring up an executable Tool that
+/// the harness can actually call belongs in step 14 once the
+/// guest-tool surface accepts native-built `DynTool`s.
+///
+/// `options` is reserved for future per-invocation defaults (language,
+/// diarize, …). It is currently ignored; pass `None`.
+#[pyfunction]
+#[pyo3(signature = (stt_handle, options=None))]
+pub fn transcribe_tool(
+    stt_handle: PySpeechToText,
+    options: Option<&Bound<'_, PyAny>>,
+) -> PyToolDescriptor {
+    let _ = options; // accepted for forward compat; see doc comment
+    let tool = TranscribeTool::new(stt_handle.inner);
+    PyToolDescriptor {
+        inner: Tool::descriptor(&tool).clone(),
+    }
+}
+
+/// `voice_input_skill(stt_handle) -> Skill`.
+///
+/// Returns the packaged Skill produced by the Rust
+/// `stt-tool::voice_input_skill` helper — instruction fragment +
+/// `transcribe_audio` tool overlay. The companion `TranscribeTool`
+/// itself is descriptor-only at the Python surface for now; the Skill
+/// only needs the `ToolId` to declare its overlay, which is what this
+/// binding exposes.
+#[pyfunction]
+pub fn voice_input_skill(stt_handle: PySpeechToText) -> PySkill {
+    let (skill, _tool) = build_voice_input_skill(stt_handle.inner);
+    PySkill { inner: skill }
+}
+
 // ----- Module registration --------------------------------------------------
 
 pub fn register(py: Python<'_>, parent: &Bound<'_, PyModule>) -> PyResult<()> {
@@ -635,6 +680,8 @@ pub fn register(py: Python<'_>, parent: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(stt_deepgram, &m)?)?;
     m.add_function(wrap_pyfunction!(stt_assemblyai, &m)?)?;
     m.add_function(wrap_pyfunction!(stt_whisper, &m)?)?;
+    m.add_function(wrap_pyfunction!(transcribe_tool, &m)?)?;
+    m.add_function(wrap_pyfunction!(voice_input_skill, &m)?)?;
     parent.add_submodule(&m)?;
     Ok(())
 }

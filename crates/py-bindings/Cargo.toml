@@ -40,6 +40,7 @@ atomr-agents-stt-runtime-deepgram  = { workspace = true }
 atomr-agents-stt-runtime-assemblyai = { workspace = true }
 atomr-agents-stt-runtime-whisper   = { workspace = true }
 atomr-agents-stt-voice             = { workspace = true }
+atomr-agents-stt-diarize-sherpa    = { workspace = true }
 atomr-agents-stt-tool              = { workspace = true }
 atomr-agents-tts-core              = { workspace = true }
 atomr-agents-tts-audio             = { workspace = true }
@@ -97,3 +98,10 @@ default = []
 stt-whisper-cpp = ["atomr-agents-stt-runtime-whisper/whisper-cpp"]
 stt-mic         = ["atomr-agents-stt-audio/mic"]
 stt-vad-silero  = ["atomr-agents-stt-voice/vad-silero"]
+stt-diarize-sherpa-onnx = ["atomr-agents-stt-diarize-sherpa/sherpa-onnx"]
+# LLM cache backends.
+cache-sqlite    = ["atomr-agents-cache/sqlite"]
+cache-redis     = ["atomr-agents-cache/redis"]
+# Checkpointer backends — forward to atomr-agents-state feature flags.
+state-sqlite    = ["atomr-agents-state/sqlite"]
+state-postgres  = ["atomr-agents-state/postgres"]
