@@ -24,9 +24,7 @@ impl OpenAiSynthesisStream {
     /// Spawn a task that reads the response body's chunked frames
     /// and forwards them as `AudioChunk`s over an mpsc.
     pub(crate) fn spawn(
-        body_stream: impl Stream<Item = std::result::Result<Bytes, reqwest::Error>>
-            + Send
-            + 'static,
+        body_stream: impl Stream<Item = std::result::Result<Bytes, reqwest::Error>> + Send + 'static,
         format: AudioFormat,
     ) -> Self {
         let (tx, rx) = mpsc::channel::<std::result::Result<AudioChunk, SttError>>(64);
@@ -85,13 +83,16 @@ impl OpenAiSynthesisStream {
 
 #[async_trait]
 impl SynthesisStream for OpenAiSynthesisStream {
-    fn capabilities(&self) -> &'static Capabilities { &CAPS }
-    fn format(&self) -> &AudioFormat { &self.format }
+    fn capabilities(&self) -> &'static Capabilities {
+        &CAPS
+    }
+    fn format(&self) -> &AudioFormat {
+        &self.format
+    }
 
     fn events(
         &mut self,
-    ) -> Pin<Box<dyn Stream<Item = std::result::Result<AudioChunk, SttError>> + Send + '_>>
-    {
+    ) -> Pin<Box<dyn Stream<Item = std::result::Result<AudioChunk, SttError>> + Send + '_>> {
         let mut guard = self.rx.lock();
         let rx = guard.take();
         drop(guard);

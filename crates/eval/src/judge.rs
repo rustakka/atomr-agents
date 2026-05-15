@@ -42,11 +42,7 @@ impl LlmJudgeScorer {
         }
     }
 
-    fn build_prompt(
-        &self,
-        expected: &atomr_agents_core::Value,
-        actual: &atomr_agents_core::Value,
-    ) -> String {
+    fn build_prompt(&self, expected: &atomr_agents_core::Value, actual: &atomr_agents_core::Value) -> String {
         self.prompt_template
             .replace("{expected}", &expected.to_string())
             .replace("{actual}", &actual.to_string())
@@ -117,10 +113,7 @@ impl RubricScorer {
         )
     }
 
-    fn aggregate(
-        results: &[(&RubricCriterion, f32)],
-        pass_at: f32,
-    ) -> ScorerOutcome {
+    fn aggregate(results: &[(&RubricCriterion, f32)], pass_at: f32) -> ScorerOutcome {
         let mut total = 0.0;
         let mut total_w = 0.0;
         let mut notes = Vec::with_capacity(results.len());
@@ -193,12 +186,7 @@ mod tests {
             replies: Mutex::new(vec!["pass\nlooks good".into()]),
         });
         let s = LlmJudgeScorer::new(m);
-        let r = AsyncScorer::score(
-            &s,
-            &Value::String("yes".into()),
-            &Value::String("yes!".into()),
-        )
-        .await;
+        let r = AsyncScorer::score(&s, &Value::String("yes".into()), &Value::String("yes!".into())).await;
         assert!(r.passed);
         assert!(r.note.contains("looks good"));
     }

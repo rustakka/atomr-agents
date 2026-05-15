@@ -4,8 +4,7 @@ use url::Url;
 
 pub const ELEVENLABS_REST_BASE: &str = "https://api.elevenlabs.io/v1/";
 pub const ELEVENLABS_WS_BASE: &str = "wss://api.elevenlabs.io/v1/text-to-speech/";
-pub const ELEVENLABS_CONVAI_BASE: &str =
-    "wss://api.elevenlabs.io/v1/convai/conversation";
+pub const ELEVENLABS_CONVAI_BASE: &str = "wss://api.elevenlabs.io/v1/convai/conversation";
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ElevenLabsConfig {
@@ -40,12 +39,24 @@ pub struct ElevenLabsConfig {
     pub rate_limits: RateLimits,
 }
 
-fn default_rest() -> Url { Url::parse(ELEVENLABS_REST_BASE).expect("ELEVENLABS_REST_BASE") }
-fn default_ws() -> Url { Url::parse(ELEVENLABS_WS_BASE).expect("ELEVENLABS_WS_BASE") }
-fn default_convai() -> Url { Url::parse(ELEVENLABS_CONVAI_BASE).expect("ELEVENLABS_CONVAI_BASE") }
-fn default_model() -> String { "eleven_turbo_v2_5".to_string() }
-fn default_voice() -> String { "21m00Tcm4TlvDq8ikWAM".to_string() } // Rachel
-fn default_format() -> String { "mp3_44100_128".to_string() }
+fn default_rest() -> Url {
+    Url::parse(ELEVENLABS_REST_BASE).expect("ELEVENLABS_REST_BASE")
+}
+fn default_ws() -> Url {
+    Url::parse(ELEVENLABS_WS_BASE).expect("ELEVENLABS_WS_BASE")
+}
+fn default_convai() -> Url {
+    Url::parse(ELEVENLABS_CONVAI_BASE).expect("ELEVENLABS_CONVAI_BASE")
+}
+fn default_model() -> String {
+    "eleven_turbo_v2_5".to_string()
+}
+fn default_voice() -> String {
+    "21m00Tcm4TlvDq8ikWAM".to_string()
+} // Rachel
+fn default_format() -> String {
+    "mp3_44100_128".to_string()
+}
 
 impl ElevenLabsConfig {
     pub fn from_env() -> Self {

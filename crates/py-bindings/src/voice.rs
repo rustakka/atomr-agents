@@ -22,8 +22,7 @@ use atomr_agents_core::Result as AgentResult;
 use atomr_agents_stt_core::SttError;
 use atomr_agents_stt_voice::{VoiceEvent, VoiceMode, VoiceSession};
 use atomr_agents_tts_voice::{
-    Conversation, ConversationAgent, ConversationEvent, ConversationMode, ConversationOptions,
-    NoopAgent,
+    Conversation, ConversationAgent, ConversationEvent, ConversationMode, ConversationOptions, NoopAgent,
 };
 use bytes::Bytes;
 use parking_lot::Mutex;
@@ -105,8 +104,7 @@ impl PyVoiceEvent {
     }
 
     fn to_dict(&self, py: Python<'_>) -> PyResult<PyObject> {
-        let v = serde_json::to_value(&self.inner)
-            .map_err(|e| PyRuntimeError::new_err(e.to_string()))?;
+        let v = serde_json::to_value(&self.inner).map_err(|e| PyRuntimeError::new_err(e.to_string()))?;
         json_to_py(py, &v)
     }
 
@@ -448,8 +446,9 @@ impl PyConversationEvent {
     #[getter]
     fn text(&self) -> Option<String> {
         match &self.inner {
-            ConversationEvent::UserSpoke { text, .. }
-            | ConversationEvent::AssistantText { text, .. } => Some(text.clone()),
+            ConversationEvent::UserSpoke { text, .. } | ConversationEvent::AssistantText { text, .. } => {
+                Some(text.clone())
+            }
             _ => None,
         }
     }
@@ -468,16 +467,13 @@ impl PyConversationEvent {
     #[getter]
     fn audio(&self) -> Option<PyAudioChunk> {
         match &self.inner {
-            ConversationEvent::AssistantAudio { chunk } => Some(PyAudioChunk {
-                inner: chunk.clone(),
-            }),
+            ConversationEvent::AssistantAudio { chunk } => Some(PyAudioChunk { inner: chunk.clone() }),
             _ => None,
         }
     }
 
     fn to_dict(&self, py: Python<'_>) -> PyResult<PyObject> {
-        let v = serde_json::to_value(&self.inner)
-            .map_err(|e| PyRuntimeError::new_err(e.to_string()))?;
+        let v = serde_json::to_value(&self.inner).map_err(|e| PyRuntimeError::new_err(e.to_string()))?;
         json_to_py(py, &v)
     }
 
@@ -599,9 +595,7 @@ impl PyConversation {
         let mode_inner = mode.inner;
         pyo3_async_runtimes::tokio::future_into_py(py, async move {
             let conv = match mode_inner {
-                ConversationMode::TurnBased => {
-                    Conversation::open_turn_based(tts_inner, agent_inner, opts)
-                }
+                ConversationMode::TurnBased => Conversation::open_turn_based(tts_inner, agent_inner, opts),
                 ConversationMode::UnifiedRealtime => {
                     Conversation::open_unified_realtime(tts_inner, agent_inner, opts)
                         .await
@@ -680,9 +674,8 @@ impl PyConversation {
         // Drain the receiver into our own `mpsc` channel via a pumping
         // task — same shape as `PyEventStream` in observability.rs but
         // driven by the borrow-checker-safe `Conversation::events()`.
-        let (tx, rx) = tokio::sync::mpsc::unbounded_channel::<
-            std::result::Result<ConversationEvent, SttError>,
-        >();
+        let (tx, rx) =
+            tokio::sync::mpsc::unbounded_channel::<std::result::Result<ConversationEvent, SttError>>();
         // Spawn a forwarder on the shared tokio runtime so the
         // borrow against `Conversation` (the `events()` Stream's
         // lifetime is `'a` of the session) stays inside the task.
@@ -727,11 +720,7 @@ impl PyConversation {
 #[pyclass(name = "ConversationEventStream", module = "atomr_agents._native.voice")]
 pub struct PyConversationEventStream {
     rx: Arc<
-        AsyncMutex<
-            tokio::sync::mpsc::UnboundedReceiver<
-                std::result::Result<ConversationEvent, SttError>,
-            >,
-        >,
+        AsyncMutex<tokio::sync::mpsc::UnboundedReceiver<std::result::Result<ConversationEvent, SttError>>>,
     >,
     // Keep the pump task alive for the lifetime of the stream. Wrapped
     // in an `Arc<Mutex<Option<_>>>` so the iterator stays `Send`.
@@ -749,9 +738,7 @@ impl PyConversationEventStream {
         pyo3_async_runtimes::tokio::future_into_py(py, async move {
             let mut guard = rx.lock().await;
             match guard.recv().await {
-                Some(Ok(ev)) => {
-                    Python::with_gil(|py| Py::new(py, PyConversationEvent { inner: ev }))
-                }
+                Some(Ok(ev)) => Python::with_gil(|py| Py::new(py, PyConversationEvent { inner: ev })),
                 Some(Err(e)) => Err(PyRuntimeError::new_err(e.to_string())),
                 None => Err(PyStopAsyncIteration::new_err("")),
             }

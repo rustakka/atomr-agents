@@ -29,12 +29,7 @@ pub fn decode_to_pcm(input: AudioInput) -> Result<PcmBuffer, SttError> {
     }
 
     let probed = symphonia::default::get_probe()
-        .format(
-            &hint,
-            mss,
-            &FormatOptions::default(),
-            &MetadataOptions::default(),
-        )
+        .format(&hint, mss, &FormatOptions::default(), &MetadataOptions::default())
         .map_err(|e| SttError::decode(format!("symphonia probe: {e}")))?;
     let mut format = probed.format;
 
@@ -62,9 +57,7 @@ pub fn decode_to_pcm(input: AudioInput) -> Result<PcmBuffer, SttError> {
     loop {
         let packet = match format.next_packet() {
             Ok(p) => p,
-            Err(SymphError::IoError(ref e))
-                if e.kind() == std::io::ErrorKind::UnexpectedEof =>
-            {
+            Err(SymphError::IoError(ref e)) if e.kind() == std::io::ErrorKind::UnexpectedEof => {
                 break;
             }
             Err(SymphError::ResetRequired) => break,
@@ -115,16 +108,11 @@ fn append_interleaved(buf: &AudioBufferRef<'_>, out: &mut Vec<f32>) {
 fn read_input(input: AudioInput) -> Result<(Vec<u8>, Option<String>), SttError> {
     match input {
         AudioInput::File(p) => {
-            let ext = p
-                .extension()
-                .and_then(|e| e.to_str())
-                .map(|s| s.to_string());
+            let ext = p.extension().and_then(|e| e.to_str()).map(|s| s.to_string());
             let data = std::fs::read(&p)?;
             Ok((data, ext))
         }
-        AudioInput::Bytes { data, format } => {
-            Ok((data.to_vec(), Some(format.extension().to_string())))
-        }
+        AudioInput::Bytes { data, format } => Ok((data.to_vec(), Some(format.extension().to_string()))),
         AudioInput::Pcm(_) => Err(SttError::decode(
             "decode_to_pcm called with already-decoded PCM input",
         )),
@@ -186,11 +174,7 @@ mod tests {
     #[test]
     fn to_mono_averages_stereo() {
         // 4 frames stereo: [L0,R0, L1,R1, L2,R2, L3,R3].
-        let pcm = PcmBuffer::new(
-            vec![1.0, 0.0, 0.5, 0.5, -1.0, 1.0, 0.0, 0.0],
-            44_100,
-            2,
-        );
+        let pcm = PcmBuffer::new(vec![1.0, 0.0, 0.5, 0.5, -1.0, 1.0, 0.0, 0.0], 44_100, 2);
         let mono = to_mono(&pcm);
         assert_eq!(mono.samples, vec![0.5, 0.5, 0.0, 0.0]);
         assert_eq!(mono.channels, 1);

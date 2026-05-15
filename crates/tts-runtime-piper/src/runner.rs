@@ -28,9 +28,7 @@ impl PiperRunner {
     fn pick_voice<'a>(&'a self, voice: &'a VoiceRef) -> Result<&'a str> {
         match voice {
             VoiceRef::Library { id } => Ok(id.as_str()),
-            VoiceRef::DescribedAs { .. } => {
-                Err(SttError::UnsupportedCapability("voicegen_from_text"))
-            }
+            VoiceRef::DescribedAs { .. } => Err(SttError::UnsupportedCapability("voicegen_from_text")),
             VoiceRef::ClonedFrom(_) => Err(SttError::UnsupportedCapability("voice_cloning")),
             VoiceRef::Custom(_) => Err(SttError::UnsupportedCapability("custom_voice")),
         }
@@ -39,9 +37,15 @@ impl PiperRunner {
 
 #[async_trait]
 impl TextToSpeech for PiperRunner {
-    fn capabilities(&self) -> &'static Capabilities { &CAPS }
-    fn backend_kind(&self) -> BackendKind { BackendKind::Piper }
-    fn transport_kind(&self) -> TransportKind { TransportKind::LocalModel }
+    fn capabilities(&self) -> &'static Capabilities {
+        &CAPS
+    }
+    fn backend_kind(&self) -> BackendKind {
+        BackendKind::Piper
+    }
+    fn transport_kind(&self) -> TransportKind {
+        TransportKind::LocalModel
+    }
 
     async fn synthesize(&self, request: SynthesisRequest) -> Result<AudioOutput> {
         let (text, voice) = match request {
@@ -62,20 +66,14 @@ impl TextToSpeech for PiperRunner {
         )))
     }
 
-    async fn synthesize_stream(
-        &self,
-        _request: SynthesisRequest,
-    ) -> Result<Box<dyn SynthesisStream>> {
+    async fn synthesize_stream(&self, _request: SynthesisRequest) -> Result<Box<dyn SynthesisStream>> {
         Err(SttError::model_load(
             "atomr-agents-tts-runtime-piper: streaming pipeline pending; rebuild with \
              --features piper-ort once the ORT binding lands.",
         ))
     }
 
-    async fn open_realtime(
-        &self,
-        _opts: RealtimeOptions,
-    ) -> Result<Box<dyn RealtimeSession>> {
+    async fn open_realtime(&self, _opts: RealtimeOptions) -> Result<Box<dyn RealtimeSession>> {
         Err(SttError::UnsupportedCapability("realtime_bidirectional"))
     }
 }
@@ -110,6 +108,9 @@ mod tests {
             Ok(_) => panic!("expected UnsupportedCapability"),
             Err(e) => e,
         };
-        assert!(matches!(err, SttError::UnsupportedCapability("realtime_bidirectional")));
+        assert!(matches!(
+            err,
+            SttError::UnsupportedCapability("realtime_bidirectional")
+        ));
     }
 }

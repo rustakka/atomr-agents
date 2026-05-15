@@ -160,9 +160,7 @@ fn name_of(e: &Event) -> String {
         Event::AgentTurn { agent_id, .. } => format!("agent:{}", agent_id.as_str()),
         Event::ToolInvoked { tool_id, .. } => format!("tool:{}", tool_id.as_str()),
         Event::ToolCallStreamed {
-            tool_name,
-            iteration,
-            ..
+            tool_name, iteration, ..
         } => format!("tool-call-stream:{tool_name}#{iteration}"),
         Event::WorkflowStep { step_id, .. } => format!("step:{step_id}"),
         Event::HarnessIteration {

@@ -17,9 +17,7 @@ use atomr_agents_core::{AgentContext, AgentError, Result as AgentResult, TokenBu
 use atomr_agents_persona::{PersonaStrategy, RenderedPersona};
 use pyo3::prelude::*;
 
-use super::conv_helpers::{
-    await_and_jsonify, build_agent_ctx_dict, build_budget_dict, resolve_instance,
-};
+use super::conv_helpers::{await_and_jsonify, build_agent_ctx_dict, build_budget_dict, resolve_instance};
 use super::registry::GUESTS;
 
 pub struct PyPersonaAdapter {
@@ -35,11 +33,7 @@ impl PyPersonaAdapter {
 
 #[async_trait]
 impl PersonaStrategy for PyPersonaAdapter {
-    async fn resolve(
-        &self,
-        ctx: &AgentContext,
-        budget: &mut TokenBudget,
-    ) -> AgentResult<RenderedPersona> {
+    async fn resolve(&self, ctx: &AgentContext, budget: &mut TokenBudget) -> AgentResult<RenderedPersona> {
         let target = self.target.clone();
         let label = self.label.clone();
 
@@ -88,13 +82,9 @@ impl PyPersona {
 
 #[pyfunction]
 pub(crate) fn build_guest_persona(key: String) -> PyResult<PyPersona> {
-    let entry = GUESTS
-        .get(&("persona".to_string(), key.clone()))
-        .ok_or_else(|| {
-            pyo3::exceptions::PyKeyError::new_err(format!(
-                "no persona registered with key {key:?}"
-            ))
-        })?;
+    let entry = GUESTS.get(&("persona".to_string(), key.clone())).ok_or_else(|| {
+        pyo3::exceptions::PyKeyError::new_err(format!("no persona registered with key {key:?}"))
+    })?;
     let target = entry.value().clone();
     let adapter = PyPersonaAdapter::new(target, key.clone());
     Ok(PyPersona {

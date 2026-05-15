@@ -14,8 +14,8 @@ use std::path::PathBuf;
 use std::sync::Arc;
 
 use atomr_agents_stt_core::{
-    AudioFormat, AudioInput, Capabilities, DynSpeechToText, MockSpeechToText, PcmBuffer,
-    StreamEvent, StreamOptions, StreamingSession, TranscribeOptions, Transcript,
+    AudioFormat, AudioInput, Capabilities, DynSpeechToText, MockSpeechToText, PcmBuffer, StreamEvent,
+    StreamOptions, StreamingSession, TranscribeOptions, Transcript,
 };
 use bytes::Bytes;
 use futures::StreamExt;
@@ -42,8 +42,7 @@ pub struct PyCapabilities {
 #[pymethods]
 impl PyCapabilities {
     fn to_dict(&self, py: Python<'_>) -> PyResult<PyObject> {
-        let v = serde_json::to_value(&self.inner)
-            .map_err(|e| PyRuntimeError::new_err(e.to_string()))?;
+        let v = serde_json::to_value(&self.inner).map_err(|e| PyRuntimeError::new_err(e.to_string()))?;
         json_to_py(py, &v)
     }
 
@@ -130,9 +129,7 @@ fn parse_format(s: &str) -> PyResult<AudioFormat> {
         "mp4" | "m4a" => AudioFormat::Mp4,
         "aac" => AudioFormat::Aac,
         other => {
-            return Err(PyValueError::new_err(format!(
-                "unknown audio format {other:?}"
-            )));
+            return Err(PyValueError::new_err(format!("unknown audio format {other:?}")));
         }
     })
 }
@@ -205,14 +202,13 @@ impl PyTranscript {
 
     #[getter]
     fn segments(&self, py: Python<'_>) -> PyResult<PyObject> {
-        let v = serde_json::to_value(&self.inner.segments)
-            .map_err(|e| PyRuntimeError::new_err(e.to_string()))?;
+        let v =
+            serde_json::to_value(&self.inner.segments).map_err(|e| PyRuntimeError::new_err(e.to_string()))?;
         json_to_py(py, &v)
     }
 
     fn to_dict(&self, py: Python<'_>) -> PyResult<PyObject> {
-        let v = serde_json::to_value(&self.inner)
-            .map_err(|e| PyRuntimeError::new_err(e.to_string()))?;
+        let v = serde_json::to_value(&self.inner).map_err(|e| PyRuntimeError::new_err(e.to_string()))?;
         json_to_py(py, &v)
     }
 
@@ -250,8 +246,7 @@ impl PyStreamEvent {
     }
 
     fn to_dict(&self, py: Python<'_>) -> PyResult<PyObject> {
-        let v = serde_json::to_value(&self.inner)
-            .map_err(|e| PyRuntimeError::new_err(e.to_string()))?;
+        let v = serde_json::to_value(&self.inner).map_err(|e| PyRuntimeError::new_err(e.to_string()))?;
         json_to_py(py, &v)
     }
 
@@ -322,11 +317,7 @@ impl PyStreamingSession {
         Ok(PyCapabilities { inner: caps })
     }
 
-    fn push_audio<'py>(
-        &self,
-        py: Python<'py>,
-        data: &Bound<'py, PyBytes>,
-    ) -> PyResult<Bound<'py, PyAny>> {
+    fn push_audio<'py>(&self, py: Python<'py>, data: &Bound<'py, PyBytes>) -> PyResult<Bound<'py, PyAny>> {
         let inner = self.inner.clone();
         let bytes = Bytes::copy_from_slice(data.as_bytes());
         pyo3_async_runtimes::tokio::future_into_py(py, async move {
@@ -507,9 +498,7 @@ pub fn mock_speech_to_text(text: Option<String>, language: Option<String>) -> Py
     if let Some(l) = language {
         m = m.with_language(l);
     }
-    PySpeechToText {
-        inner: Arc::new(m),
-    }
+    PySpeechToText { inner: Arc::new(m) }
 }
 
 // ----- Backend constructors -------------------------------------------------
@@ -636,10 +625,7 @@ pub fn stt_whisper(
 /// diarize, …). It is currently ignored; pass `None`.
 #[pyfunction]
 #[pyo3(signature = (stt_handle, options=None))]
-pub fn transcribe_tool(
-    stt_handle: PySpeechToText,
-    options: Option<&Bound<'_, PyAny>>,
-) -> PyToolDescriptor {
+pub fn transcribe_tool(stt_handle: PySpeechToText, options: Option<&Bound<'_, PyAny>>) -> PyToolDescriptor {
     let _ = options; // accepted for forward compat; see doc comment
     let tool = TranscribeTool::new(stt_handle.inner);
     PyToolDescriptor {

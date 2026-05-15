@@ -46,6 +46,7 @@ atomr-agents-stt-runtime-whisper   = { workspace = true, optional = true }
 atomr-agents-stt-diarize-sherpa    = { workspace = true, optional = true }
 atomr-agents-stt-voice             = { workspace = true, optional = true }
 atomr-agents-stt-tool              = { workspace = true, optional = true }
+atomr-agents-stt-harness           = { workspace = true, optional = true }
 
 # Text-to-speech capability surface. Mirrors the STT layout: each
 # backend is gated behind its own feature; the umbrella `tts` feature
@@ -94,7 +95,10 @@ stt-whisper      = ["stt", "dep:atomr-agents-stt-runtime-whisper"]
 stt-diarize      = ["stt", "dep:atomr-agents-stt-diarize-sherpa"]
 stt-mic          = ["stt", "atomr-agents-stt-audio/mic"]
 stt-voice        = ["stt", "dep:atomr-agents-stt-voice"]
-stt-full         = ["stt-openai", "stt-deepgram", "stt-assemblyai", "stt-whisper", "stt-diarize", "stt-voice"]
+# STT harness: the agentic streaming pipeline. Pulls in diarization +
+# voice-mode coalescing it builds on.
+stt-harness      = ["stt", "stt-diarize", "stt-voice", "dep:atomr-agents-stt-harness"]
+stt-full         = ["stt-openai", "stt-deepgram", "stt-assemblyai", "stt-whisper", "stt-diarize", "stt-voice", "stt-harness"]
 
 # ----- Text-to-speech feature surface ---------------------------------------
 tts                  = ["dep:atomr-agents-tts-core", "dep:atomr-agents-tts-audio", "dep:atomr-agents-tts-tool", "tool"]

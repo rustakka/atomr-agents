@@ -17,12 +17,24 @@ readme        = "../../README.md"
 name = "atomr-agents"
 path = "src/main.rs"
 
+[features]
+default = []
+# Compile in the STT-harness web UI so `atomr-agents serve` runs a real
+# axum server instead of printing the inspector endpoint list.
+stt-web = [
+    "dep:atomr-agents-stt-harness",
+    "dep:atomr-agents-stt-harness-web",
+    "atomr-agents-stt-harness/state",
+]
+
 [dependencies]
 atomr-agents-core     = { workspace = true }
 atomr-agents-harness  = { workspace = true }
 atomr-agents-eval     = { workspace = true }
 atomr-agents-registry = { workspace = true }
 atomr-agents-state    = { workspace = true }
+atomr-agents-stt-harness     = { workspace = true, optional = true }
+atomr-agents-stt-harness-web = { workspace = true, optional = true }
 clap                  = { workspace = true }
 tokio                 = { workspace = true }
 anyhow                = { workspace = true }

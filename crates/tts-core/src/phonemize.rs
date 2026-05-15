@@ -41,7 +41,10 @@ pub struct PhonemizedText {
 
 impl PhonemizedText {
     pub fn new(ipa: impl Into<String>, tokens: Vec<String>) -> Self {
-        Self { ipa: ipa.into(), tokens }
+        Self {
+            ipa: ipa.into(),
+            tokens,
+        }
     }
 }
 

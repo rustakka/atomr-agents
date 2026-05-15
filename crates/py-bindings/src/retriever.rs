@@ -205,10 +205,7 @@ fn extract_document(bound: &Bound<'_, PyAny>) -> PyResult<Document> {
         return Ok(d.inner);
     }
     let py = bound.py();
-    let id: String = bound
-        .get_item("id")
-        .or_else(|_| bound.getattr("id"))?
-        .extract()?;
+    let id: String = bound.get_item("id").or_else(|_| bound.getattr("id"))?.extract()?;
     let text: String = if let Ok(v) = bound.get_item("text") {
         v.extract()?
     } else if let Ok(v) = bound.get_item("page_content") {
@@ -297,12 +294,7 @@ fn vector_retriever(
 /// BM25 with `k1=1.5`, `b=0.75`).
 #[pyfunction]
 #[pyo3(signature = (documents, top_k=5, k1=1.5, b=0.75))]
-fn bm25_retriever(
-    documents: Vec<PyDocument>,
-    top_k: usize,
-    k1: f32,
-    b: f32,
-) -> PyRetriever {
+fn bm25_retriever(documents: Vec<PyDocument>, top_k: usize, k1: f32, b: f32) -> PyRetriever {
     let _ = (k1, b);
     let r = Bm25Retriever::new(top_k);
     r.add_many(documents.into_iter().map(|d| d.inner));
@@ -320,11 +312,7 @@ struct StaticExpander {
 #[async_trait]
 impl QueryExpander for StaticExpander {
     async fn expand(&self, query: &str, _n: usize) -> AgentResult<Vec<String>> {
-        Ok(self
-            .variants
-            .iter()
-            .map(|v| format!("{query} {v}"))
-            .collect())
+        Ok(self.variants.iter().map(|v| format!("{query} {v}")).collect())
     }
 }
 
@@ -333,16 +321,8 @@ impl QueryExpander for StaticExpander {
 /// lands.
 #[pyfunction]
 #[pyo3(signature = (base, n_queries=3, variants=None))]
-fn multi_query_retriever(
-    base: PyRetriever,
-    n_queries: usize,
-    variants: Option<Vec<String>>,
-) -> PyRetriever {
-    let variants = variants.unwrap_or_else(|| {
-        (0..n_queries.max(1))
-            .map(|i| format!("variant{i}"))
-            .collect()
-    });
+fn multi_query_retriever(base: PyRetriever, n_queries: usize, variants: Option<Vec<String>>) -> PyRetriever {
+    let variants = variants.unwrap_or_else(|| (0..n_queries.max(1)).map(|i| format!("variant{i}")).collect());
     let expander: Arc<dyn QueryExpander> = Arc::new(StaticExpander { variants });
     PyRetriever {
         inner: Arc::new(MultiQueryRetriever::new(base.inner, expander, n_queries)),
@@ -360,11 +340,7 @@ fn contextual_compression_retriever(base: PyRetriever) -> PyRetriever {
     struct SentenceFilter;
     #[async_trait]
     impl CompressionStep for SentenceFilter {
-        async fn compress(
-            &self,
-            query: &str,
-            mut doc: Document,
-        ) -> AgentResult<Option<Document>> {
+        async fn compress(&self, query: &str, mut doc: Document) -> AgentResult<Option<Document>> {
             let q_tokens: std::collections::HashSet<String> = query
                 .to_lowercase()
                 .split(|c: char| !c.is_alphanumeric())
@@ -414,11 +390,7 @@ fn parent_document_retriever(
 /// the underlying crate fuses without per-member weighting.
 #[pyfunction]
 #[pyo3(signature = (members, top_k=10, weights=None))]
-fn ensemble_retriever(
-    members: Vec<PyRetriever>,
-    top_k: usize,
-    weights: Option<Vec<f32>>,
-) -> PyRetriever {
+fn ensemble_retriever(members: Vec<PyRetriever>, top_k: usize, weights: Option<Vec<f32>>) -> PyRetriever {
     let _ = weights;
     let members: Vec<Arc<dyn Retriever>> = members.into_iter().map(|r| r.inner).collect();
     PyRetriever {

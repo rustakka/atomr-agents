@@ -16,7 +16,10 @@ fn is_transient(e: &SttError) -> bool {
         e,
         SttError::Transport(_)
             | SttError::RateLimited { .. }
-            | SttError::Backend { status: 500..=599, .. }
+            | SttError::Backend {
+                status: 500..=599,
+                ..
+            }
     )
 }
 

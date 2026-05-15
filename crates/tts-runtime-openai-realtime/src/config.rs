@@ -30,11 +30,21 @@ pub struct OpenAiRealtimeConfig {
     pub timeouts: Timeouts,
 }
 
-fn default_endpoint() -> Url { Url::parse(OPENAI_REALTIME_WS_BASE).expect("OPENAI_REALTIME_WS_BASE") }
-fn default_model() -> String { "gpt-4o-realtime-preview".to_string() }
-fn default_voice() -> String { "alloy".to_string() }
-fn default_modalities() -> Vec<String> { vec!["audio".to_string(), "text".to_string()] }
-fn default_sample_rate() -> u32 { 24_000 }
+fn default_endpoint() -> Url {
+    Url::parse(OPENAI_REALTIME_WS_BASE).expect("OPENAI_REALTIME_WS_BASE")
+}
+fn default_model() -> String {
+    "gpt-4o-realtime-preview".to_string()
+}
+fn default_voice() -> String {
+    "alloy".to_string()
+}
+fn default_modalities() -> Vec<String> {
+    vec!["audio".to_string(), "text".to_string()]
+}
+fn default_sample_rate() -> u32 {
+    24_000
+}
 
 impl OpenAiRealtimeConfig {
     pub fn from_env() -> Self {

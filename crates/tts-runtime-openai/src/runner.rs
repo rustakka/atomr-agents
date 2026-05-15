@@ -4,8 +4,8 @@ use async_trait::async_trait;
 use atomr_agents_stt_core::{AudioFormat, Result, SampleType, SttError, TransportKind};
 use atomr_agents_stt_remote_core::{build_http_client, classify_status, retry};
 use atomr_agents_tts_core::{
-    AudioOutput, BackendKind, Capabilities, RealtimeOptions, RealtimeSession, SynthOptions,
-    SynthesisRequest, SynthesisStream, TextToSpeech, VoiceRef,
+    AudioOutput, BackendKind, Capabilities, RealtimeOptions, RealtimeSession, SynthOptions, SynthesisRequest,
+    SynthesisStream, TextToSpeech, VoiceRef,
 };
 use reqwest::{header, Client};
 use secrecy::ExposeSecret;
@@ -34,9 +34,7 @@ impl OpenAiTtsRunner {
     fn pick_voice<'a>(&'a self, voice: &'a VoiceRef) -> Result<&'a str> {
         match voice {
             VoiceRef::Library { id } => Ok(id.as_str()),
-            VoiceRef::DescribedAs { .. } => Err(SttError::UnsupportedCapability(
-                "voicegen_from_text",
-            )),
+            VoiceRef::DescribedAs { .. } => Err(SttError::UnsupportedCapability("voicegen_from_text")),
             VoiceRef::ClonedFrom(_) => Err(SttError::UnsupportedCapability("voice_cloning")),
             VoiceRef::Custom(_) => Err(SttError::UnsupportedCapability("custom_voice")),
         }
@@ -97,9 +95,15 @@ fn format_from_str(s: &str) -> AudioFormat {
 
 #[async_trait]
 impl TextToSpeech for OpenAiTtsRunner {
-    fn capabilities(&self) -> &'static Capabilities { &CAPS }
-    fn backend_kind(&self) -> BackendKind { BackendKind::OpenAi }
-    fn transport_kind(&self) -> TransportKind { TransportKind::Rest }
+    fn capabilities(&self) -> &'static Capabilities {
+        &CAPS
+    }
+    fn backend_kind(&self) -> BackendKind {
+        BackendKind::OpenAi
+    }
+    fn transport_kind(&self) -> TransportKind {
+        TransportKind::Rest
+    }
 
     async fn synthesize(&self, request: SynthesisRequest) -> Result<AudioOutput> {
         let (text, voice_ref, opts) = match request {
@@ -191,10 +195,7 @@ impl TextToSpeech for OpenAiTtsRunner {
         Ok(out)
     }
 
-    async fn synthesize_stream(
-        &self,
-        request: SynthesisRequest,
-    ) -> Result<Box<dyn SynthesisStream>> {
+    async fn synthesize_stream(&self, request: SynthesisRequest) -> Result<Box<dyn SynthesisStream>> {
         let (text, voice_ref, opts) = match request {
             SynthesisRequest::Tts { text, voice, options } => (text, voice, options),
             SynthesisRequest::SoundEffect { .. } => {
@@ -224,8 +225,7 @@ impl TextToSpeech for OpenAiTtsRunner {
             speed,
             instructions,
         };
-        let body = serde_json::to_vec(&payload)
-            .map_err(|e| SttError::internal(format!("serialize: {e}")))?;
+        let body = serde_json::to_vec(&payload).map_err(|e| SttError::internal(format!("serialize: {e}")))?;
         let mut req = self
             .client
             .post(url)
@@ -249,10 +249,7 @@ impl TextToSpeech for OpenAiTtsRunner {
         Ok(Box::new(OpenAiSynthesisStream::spawn(body_stream, format)))
     }
 
-    async fn open_realtime(
-        &self,
-        _opts: RealtimeOptions,
-    ) -> Result<Box<dyn RealtimeSession>> {
+    async fn open_realtime(&self, _opts: RealtimeOptions) -> Result<Box<dyn RealtimeSession>> {
         Err(SttError::UnsupportedCapability(
             "realtime_bidirectional (use atomr-agents-tts-runtime-openai-realtime instead)",
         ))
@@ -293,10 +290,7 @@ mod tests {
         let mut cfg = OpenAiTtsConfig::from_env();
         cfg.api_key = SecretRef::literal("sk-test");
         let r = OpenAiTtsRunner::new(cfg).unwrap();
-        let req = SynthesisRequest::tts(
-            "hello",
-            VoiceRef::described("warm and slow"),
-        );
+        let req = SynthesisRequest::tts("hello", VoiceRef::described("warm and slow"));
         let err = r.synthesize(req).await.unwrap_err();
         assert!(matches!(
             err,

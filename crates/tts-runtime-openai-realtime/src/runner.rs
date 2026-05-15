@@ -23,9 +23,15 @@ impl OpenAiRealtimeRunner {
 
 #[async_trait]
 impl TextToSpeech for OpenAiRealtimeRunner {
-    fn capabilities(&self) -> &'static Capabilities { &CAPS }
-    fn backend_kind(&self) -> BackendKind { BackendKind::OpenAiRealtime }
-    fn transport_kind(&self) -> TransportKind { TransportKind::WebSocket }
+    fn capabilities(&self) -> &'static Capabilities {
+        &CAPS
+    }
+    fn backend_kind(&self) -> BackendKind {
+        BackendKind::OpenAiRealtime
+    }
+    fn transport_kind(&self) -> TransportKind {
+        TransportKind::WebSocket
+    }
 
     async fn synthesize(&self, _request: SynthesisRequest) -> Result<AudioOutput> {
         Err(SttError::UnsupportedCapability(
@@ -33,19 +39,13 @@ impl TextToSpeech for OpenAiRealtimeRunner {
         ))
     }
 
-    async fn synthesize_stream(
-        &self,
-        _request: SynthesisRequest,
-    ) -> Result<Box<dyn SynthesisStream>> {
+    async fn synthesize_stream(&self, _request: SynthesisRequest) -> Result<Box<dyn SynthesisStream>> {
         Err(SttError::UnsupportedCapability(
             "openai realtime: use open_realtime() — this backend has no streaming-batch surface",
         ))
     }
 
-    async fn open_realtime(
-        &self,
-        opts: RealtimeOptions,
-    ) -> Result<Box<dyn RealtimeSession>> {
+    async fn open_realtime(&self, opts: RealtimeOptions) -> Result<Box<dyn RealtimeSession>> {
         let mut url = self.config.endpoint.clone();
         url.query_pairs_mut().append_pair("model", &self.config.model);
 

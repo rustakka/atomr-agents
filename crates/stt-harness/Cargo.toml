@@ -1,0 +1,49 @@
+[package]
+name          = "atomr-agents-stt-harness"
+version       = { workspace = true }
+edition       = { workspace = true }
+rust-version  = { workspace = true }
+license       = { workspace = true }
+repository    = { workspace = true }
+homepage      = { workspace = true }
+authors       = { workspace = true }
+description   = "STT harness: an agentic streaming pipeline that diarizes, transcribes, and accumulates a conversation record aligned to agentic structures."
+
+keywords      = ["agents", "stt", "harness", "diarization", "atomr"]
+categories    = ["asynchronous", "multimedia::audio"]
+readme        = "../../README.md"
+
+[features]
+default = []
+# Live microphone audio source. Pulls stt-audio's `mic` feature.
+mic     = ["atomr-agents-stt-audio/mic"]
+# File / in-memory-bytes decoding for the File and Bytes audio sources.
+decode  = ["atomr-agents-stt-audio/decode"]
+# Persist conversations through `crates/state`'s configured Checkpointer.
+state   = ["dep:atomr-agents-state"]
+
+[dependencies]
+atomr-agents-core          = { workspace = true }
+atomr-agents-callable      = { workspace = true }
+atomr-agents-observability = { workspace = true }
+atomr-agents-stt-core      = { workspace = true }
+atomr-agents-stt-audio     = { workspace = true }
+atomr-agents-stt-voice     = { workspace = true }
+atomr-agents-stt-diarize-sherpa = { workspace = true }
+atomr-agents-state         = { workspace = true, optional = true }
+
+async-trait  = { workspace = true }
+tokio        = { workspace = true }
+futures      = { workspace = true }
+futures-util = { workspace = true }
+bytes        = { workspace = true }
+serde        = { workspace = true }
+serde_json   = { workspace = true }
+thiserror    = { workspace = true }
+tracing      = { workspace = true }
+parking_lot  = { workspace = true }
+semver       = { workspace = true }
+chrono       = { workspace = true }
+
+[dev-dependencies]
+tokio = { workspace = true, features = ["full", "test-util"] }

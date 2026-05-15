@@ -3,12 +3,10 @@
 use std::sync::Arc;
 
 use async_trait::async_trait;
-use atomr_agents_core::{
-    AgentError, MemoryItem, MemoryNamespace, Result as AgentResult, Value,
-};
+use atomr_agents_core::{AgentError, MemoryItem, MemoryNamespace, Result as AgentResult, Value};
 use atomr_agents_memory::{
-    InMemoryLongStore, InMemoryStore, LongStore, MemoryStore, Namespace, RecencyMemoryStrategy,
-    StoreItem, SummarizingMemoryStrategy,
+    InMemoryLongStore, InMemoryStore, LongStore, MemoryStore, Namespace, RecencyMemoryStrategy, StoreItem,
+    SummarizingMemoryStrategy,
 };
 use atomr_agents_strategy::{ChainedMemoryStrategy, MemoryStrategy};
 use pyo3::prelude::*;
@@ -27,11 +25,7 @@ pub struct PyMemoryStore {
 
 #[pymethods]
 impl PyMemoryStore {
-    fn put<'py>(
-        &self,
-        py: Python<'py>,
-        item: crate::core::PyMemoryItem,
-    ) -> PyResult<Bound<'py, PyAny>> {
+    fn put<'py>(&self, py: Python<'py>, item: crate::core::PyMemoryItem) -> PyResult<Bound<'py, PyAny>> {
         let inner = self.inner.clone();
         let item_inner = item.inner.clone();
         pyo3_async_runtimes::tokio::future_into_py(py, async move {
@@ -92,11 +86,7 @@ impl MemoryStore for PyMemoryStoreAdapter {
         Ok(())
     }
 
-    async fn list(
-        &self,
-        namespace: &MemoryNamespace,
-        limit: usize,
-    ) -> AgentResult<Vec<MemoryItem>> {
+    async fn list(&self, namespace: &MemoryNamespace, limit: usize) -> AgentResult<Vec<MemoryItem>> {
         let target = self.target.clone();
         let ns = namespace.clone();
         let coro_or_val = Python::with_gil(|py| -> PyResult<PyObject> {
@@ -242,12 +232,7 @@ impl PyLongStore {
         })
     }
 
-    fn get<'py>(
-        &self,
-        py: Python<'py>,
-        namespace: PyNamespace,
-        key: String,
-    ) -> PyResult<Bound<'py, PyAny>> {
+    fn get<'py>(&self, py: Python<'py>, namespace: PyNamespace, key: String) -> PyResult<Bound<'py, PyAny>> {
         let inner = self.inner.clone();
         pyo3_async_runtimes::tokio::future_into_py(py, async move {
             let out = inner
@@ -305,11 +290,7 @@ impl PyLongStore {
         })
     }
 
-    fn list_namespaces<'py>(
-        &self,
-        py: Python<'py>,
-        prefix: PyNamespace,
-    ) -> PyResult<Bound<'py, PyAny>> {
+    fn list_namespaces<'py>(&self, py: Python<'py>, prefix: PyNamespace) -> PyResult<Bound<'py, PyAny>> {
         let inner = self.inner.clone();
         pyo3_async_runtimes::tokio::future_into_py(py, async move {
             let nss = inner
@@ -352,9 +333,7 @@ impl LongStore for PyLongStoreAdapter {
             } else {
                 bound.clone()
             };
-            let r = instance
-                .getattr("put")?
-                .call1((py_ns, key, val_obj, embedding))?;
+            let r = instance.getattr("put")?.call1((py_ns, key, val_obj, embedding))?;
             Ok(r.unbind())
         })
         .map_err(|e| AgentError::Internal(format!("py long_store put: {e}")))?;
@@ -524,11 +503,7 @@ fn recency_memory_strategy(
     tokens_per_item: u32,
 ) -> crate::strategy::PyMemoryStrategy {
     crate::strategy::PyMemoryStrategy {
-        inner: Arc::new(RecencyMemoryStrategy::new(
-            store.inner,
-            limit,
-            tokens_per_item,
-        )),
+        inner: Arc::new(RecencyMemoryStrategy::new(store.inner, limit, tokens_per_item)),
     }
 }
 

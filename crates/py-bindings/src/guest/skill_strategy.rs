@@ -13,9 +13,7 @@ use atomr_agents_core::{AgentContext, AgentError, Result as AgentResult, SkillId
 use atomr_agents_strategy::{SkillRef, SkillStrategy};
 use pyo3::prelude::*;
 
-use super::conv_helpers::{
-    await_and_jsonify, build_agent_ctx_dict, build_budget_dict, resolve_instance,
-};
+use super::conv_helpers::{await_and_jsonify, build_agent_ctx_dict, build_budget_dict, resolve_instance};
 use super::registry::GUESTS;
 
 pub struct PySkillStrategyAdapter {
@@ -31,11 +29,7 @@ impl PySkillStrategyAdapter {
 
 #[async_trait]
 impl SkillStrategy for PySkillStrategyAdapter {
-    async fn applicable(
-        &self,
-        ctx: &AgentContext,
-        budget: &mut TokenBudget,
-    ) -> AgentResult<Vec<SkillRef>> {
+    async fn applicable(&self, ctx: &AgentContext, budget: &mut TokenBudget) -> AgentResult<Vec<SkillRef>> {
         let target = self.target.clone();
         let label = self.label.clone();
 
@@ -60,26 +54,15 @@ impl SkillStrategy for PySkillStrategyAdapter {
         let mut out = Vec::with_capacity(arr.len());
         for v in arr {
             let map = v.as_object().ok_or_else(|| {
-                AgentError::Strategy(format!(
-                    "guest skill {label}: expected skill ref object, got {v}"
-                ))
+                AgentError::Strategy(format!("guest skill {label}: expected skill ref object, got {v}"))
             })?;
             let id = map
                 .get("id")
                 .and_then(|x| x.as_str())
-                .ok_or_else(|| {
-                    AgentError::Strategy(format!("guest skill {label}: skill ref missing id"))
-                })?
+                .ok_or_else(|| AgentError::Strategy(format!("guest skill {label}: skill ref missing id")))?
                 .to_string();
-            let name = map
-                .get("name")
-                .and_then(|x| x.as_str())
-                .unwrap_or("")
-                .to_string();
-            let priority = map
-                .get("priority")
-                .and_then(|x| x.as_u64())
-                .unwrap_or(5) as u8;
+            let name = map.get("name").and_then(|x| x.as_str()).unwrap_or("").to_string();
+            let priority = map.get("priority").and_then(|x| x.as_u64()).unwrap_or(5) as u8;
             out.push(SkillRef {
                 id: SkillId::from(id),
                 name,
@@ -113,9 +96,7 @@ pub(crate) fn build_guest_skill_strategy(key: String) -> PyResult<PySkillStrateg
     let entry = GUESTS
         .get(&("strategy:skill".to_string(), key.clone()))
         .ok_or_else(|| {
-            pyo3::exceptions::PyKeyError::new_err(format!(
-                "no skill strategy registered with key {key:?}"
-            ))
+            pyo3::exceptions::PyKeyError::new_err(format!("no skill strategy registered with key {key:?}"))
         })?;
     let target = entry.value().clone();
     let adapter = PySkillStrategyAdapter::new(target, key.clone());

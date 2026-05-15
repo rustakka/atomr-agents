@@ -13,9 +13,9 @@
 use std::sync::Arc;
 
 use atomr_agents_tts_core::{
-    AudioInput, AudioOutput, BackendKind, Capabilities, DialogueTurn, DynTextToSpeech,
-    MockTextToSpeech, RealtimeEvent, RealtimeOptions, RealtimeSession, SpeakerVoice,
-    SynthOptions, SynthesisRequest, SynthesisStream, VoiceRef,
+    AudioInput, AudioOutput, BackendKind, Capabilities, DialogueTurn, DynTextToSpeech, MockTextToSpeech,
+    RealtimeEvent, RealtimeOptions, RealtimeSession, SpeakerVoice, SynthOptions, SynthesisRequest,
+    SynthesisStream, VoiceRef,
 };
 use bytes::Bytes;
 use futures::StreamExt;
@@ -26,8 +26,8 @@ use tokio::sync::Mutex as AsyncMutex;
 
 use atomr_agents_tool::Tool;
 use atomr_agents_tts_tool::{
-    voice_response_skill as build_voice_response_skill,
-    voice_speak_skill as build_voice_speak_skill, SpeakTool,
+    voice_response_skill as build_voice_response_skill, voice_speak_skill as build_voice_speak_skill,
+    SpeakTool,
 };
 
 use crate::conv::{json_to_py, py_to_json};
@@ -46,15 +46,18 @@ pub struct PyCapabilities {
 #[pymethods]
 impl PyCapabilities {
     fn to_dict(&self, py: Python<'_>) -> PyResult<PyObject> {
-        let v = serde_json::to_value(&self.inner)
-            .map_err(|e| PyRuntimeError::new_err(e.to_string()))?;
+        let v = serde_json::to_value(&self.inner).map_err(|e| PyRuntimeError::new_err(e.to_string()))?;
         json_to_py(py, &v)
     }
 
     #[getter]
-    fn plain_tts(&self) -> bool { self.inner.plain_tts }
+    fn plain_tts(&self) -> bool {
+        self.inner.plain_tts
+    }
     #[getter]
-    fn voicegen_from_text(&self) -> bool { self.inner.voicegen_from_text }
+    fn voicegen_from_text(&self) -> bool {
+        self.inner.voicegen_from_text
+    }
     #[getter]
     fn voice_cloning(&self, py: Python<'_>) -> PyResult<PyObject> {
         let v = serde_json::to_value(&self.inner.voice_cloning)
@@ -62,31 +65,57 @@ impl PyCapabilities {
         json_to_py(py, &v)
     }
     #[getter]
-    fn dialogue_multispeaker(&self) -> Option<u8> { self.inner.dialogue_multispeaker }
+    fn dialogue_multispeaker(&self) -> Option<u8> {
+        self.inner.dialogue_multispeaker
+    }
     #[getter]
-    fn sound_effects(&self) -> bool { self.inner.sound_effects }
+    fn sound_effects(&self) -> bool {
+        self.inner.sound_effects
+    }
     #[getter]
-    fn realtime_bidirectional(&self) -> bool { self.inner.realtime_bidirectional }
+    fn realtime_bidirectional(&self) -> bool {
+        self.inner.realtime_bidirectional
+    }
     #[getter]
-    fn streaming_output(&self) -> bool { self.inner.streaming_output }
+    fn streaming_output(&self) -> bool {
+        self.inner.streaming_output
+    }
     #[getter]
-    fn style_control(&self) -> bool { self.inner.style_control }
+    fn style_control(&self) -> bool {
+        self.inner.style_control
+    }
     #[getter]
-    fn ssml(&self) -> bool { self.inner.ssml }
+    fn ssml(&self) -> bool {
+        self.inner.ssml
+    }
     #[getter]
-    fn prosody_control(&self) -> bool { self.inner.prosody_control }
+    fn prosody_control(&self) -> bool {
+        self.inner.prosody_control
+    }
     #[getter]
-    fn word_timestamps(&self) -> bool { self.inner.word_timestamps }
+    fn word_timestamps(&self) -> bool {
+        self.inner.word_timestamps
+    }
     #[getter]
-    fn requires_network(&self) -> bool { self.inner.requires_network }
+    fn requires_network(&self) -> bool {
+        self.inner.requires_network
+    }
     #[getter]
-    fn typical_ttfb_ms(&self) -> Option<u16> { self.inner.typical_ttfb_ms }
+    fn typical_ttfb_ms(&self) -> Option<u16> {
+        self.inner.typical_ttfb_ms
+    }
     #[getter]
-    fn cost_per_1k_chars_usd(&self) -> Option<f32> { self.inner.cost_per_1k_chars_usd }
+    fn cost_per_1k_chars_usd(&self) -> Option<f32> {
+        self.inner.cost_per_1k_chars_usd
+    }
     #[getter]
-    fn cost_per_audio_min_usd(&self) -> Option<f32> { self.inner.cost_per_audio_min_usd }
+    fn cost_per_audio_min_usd(&self) -> Option<f32> {
+        self.inner.cost_per_audio_min_usd
+    }
     #[getter]
-    fn max_chars_per_request(&self) -> Option<u32> { self.inner.max_chars_per_request }
+    fn max_chars_per_request(&self) -> Option<u32> {
+        self.inner.max_chars_per_request
+    }
 
     fn __repr__(&self) -> String {
         format!(
@@ -110,17 +139,23 @@ pub struct PyVoiceRef {
 
 #[pyfunction]
 pub fn voice_library(id: String) -> PyVoiceRef {
-    PyVoiceRef { inner: VoiceRef::library(id) }
+    PyVoiceRef {
+        inner: VoiceRef::library(id),
+    }
 }
 
 #[pyfunction]
 pub fn voice_described(description: String) -> PyVoiceRef {
-    PyVoiceRef { inner: VoiceRef::described(description) }
+    PyVoiceRef {
+        inner: VoiceRef::described(description),
+    }
 }
 
 #[pyfunction]
 pub fn voice_cloned(audio: PyAudioInput) -> PyVoiceRef {
-    PyVoiceRef { inner: VoiceRef::cloned_from(audio.inner) }
+    PyVoiceRef {
+        inner: VoiceRef::cloned_from(audio.inner),
+    }
 }
 
 // ----- SynthesisRequest -----------------------------------------------------
@@ -218,7 +253,10 @@ pub fn dialogue_request(
         .collect();
     let speakers: Vec<SpeakerVoice> = speakers
         .into_iter()
-        .map(|(tag, voice)| SpeakerVoice { tag, voice: voice.inner })
+        .map(|(tag, voice)| SpeakerVoice {
+            tag,
+            voice: voice.inner,
+        })
         .collect();
     Ok(PySynthesisRequest {
         inner: SynthesisRequest::Dialogue {
@@ -240,21 +278,37 @@ pub struct PyAudioOutput {
 #[pymethods]
 impl PyAudioOutput {
     #[getter]
-    fn duration_secs(&self) -> f32 { self.inner.duration_secs }
+    fn duration_secs(&self) -> f32 {
+        self.inner.duration_secs
+    }
     #[getter]
-    fn characters_processed(&self) -> u32 { self.inner.characters_processed }
+    fn characters_processed(&self) -> u32 {
+        self.inner.characters_processed
+    }
     #[getter]
-    fn backend(&self) -> String { self.inner.backend.as_str().to_string() }
+    fn backend(&self) -> String {
+        self.inner.backend.as_str().to_string()
+    }
     #[getter]
-    fn model_id(&self) -> Option<String> { self.inner.model_id.clone() }
+    fn model_id(&self) -> Option<String> {
+        self.inner.model_id.clone()
+    }
     #[getter]
-    fn voice_id_used(&self) -> Option<String> { self.inner.voice_id_used.clone() }
+    fn voice_id_used(&self) -> Option<String> {
+        self.inner.voice_id_used.clone()
+    }
     #[getter]
-    fn cost_usd(&self) -> Option<f32> { self.inner.cost_usd }
+    fn cost_usd(&self) -> Option<f32> {
+        self.inner.cost_usd
+    }
     #[getter]
-    fn sample_rate(&self) -> u32 { self.inner.audio.sample_rate }
+    fn sample_rate(&self) -> u32 {
+        self.inner.audio.sample_rate
+    }
     #[getter]
-    fn channels(&self) -> u16 { self.inner.audio.channels }
+    fn channels(&self) -> u16 {
+        self.inner.audio.channels
+    }
 
     /// Return the raw PCM samples as a flat list of f32.
     fn samples(&self) -> Vec<f32> {
@@ -271,8 +325,7 @@ impl PyAudioOutput {
     }
 
     fn to_dict(&self, py: Python<'_>) -> PyResult<PyObject> {
-        let v = serde_json::to_value(&self.inner)
-            .map_err(|e| PyRuntimeError::new_err(e.to_string()))?;
+        let v = serde_json::to_value(&self.inner).map_err(|e| PyRuntimeError::new_err(e.to_string()))?;
         json_to_py(py, &v)
     }
 
@@ -297,9 +350,13 @@ pub struct PyAudioChunk {
 #[pymethods]
 impl PyAudioChunk {
     #[getter]
-    fn seq(&self) -> u64 { self.inner.seq }
+    fn seq(&self) -> u64 {
+        self.inner.seq
+    }
     #[getter]
-    fn is_final(&self) -> bool { self.inner.is_final }
+    fn is_final(&self) -> bool {
+        self.inner.is_final
+    }
 
     fn bytes<'py>(&self, py: Python<'py>) -> Bound<'py, PyBytes> {
         PyBytes::new_bound(py, self.inner.bytes.as_ref())
@@ -339,7 +396,9 @@ impl PySynthesisStream {
         pyo3_async_runtimes::tokio::future_into_py(py, async move {
             let mut g = inner.lock().await;
             if let Some(s) = g.as_mut() {
-                s.close().await.map_err(|e| PyRuntimeError::new_err(e.to_string()))?;
+                s.close()
+                    .await
+                    .map_err(|e| PyRuntimeError::new_err(e.to_string()))?;
             }
             Ok(())
         })
@@ -359,7 +418,9 @@ pub struct PyAudioChunkIter {
 
 #[pymethods]
 impl PyAudioChunkIter {
-    fn __aiter__(slf: PyRef<'_, Self>) -> PyRef<'_, Self> { slf }
+    fn __aiter__(slf: PyRef<'_, Self>) -> PyRef<'_, Self> {
+        slf
+    }
 
     fn __anext__<'py>(slf: PyRef<'py, Self>, py: Python<'py>) -> PyResult<Bound<'py, PyAny>> {
         let session = slf.session.clone();
@@ -405,8 +466,7 @@ impl PyRealtimeEvent {
     }
 
     fn to_dict(&self, py: Python<'_>) -> PyResult<PyObject> {
-        let v = serde_json::to_value(&self.inner)
-            .map_err(|e| PyRuntimeError::new_err(e.to_string()))?;
+        let v = serde_json::to_value(&self.inner).map_err(|e| PyRuntimeError::new_err(e.to_string()))?;
         json_to_py(py, &v)
     }
 
@@ -429,9 +489,8 @@ impl PyRealtimeSession {
 
     pub(crate) async fn take(&self) -> PyResult<Box<dyn RealtimeSession>> {
         let mut g = self.inner.lock().await;
-        g.take().ok_or_else(|| {
-            PyRuntimeError::new_err("RealtimeSession already consumed")
-        })
+        g.take()
+            .ok_or_else(|| PyRuntimeError::new_err("RealtimeSession already consumed"))
     }
 }
 
@@ -441,11 +500,7 @@ fn rt_consumed_err() -> pyo3::PyErr {
 
 #[pymethods]
 impl PyRealtimeSession {
-    fn push_text<'py>(
-        &self,
-        py: Python<'py>,
-        text: String,
-    ) -> PyResult<Bound<'py, PyAny>> {
+    fn push_text<'py>(&self, py: Python<'py>, text: String) -> PyResult<Bound<'py, PyAny>> {
         let inner = self.inner.clone();
         pyo3_async_runtimes::tokio::future_into_py(py, async move {
             let mut g = inner.lock().await;
@@ -456,11 +511,7 @@ impl PyRealtimeSession {
         })
     }
 
-    fn push_audio<'py>(
-        &self,
-        py: Python<'py>,
-        data: &Bound<'py, PyBytes>,
-    ) -> PyResult<Bound<'py, PyAny>> {
+    fn push_audio<'py>(&self, py: Python<'py>, data: &Bound<'py, PyBytes>) -> PyResult<Bound<'py, PyAny>> {
         let inner = self.inner.clone();
         let bytes = Bytes::copy_from_slice(data.as_bytes());
         pyo3_async_runtimes::tokio::future_into_py(py, async move {
@@ -499,7 +550,9 @@ impl PyRealtimeSession {
         pyo3_async_runtimes::tokio::future_into_py(py, async move {
             let mut g = inner.lock().await;
             if let Some(s) = g.as_mut() {
-                s.close().await.map_err(|e| PyRuntimeError::new_err(e.to_string()))?;
+                s.close()
+                    .await
+                    .map_err(|e| PyRuntimeError::new_err(e.to_string()))?;
             }
             Ok(())
         })
@@ -519,7 +572,9 @@ pub struct PyRealtimeEventIter {
 
 #[pymethods]
 impl PyRealtimeEventIter {
-    fn __aiter__(slf: PyRef<'_, Self>) -> PyRef<'_, Self> { slf }
+    fn __aiter__(slf: PyRef<'_, Self>) -> PyRef<'_, Self> {
+        slf
+    }
 
     fn __anext__<'py>(slf: PyRef<'py, Self>, py: Python<'py>) -> PyResult<Bound<'py, PyAny>> {
         let session = slf.session.clone();
@@ -563,11 +618,7 @@ impl PyTextToSpeech {
         self.inner.transport_kind().as_str().to_string()
     }
 
-    fn synthesize<'py>(
-        &self,
-        py: Python<'py>,
-        request: PySynthesisRequest,
-    ) -> PyResult<Bound<'py, PyAny>> {
+    fn synthesize<'py>(&self, py: Python<'py>, request: PySynthesisRequest) -> PyResult<Bound<'py, PyAny>> {
         let tts = self.inner.clone();
         pyo3_async_runtimes::tokio::future_into_py(py, async move {
             let out = tts
@@ -655,12 +706,20 @@ pub fn tts_openai(
 ) -> PyResult<PyTextToSpeech> {
     let mut cfg = atomr_agents_tts_runtime_openai::OpenAiTtsConfig::from_env();
     cfg.api_key = tts_secret_ref(api_key);
-    if let Some(m) = model { cfg.default_model = m; }
-    if let Some(v) = voice { cfg.default_voice = v; }
-    if let Some(f) = response_format { cfg.default_format = f; }
+    if let Some(m) = model {
+        cfg.default_model = m;
+    }
+    if let Some(v) = voice {
+        cfg.default_voice = v;
+    }
+    if let Some(f) = response_format {
+        cfg.default_format = f;
+    }
     let runner = atomr_agents_tts_runtime_openai::OpenAiTtsRunner::new(cfg)
         .map_err(|e| PyRuntimeError::new_err(e.to_string()))?;
-    Ok(PyTextToSpeech { inner: Arc::new(runner) })
+    Ok(PyTextToSpeech {
+        inner: Arc::new(runner),
+    })
 }
 
 /// `tts_elevenlabs(api_key, *, model=None, voice=None, output_format=None, agent_id=None)`.
@@ -675,13 +734,23 @@ pub fn tts_elevenlabs(
 ) -> PyResult<PyTextToSpeech> {
     let mut cfg = atomr_agents_tts_runtime_elevenlabs::ElevenLabsConfig::from_env();
     cfg.api_key = tts_secret_ref(api_key);
-    if let Some(m) = model { cfg.default_model = m; }
-    if let Some(v) = voice { cfg.default_voice = v; }
-    if let Some(f) = output_format { cfg.default_output_format = f; }
-    if agent_id.is_some() { cfg.convai_agent_id = agent_id; }
+    if let Some(m) = model {
+        cfg.default_model = m;
+    }
+    if let Some(v) = voice {
+        cfg.default_voice = v;
+    }
+    if let Some(f) = output_format {
+        cfg.default_output_format = f;
+    }
+    if agent_id.is_some() {
+        cfg.convai_agent_id = agent_id;
+    }
     let runner = atomr_agents_tts_runtime_elevenlabs::ElevenLabsRunner::new(cfg)
         .map_err(|e| PyRuntimeError::new_err(e.to_string()))?;
-    Ok(PyTextToSpeech { inner: Arc::new(runner) })
+    Ok(PyTextToSpeech {
+        inner: Arc::new(runner),
+    })
 }
 
 /// `tts_openai_realtime(api_key, *, model=None, voice=None, instructions=None)`.
@@ -695,11 +764,19 @@ pub fn tts_openai_realtime(
 ) -> PyResult<PyTextToSpeech> {
     let mut cfg = atomr_agents_tts_runtime_openai_realtime::OpenAiRealtimeConfig::from_env();
     cfg.api_key = tts_secret_ref(api_key);
-    if let Some(m) = model { cfg.model = m; }
-    if let Some(v) = voice { cfg.default_voice = v; }
-    if instructions.is_some() { cfg.instructions = instructions; }
+    if let Some(m) = model {
+        cfg.model = m;
+    }
+    if let Some(v) = voice {
+        cfg.default_voice = v;
+    }
+    if instructions.is_some() {
+        cfg.instructions = instructions;
+    }
     let runner = atomr_agents_tts_runtime_openai_realtime::OpenAiRealtimeRunner::new(cfg);
-    Ok(PyTextToSpeech { inner: Arc::new(runner) })
+    Ok(PyTextToSpeech {
+        inner: Arc::new(runner),
+    })
 }
 
 /// `tts_gemini_live(api_key, *, model=None, voice=None, instructions=None)`.
@@ -713,11 +790,19 @@ pub fn tts_gemini_live(
 ) -> PyResult<PyTextToSpeech> {
     let mut cfg = atomr_agents_tts_runtime_gemini_live::GeminiLiveConfig::from_env();
     cfg.api_key = tts_secret_ref(api_key);
-    if let Some(m) = model { cfg.model = m; }
-    if let Some(v) = voice { cfg.default_voice = v; }
-    if instructions.is_some() { cfg.instructions = instructions; }
+    if let Some(m) = model {
+        cfg.model = m;
+    }
+    if let Some(v) = voice {
+        cfg.default_voice = v;
+    }
+    if instructions.is_some() {
+        cfg.instructions = instructions;
+    }
     let runner = atomr_agents_tts_runtime_gemini_live::GeminiLiveRunner::new(cfg);
-    Ok(PyTextToSpeech { inner: Arc::new(runner) })
+    Ok(PyTextToSpeech {
+        inner: Arc::new(runner),
+    })
 }
 
 /// `tts_piper(*, voices=None)`. `voices` is a list of dicts:
@@ -750,13 +835,21 @@ pub fn tts_piper(
             });
         }
     }
-    if let Some(v) = length_scale { cfg.length_scale = v; }
-    if let Some(v) = noise_scale { cfg.noise_scale = v; }
-    if let Some(v) = noise_w { cfg.noise_w = v; }
+    if let Some(v) = length_scale {
+        cfg.length_scale = v;
+    }
+    if let Some(v) = noise_scale {
+        cfg.noise_scale = v;
+    }
+    if let Some(v) = noise_w {
+        cfg.noise_w = v;
+    }
     cfg.use_gpu = use_gpu;
     let runner = atomr_agents_tts_runtime_piper::PiperRunner::new(cfg)
         .map_err(|e| PyRuntimeError::new_err(e.to_string()))?;
-    Ok(PyTextToSpeech { inner: Arc::new(runner) })
+    Ok(PyTextToSpeech {
+        inner: Arc::new(runner),
+    })
 }
 
 /// `tts_kokoro(model_path, voices_path, *, default_voice=None, speed=None, use_gpu=False)`.
@@ -772,12 +865,18 @@ pub fn tts_kokoro(
     let mut cfg = atomr_agents_tts_runtime_kokoro::KokoroConfig::default();
     cfg.model_path = std::path::PathBuf::from(model_path);
     cfg.voices_path = std::path::PathBuf::from(voices_path);
-    if let Some(v) = default_voice { cfg.default_voice = v; }
-    if let Some(s) = speed { cfg.speed = s; }
+    if let Some(v) = default_voice {
+        cfg.default_voice = v;
+    }
+    if let Some(s) = speed {
+        cfg.speed = s;
+    }
     cfg.use_gpu = use_gpu;
     let runner = atomr_agents_tts_runtime_kokoro::KokoroRunner::new(cfg)
         .map_err(|e| PyRuntimeError::new_err(e.to_string()))?;
-    Ok(PyTextToSpeech { inner: Arc::new(runner) })
+    Ok(PyTextToSpeech {
+        inner: Arc::new(runner),
+    })
 }
 
 /// `tts_moss(*, endpoint=None, model_variant=None, default_voice=None, bearer_token=None)`.
@@ -791,8 +890,8 @@ pub fn tts_moss(
 ) -> PyResult<PyTextToSpeech> {
     let mut cfg = atomr_agents_tts_runtime_moss::MossTtsConfig::default();
     if let Some(e) = endpoint {
-        cfg.endpoint = url::Url::parse(&e)
-            .map_err(|err| PyValueError::new_err(format!("bad endpoint: {err}")))?;
+        cfg.endpoint =
+            url::Url::parse(&e).map_err(|err| PyValueError::new_err(format!("bad endpoint: {err}")))?;
     }
     if let Some(v) = model_variant {
         cfg.model_variant = match v.as_str() {
@@ -805,11 +904,17 @@ pub fn tts_moss(
             other => return Err(PyValueError::new_err(format!("unknown model_variant: {other}"))),
         };
     }
-    if default_voice.is_some() { cfg.default_voice = default_voice; }
-    if bearer_token.is_some() { cfg.bearer_token = bearer_token; }
+    if default_voice.is_some() {
+        cfg.default_voice = default_voice;
+    }
+    if bearer_token.is_some() {
+        cfg.bearer_token = bearer_token;
+    }
     let runner = atomr_agents_tts_runtime_moss::MossTtsRunner::new(cfg)
         .map_err(|e| PyRuntimeError::new_err(e.to_string()))?;
-    Ok(PyTextToSpeech { inner: Arc::new(runner) })
+    Ok(PyTextToSpeech {
+        inner: Arc::new(runner),
+    })
 }
 
 /// `tts_xtts(*, endpoint=None, default_speaker=None, default_language=None, bearer_token=None)`.
@@ -823,15 +928,23 @@ pub fn tts_xtts(
 ) -> PyResult<PyTextToSpeech> {
     let mut cfg = atomr_agents_tts_runtime_xtts::XttsConfig::default();
     if let Some(e) = endpoint {
-        cfg.endpoint = url::Url::parse(&e)
-            .map_err(|err| PyValueError::new_err(format!("bad endpoint: {err}")))?;
+        cfg.endpoint =
+            url::Url::parse(&e).map_err(|err| PyValueError::new_err(format!("bad endpoint: {err}")))?;
     }
-    if default_speaker.is_some() { cfg.default_speaker = default_speaker; }
-    if let Some(l) = default_language { cfg.default_language = l; }
-    if bearer_token.is_some() { cfg.bearer_token = bearer_token; }
+    if default_speaker.is_some() {
+        cfg.default_speaker = default_speaker;
+    }
+    if let Some(l) = default_language {
+        cfg.default_language = l;
+    }
+    if bearer_token.is_some() {
+        cfg.bearer_token = bearer_token;
+    }
     let runner = atomr_agents_tts_runtime_xtts::XttsRunner::new(cfg)
         .map_err(|e| PyRuntimeError::new_err(e.to_string()))?;
-    Ok(PyTextToSpeech { inner: Arc::new(runner) })
+    Ok(PyTextToSpeech {
+        inner: Arc::new(runner),
+    })
 }
 
 // Silence unused for items we keep for future steps.
@@ -854,10 +967,7 @@ fn _unused_marker(_a: AudioInput, _b: BackendKind, _v: PyValueError) {}
 /// step.
 #[pyfunction]
 #[pyo3(signature = (tts_handle, options=None))]
-pub fn speak_tool(
-    tts_handle: PyTextToSpeech,
-    options: Option<&Bound<'_, PyAny>>,
-) -> PyToolDescriptor {
+pub fn speak_tool(tts_handle: PyTextToSpeech, options: Option<&Bound<'_, PyAny>>) -> PyToolDescriptor {
     let _ = options; // accepted for forward compat; see doc comment
     let tool = SpeakTool::new(tts_handle.inner);
     PyToolDescriptor {

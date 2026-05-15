@@ -35,8 +35,12 @@ pub struct MossTtsConfig {
     pub bearer_token: Option<String>,
 }
 
-fn default_endpoint() -> Url { Url::parse("http://127.0.0.1:30000/").expect("MOSS endpoint") }
-fn default_variant() -> MossModelVariant { MossModelVariant::Local1_7B }
+fn default_endpoint() -> Url {
+    Url::parse("http://127.0.0.1:30000/").expect("MOSS endpoint")
+}
+fn default_variant() -> MossModelVariant {
+    MossModelVariant::Local1_7B
+}
 
 impl Default for MossTtsConfig {
     fn default() -> Self {

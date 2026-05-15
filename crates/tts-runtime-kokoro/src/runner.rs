@@ -28,9 +28,7 @@ impl KokoroRunner {
     fn pick_voice<'a>(&'a self, voice: &'a VoiceRef) -> Result<String> {
         match voice {
             VoiceRef::Library { id } => Ok(id.clone()),
-            VoiceRef::DescribedAs { .. } => {
-                Err(SttError::UnsupportedCapability("voicegen_from_text"))
-            }
+            VoiceRef::DescribedAs { .. } => Err(SttError::UnsupportedCapability("voicegen_from_text")),
             VoiceRef::ClonedFrom(_) => Err(SttError::UnsupportedCapability("voice_cloning")),
             VoiceRef::Custom(_) => Err(SttError::UnsupportedCapability("custom_voice")),
         }
@@ -39,9 +37,15 @@ impl KokoroRunner {
 
 #[async_trait]
 impl TextToSpeech for KokoroRunner {
-    fn capabilities(&self) -> &'static Capabilities { &CAPS }
-    fn backend_kind(&self) -> BackendKind { BackendKind::Kokoro }
-    fn transport_kind(&self) -> TransportKind { TransportKind::LocalModel }
+    fn capabilities(&self) -> &'static Capabilities {
+        &CAPS
+    }
+    fn backend_kind(&self) -> BackendKind {
+        BackendKind::Kokoro
+    }
+    fn transport_kind(&self) -> TransportKind {
+        TransportKind::LocalModel
+    }
 
     async fn synthesize(&self, request: SynthesisRequest) -> Result<AudioOutput> {
         let (text, voice) = match request {
@@ -61,20 +65,14 @@ impl TextToSpeech for KokoroRunner {
         )))
     }
 
-    async fn synthesize_stream(
-        &self,
-        _request: SynthesisRequest,
-    ) -> Result<Box<dyn SynthesisStream>> {
+    async fn synthesize_stream(&self, _request: SynthesisRequest) -> Result<Box<dyn SynthesisStream>> {
         Err(SttError::model_load(
             "atomr-agents-tts-runtime-kokoro: streaming pipeline pending; rebuild with \
              --features kokoro-ort once the ORT binding lands.",
         ))
     }
 
-    async fn open_realtime(
-        &self,
-        _opts: RealtimeOptions,
-    ) -> Result<Box<dyn RealtimeSession>> {
+    async fn open_realtime(&self, _opts: RealtimeOptions) -> Result<Box<dyn RealtimeSession>> {
         Err(SttError::UnsupportedCapability("realtime_bidirectional"))
     }
 }
@@ -86,14 +84,22 @@ mod tests {
     #[tokio::test]
     async fn caps_advertise_static_voice_library() {
         assert!(CAPS.plain_tts);
-        assert!(matches!(CAPS.voice_library, atomr_agents_tts_core::VoiceCatalog::Static { .. }));
+        assert!(matches!(
+            CAPS.voice_library,
+            atomr_agents_tts_core::VoiceCatalog::Static { .. }
+        ));
         assert!(!CAPS.requires_network);
     }
 
     #[tokio::test]
     async fn synthesize_returns_model_load_without_feature() {
         let r = KokoroRunner::new(KokoroConfig::default()).unwrap();
-        let req = SynthesisRequest::tts("hello", VoiceRef::Library { id: "af_bella".into() });
+        let req = SynthesisRequest::tts(
+            "hello",
+            VoiceRef::Library {
+                id: "af_bella".into(),
+            },
+        );
         let err = r.synthesize(req).await.unwrap_err();
         assert!(matches!(err, SttError::ModelLoad(_)));
     }

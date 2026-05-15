@@ -19,8 +19,8 @@ pub fn pcm_to_wav_bytes(pcm: &PcmBuffer) -> Result<Bytes, SttError> {
     let mut buf: Vec<u8> = Vec::with_capacity(44 + pcm.samples.len() * 2);
     {
         let cursor = Cursor::new(&mut buf);
-        let mut w = WavWriter::new(cursor, spec)
-            .map_err(|e| SttError::internal(format!("wav writer: {e}")))?;
+        let mut w =
+            WavWriter::new(cursor, spec).map_err(|e| SttError::internal(format!("wav writer: {e}")))?;
         for s in &pcm.samples {
             let clamped = s.clamp(-1.0, 1.0);
             let q = (clamped * i16::MAX as f32) as i16;
@@ -36,11 +36,7 @@ pub fn pcm_to_wav_bytes(pcm: &PcmBuffer) -> Result<Bytes, SttError> {
 /// Concatenate streamed PCM-S16LE bytes into one WAV container.
 /// Useful when a backend emits raw PCM frames over a stream and the
 /// caller wants to persist them as a single playable file.
-pub fn pcm_s16le_chunks_to_wav(
-    chunks: &[Bytes],
-    sample_rate: u32,
-    channels: u16,
-) -> Result<Bytes, SttError> {
+pub fn pcm_s16le_chunks_to_wav(chunks: &[Bytes], sample_rate: u32, channels: u16) -> Result<Bytes, SttError> {
     let total_samples: usize = chunks.iter().map(|c| c.len() / 2).sum();
     let mut samples = Vec::with_capacity(total_samples);
     for chunk in chunks {
@@ -84,10 +80,7 @@ mod tests {
     fn pcm_chunks_concatenate_to_wav() {
         let sr = 8_000u32;
         // Two chunks of 16 samples each = 32 PCM-S16LE frames.
-        let chunks = vec![
-            Bytes::from(vec![0u8; 32]),
-            Bytes::from(vec![0u8; 32]),
-        ];
+        let chunks = vec![Bytes::from(vec![0u8; 32]), Bytes::from(vec![0u8; 32])];
         let wav = pcm_s16le_chunks_to_wav(&chunks, sr, 1).unwrap();
         assert!(wav.len() > 44); // header + samples
     }

@@ -1,20 +1,73 @@
 use atomr_agents_stt_core::{AudioFormat, Languages};
-use atomr_agents_tts_core::{
-    Capabilities, Gender, VoiceCatalog, VoiceCloningSupport, VoiceDescriptor,
-};
+use atomr_agents_tts_core::{Capabilities, Gender, VoiceCatalog, VoiceCloningSupport, VoiceDescriptor};
 
 const OPENAI_VOICES: &[VoiceDescriptor] = &[
-    VoiceDescriptor { id: "alloy",   name: "Alloy",   language: "en", gender: Gender::Neutral },
-    VoiceDescriptor { id: "echo",    name: "Echo",    language: "en", gender: Gender::Male },
-    VoiceDescriptor { id: "fable",   name: "Fable",   language: "en", gender: Gender::Neutral },
-    VoiceDescriptor { id: "onyx",    name: "Onyx",    language: "en", gender: Gender::Male },
-    VoiceDescriptor { id: "nova",    name: "Nova",    language: "en", gender: Gender::Female },
-    VoiceDescriptor { id: "shimmer", name: "Shimmer", language: "en", gender: Gender::Female },
-    VoiceDescriptor { id: "ash",     name: "Ash",     language: "en", gender: Gender::Male },
-    VoiceDescriptor { id: "ballad",  name: "Ballad",  language: "en", gender: Gender::Male },
-    VoiceDescriptor { id: "coral",   name: "Coral",   language: "en", gender: Gender::Female },
-    VoiceDescriptor { id: "sage",    name: "Sage",    language: "en", gender: Gender::Neutral },
-    VoiceDescriptor { id: "verse",   name: "Verse",   language: "en", gender: Gender::Neutral },
+    VoiceDescriptor {
+        id: "alloy",
+        name: "Alloy",
+        language: "en",
+        gender: Gender::Neutral,
+    },
+    VoiceDescriptor {
+        id: "echo",
+        name: "Echo",
+        language: "en",
+        gender: Gender::Male,
+    },
+    VoiceDescriptor {
+        id: "fable",
+        name: "Fable",
+        language: "en",
+        gender: Gender::Neutral,
+    },
+    VoiceDescriptor {
+        id: "onyx",
+        name: "Onyx",
+        language: "en",
+        gender: Gender::Male,
+    },
+    VoiceDescriptor {
+        id: "nova",
+        name: "Nova",
+        language: "en",
+        gender: Gender::Female,
+    },
+    VoiceDescriptor {
+        id: "shimmer",
+        name: "Shimmer",
+        language: "en",
+        gender: Gender::Female,
+    },
+    VoiceDescriptor {
+        id: "ash",
+        name: "Ash",
+        language: "en",
+        gender: Gender::Male,
+    },
+    VoiceDescriptor {
+        id: "ballad",
+        name: "Ballad",
+        language: "en",
+        gender: Gender::Male,
+    },
+    VoiceDescriptor {
+        id: "coral",
+        name: "Coral",
+        language: "en",
+        gender: Gender::Female,
+    },
+    VoiceDescriptor {
+        id: "sage",
+        name: "Sage",
+        language: "en",
+        gender: Gender::Neutral,
+    },
+    VoiceDescriptor {
+        id: "verse",
+        name: "Verse",
+        language: "en",
+        gender: Gender::Neutral,
+    },
 ];
 
 pub const CAPS: Capabilities = Capabilities {
@@ -25,7 +78,9 @@ pub const CAPS: Capabilities = Capabilities {
     sound_effects: false,
     realtime_bidirectional: false,
     streaming_output: true,
-    voice_library: VoiceCatalog::Static { voices: OPENAI_VOICES },
+    voice_library: VoiceCatalog::Static {
+        voices: OPENAI_VOICES,
+    },
     max_concurrent_streams: None,
     languages: Languages::All,
     style_control: true,

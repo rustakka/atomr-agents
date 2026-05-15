@@ -15,15 +15,13 @@ use atomr_agents_stt_runtime_openai::{OpenAiSttConfig, OpenAiSttRunner};
 use std::path::PathBuf;
 
 fn fixture_path() -> PathBuf {
-    PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .join("../stt-core/tests/fixtures/jfk.wav")
+    PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../stt-core/tests/fixtures/jfk.wav")
 }
 
 #[tokio::test]
 #[ignore = "requires OPENAI_API_KEY + network"]
 async fn transcribes_jfk_fixture() {
-    let _ = std::env::var("OPENAI_API_KEY")
-        .expect("set OPENAI_API_KEY to run this integration test");
+    let _ = std::env::var("OPENAI_API_KEY").expect("set OPENAI_API_KEY to run this integration test");
     let path = fixture_path();
     if !path.exists() {
         eprintln!("missing fixture {path:?} — copy jfk.wav from whisper.cpp");

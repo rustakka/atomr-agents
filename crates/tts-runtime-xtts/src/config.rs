@@ -16,8 +16,12 @@ pub struct XttsConfig {
     pub bearer_token: Option<String>,
 }
 
-fn default_endpoint() -> Url { Url::parse("http://127.0.0.1:8020/").expect("XTTS endpoint") }
-fn default_language() -> String { "en".to_string() }
+fn default_endpoint() -> Url {
+    Url::parse("http://127.0.0.1:8020/").expect("XTTS endpoint")
+}
+fn default_language() -> String {
+    "en".to_string()
+}
 
 impl Default for XttsConfig {
     fn default() -> Self {

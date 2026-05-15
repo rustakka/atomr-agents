@@ -13,7 +13,13 @@ use pyo3::prelude::*;
 
 use crate::conv::{json_to_py, py_to_json};
 
-#[pyclass(name = "PairwiseChoice", module = "atomr_agents._native.eval", eq, hash, frozen)]
+#[pyclass(
+    name = "PairwiseChoice",
+    module = "atomr_agents._native.eval",
+    eq,
+    hash,
+    frozen
+)]
 #[derive(Clone, PartialEq, Eq, Hash)]
 pub struct PyPairwiseChoice {
     inner: String,
@@ -75,9 +81,7 @@ impl PyVerdict {
     fn new(name: &str) -> PyResult<Self> {
         let valid = ["approved", "rejected", "needs_review"];
         if !valid.contains(&name) {
-            return Err(PyValueError::new_err(format!(
-                "unknown verdict: {name:?}"
-            )));
+            return Err(PyValueError::new_err(format!("unknown verdict: {name:?}")));
         }
         Ok(Self {
             inner: name.to_string(),
@@ -199,10 +203,7 @@ impl AsyncScorer for PyAsyncScorerAdapter {
             let maybe_future = match Python::with_gil(|py| -> PyResult<Option<_>> {
                 let bound = coro_or_val.bind(py);
                 let inspect = py.import_bound("inspect")?;
-                let is_coro: bool = inspect
-                    .getattr("iscoroutine")?
-                    .call1((bound,))?
-                    .extract()?;
+                let is_coro: bool = inspect.getattr("iscoroutine")?.call1((bound,))?.extract()?;
                 if is_coro {
                     Ok(Some(pyo3_async_runtimes::tokio::into_future(bound.clone())?))
                 } else {
@@ -232,9 +233,7 @@ impl AsyncScorer for PyAsyncScorerAdapter {
             }
             let v = py_to_json(py, bound)?;
             serde_json::from_value::<ScorerOutcome>(v).map_err(|e| {
-                pyo3::exceptions::PyValueError::new_err(format!(
-                    "ScorerOutcome deserialize: {e}"
-                ))
+                pyo3::exceptions::PyValueError::new_err(format!("ScorerOutcome deserialize: {e}"))
             })
         }) {
             Ok(out) => out,
@@ -271,9 +270,7 @@ impl PyAsyncScorer {
         let inner = self.inner.clone();
         pyo3_async_runtimes::tokio::future_into_py(py, async move {
             let out = inner.score(&exp, &act).await;
-            Python::with_gil(|py| {
-                Py::new(py, PyScorerOutcome { inner: out }).map(|p| p.into_any())
-            })
+            Python::with_gil(|py| Py::new(py, PyScorerOutcome { inner: out }).map(|p| p.into_any()))
         })
     }
 
@@ -293,9 +290,7 @@ impl PyAsyncScorer {
 #[pyfunction]
 fn build_guest_async_scorer(key: String) -> PyResult<PyAsyncScorer> {
     let target = crate::guest::lookup_guest("scorer", &key).ok_or_else(|| {
-        pyo3::exceptions::PyKeyError::new_err(format!(
-            "no scorer registered with key {key:?}"
-        ))
+        pyo3::exceptions::PyKeyError::new_err(format!("no scorer registered with key {key:?}"))
     })?;
     let adapter = PyAsyncScorerAdapter::new(target, key.clone());
     Ok(PyAsyncScorer {

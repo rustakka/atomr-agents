@@ -28,10 +28,18 @@ pub struct GeminiLiveConfig {
     pub timeouts: Timeouts,
 }
 
-fn default_endpoint() -> Url { Url::parse(GEMINI_LIVE_WS_BASE).expect("GEMINI_LIVE_WS_BASE") }
-fn default_model() -> String { "models/gemini-2.0-flash-live-001".to_string() }
-fn default_voice() -> String { "Puck".to_string() }
-fn default_modalities() -> Vec<String> { vec!["AUDIO".to_string()] }
+fn default_endpoint() -> Url {
+    Url::parse(GEMINI_LIVE_WS_BASE).expect("GEMINI_LIVE_WS_BASE")
+}
+fn default_model() -> String {
+    "models/gemini-2.0-flash-live-001".to_string()
+}
+fn default_voice() -> String {
+    "Puck".to_string()
+}
+fn default_modalities() -> Vec<String> {
+    vec!["AUDIO".to_string()]
+}
 
 impl GeminiLiveConfig {
     pub fn from_env() -> Self {

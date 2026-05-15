@@ -9,9 +9,9 @@
 use std::time::Duration;
 
 use atomr_agents_core::{
-    AgentId, DepartmentId, HarnessId, IterationBudget, MemoryChunk, MemoryItem, MemoryKind,
-    MemoryNamespace, MoneyBudget, OrgId, PersonaId, RunId, SkillId, TeamId, TimeBudget, TokenBudget,
-    ToolId, ToolSetId, WorkflowId,
+    AgentId, DepartmentId, HarnessId, IterationBudget, MemoryChunk, MemoryItem, MemoryKind, MemoryNamespace,
+    MoneyBudget, OrgId, PersonaId, RunId, SkillId, TeamId, TimeBudget, TokenBudget, ToolId, ToolSetId,
+    WorkflowId,
 };
 use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
@@ -323,9 +323,7 @@ impl PyMemoryKind {
             "working" => MemoryKind::Working,
             "scratchpad" => MemoryKind::Scratchpad,
             other => {
-                return Err(PyValueError::new_err(format!(
-                    "unknown memory kind: {other:?}"
-                )));
+                return Err(PyValueError::new_err(format!("unknown memory kind: {other:?}")));
             }
         };
         Ok(Self { inner })
@@ -516,12 +514,7 @@ pub struct PyTokenUsage {
 impl PyTokenUsage {
     #[new]
     #[pyo3(signature = (input_tokens=0, output_tokens=0, reasoning_tokens=0, cached_tokens=0))]
-    fn new(
-        input_tokens: u32,
-        output_tokens: u32,
-        reasoning_tokens: u32,
-        cached_tokens: u32,
-    ) -> Self {
+    fn new(input_tokens: u32, output_tokens: u32, reasoning_tokens: u32, cached_tokens: u32) -> Self {
         Self {
             input_tokens,
             output_tokens,
@@ -583,9 +576,7 @@ impl PyFinishReason {
     fn new(name: &str) -> PyResult<Self> {
         let valid = ["stop", "length", "tool_calls", "content_filter", "error"];
         if !valid.contains(&name) {
-            return Err(PyValueError::new_err(format!(
-                "unknown finish reason: {name:?}"
-            )));
+            return Err(PyValueError::new_err(format!("unknown finish reason: {name:?}")));
         }
         Ok(Self {
             inner: name.to_string(),
@@ -614,9 +605,7 @@ impl From<atomr_infer_core::tokens::FinishReason> for PyFinishReason {
             atomr_infer_core::tokens::FinishReason::Error => "error",
             _ => "unknown",
         };
-        Self {
-            inner: s.to_string(),
-        }
+        Self { inner: s.to_string() }
     }
 }
 

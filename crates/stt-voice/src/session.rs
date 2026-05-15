@@ -4,9 +4,7 @@
 //! `UserTurn` when either the backend signals `UtteranceEnd` or the
 //! VAD reports `silence_ms` of trailing silence.
 
-use atomr_agents_stt_core::{
-    Result, Segment, SpeakerTag, StreamEvent, StreamingSession, SttError, Word,
-};
+use atomr_agents_stt_core::{Result, Segment, SpeakerTag, StreamEvent, StreamingSession, SttError, Word};
 use serde::{Deserialize, Serialize};
 use tokio::sync::mpsc;
 use tokio::time::{sleep, Duration};
@@ -56,11 +54,7 @@ impl VoiceSession {
     /// `vad` is used only in `TurnBased` mode for silence-based
     /// endpointing when the backend doesn't emit `UtteranceEnd`
     /// itself. Pass `None` to use [`EnergyVad`].
-    pub fn open(
-        stream: Box<dyn StreamingSession>,
-        mode: VoiceMode,
-        vad: Option<Box<dyn Vad>>,
-    ) -> Self {
+    pub fn open(stream: Box<dyn StreamingSession>, mode: VoiceMode, vad: Option<Box<dyn Vad>>) -> Self {
         let (tx, rx) = mpsc::channel::<std::result::Result<VoiceEvent, SttError>>(64);
         let mut vad: Box<dyn Vad> = vad.unwrap_or_else(|| Box::new(EnergyVad::default()));
         let mode_for_task = mode;
@@ -78,15 +72,11 @@ impl VoiceSession {
                         // VAD heuristic for live word-level
                         // updates: feed the words through if any.
                         for w in &words {
-                            let _ = tx
-                                .send(Ok(VoiceEvent::InterimWord(w.clone())))
-                                .await;
+                            let _ = tx.send(Ok(VoiceEvent::InterimWord(w.clone()))).await;
                         }
                         match mode_for_task {
                             VoiceMode::Live => {
-                                let _ = tx
-                                    .send(Ok(VoiceEvent::PartialTranscript(text)))
-                                    .await;
+                                let _ = tx.send(Ok(VoiceEvent::PartialTranscript(text))).await;
                             }
                             VoiceMode::TurnBased { .. } => {
                                 pending_partial = Some(text);
@@ -100,9 +90,7 @@ impl VoiceSession {
                         // "stable text now").
                         pending_partial = None;
                         let text = segment.text.clone();
-                        let _ = tx
-                            .send(Ok(VoiceEvent::UserTurn { text, segment }))
-                            .await;
+                        let _ = tx.send(Ok(VoiceEvent::UserTurn { text, segment })).await;
                     }
                     Ok(StreamEvent::SpeakerTurn { speaker, .. }) => {
                         let _ = tx.send(Ok(VoiceEvent::SpeakerChange(speaker))).await;
@@ -121,18 +109,14 @@ impl VoiceSession {
                                 speaker: None,
                                 confidence: None,
                             };
-                            let _ = tx
-                                .send(Ok(VoiceEvent::UserTurn { text, segment }))
-                                .await;
+                            let _ = tx.send(Ok(VoiceEvent::UserTurn { text, segment })).await;
                             let _ = tx
                                 .send(Ok(VoiceEvent::SilenceDetected {
                                     duration_ms: silence_ms,
                                 }))
                                 .await;
                         } else {
-                            let _ = tx
-                                .send(Ok(VoiceEvent::SilenceDetected { duration_ms: 0 }))
-                                .await;
+                            let _ = tx.send(Ok(VoiceEvent::SilenceDetected { duration_ms: 0 })).await;
                         }
                     }
                     Ok(StreamEvent::Metadata(_)) => {}
@@ -153,9 +137,7 @@ impl VoiceSession {
                     speaker: None,
                     confidence: None,
                 };
-                let _ = tx
-                    .send(Ok(VoiceEvent::UserTurn { text, segment }))
-                    .await;
+                let _ = tx.send(Ok(VoiceEvent::UserTurn { text, segment })).await;
             }
             // Touch vad so the unused-write warning doesn't fire and
             // keep it alive until the task ends. Low-energy frame
@@ -218,11 +200,7 @@ mod tests {
         s.push_audio(Bytes::from_static(b"chunk")).await.unwrap();
         s.finish().await.unwrap();
 
-        let mut vs = VoiceSession::open(
-            s,
-            VoiceMode::TurnBased { silence_ms: 100 },
-            None,
-        );
+        let mut vs = VoiceSession::open(s, VoiceMode::TurnBased { silence_ms: 100 }, None);
         // Drain at most 5 events looking for UserTurn.
         let mut got_user = false;
         for _ in 0..5 {

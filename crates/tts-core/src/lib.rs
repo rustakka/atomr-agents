@@ -41,9 +41,7 @@ mod stream;
 mod trait_;
 mod voice;
 
-pub use capabilities::{
-    Capabilities, Gender, VoiceCatalog, VoiceCloningSupport, VoiceDescriptor,
-};
+pub use capabilities::{Capabilities, Gender, VoiceCatalog, VoiceCloningSupport, VoiceDescriptor};
 pub use kinds::BackendKind;
 pub use mock::MockTextToSpeech;
 pub use phonemize::{DynPhonemizer, MockPhonemizer, PhonemizedText, Phonemizer};

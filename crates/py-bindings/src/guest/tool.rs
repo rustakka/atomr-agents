@@ -92,14 +92,12 @@ impl Tool for PyToolAdapter {
                     Ok(None)
                 }
             })
-            .map_err(|e| {
-                atomr_agents_core::AgentError::Tool(format!("guest tool coroutine: {e}"))
-            })?;
+            .map_err(|e| atomr_agents_core::AgentError::Tool(format!("guest tool coroutine: {e}")))?;
 
             match maybe_future {
-                Some(fut) => fut.await.map_err(|e| {
-                    atomr_agents_core::AgentError::Tool(format!("guest tool await: {e}"))
-                })?,
+                Some(fut) => fut
+                    .await
+                    .map_err(|e| atomr_agents_core::AgentError::Tool(format!("guest tool await: {e}")))?,
                 None => coro_or_val,
             }
         };
@@ -135,9 +133,7 @@ pub(crate) fn build_guest_toolset(
     let mut tools: Vec<DynTool> = Vec::with_capacity(selected.len());
     for key in &selected {
         let entry = TOOLS.get(key).ok_or_else(|| {
-            pyo3::exceptions::PyKeyError::new_err(format!(
-                "no guest tool registered with key {key:?}"
-            ))
+            pyo3::exceptions::PyKeyError::new_err(format!("no guest tool registered with key {key:?}"))
         })?;
         let adapter = PyToolAdapter::new(entry.descriptor.clone(), entry.target.clone());
         tools.push(Arc::new(adapter));

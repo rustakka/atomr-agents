@@ -18,8 +18,8 @@ pub fn pcm_to_wav_bytes(pcm: &PcmBuffer) -> Result<Bytes, SttError> {
     let mut buf: Vec<u8> = Vec::with_capacity(44 + pcm.samples.len() * 2);
     {
         let cursor = Cursor::new(&mut buf);
-        let mut w = WavWriter::new(cursor, spec)
-            .map_err(|e| SttError::internal(format!("wav writer: {e}")))?;
+        let mut w =
+            WavWriter::new(cursor, spec).map_err(|e| SttError::internal(format!("wav writer: {e}")))?;
         for s in &pcm.samples {
             // Saturating cast f32 [-1.0, 1.0] → i16.
             let clamped = s.clamp(-1.0, 1.0);

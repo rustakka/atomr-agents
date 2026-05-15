@@ -24,9 +24,7 @@ use std::sync::Arc;
 
 use async_trait::async_trait;
 use atomr_agents_stt_core::{Result, SttError};
-use atomr_agents_tts_core::{
-    AudioChunk, Capabilities, RealtimeEvent, RealtimeSession,
-};
+use atomr_agents_tts_core::{AudioChunk, Capabilities, RealtimeEvent, RealtimeSession};
 use bytes::Bytes;
 use futures::Stream;
 use parking_lot::Mutex;
@@ -50,9 +48,7 @@ enum OutgoingMsg {
 
 impl OpenAiRealtimeSession {
     pub fn spawn(
-        ws: tokio_tungstenite::WebSocketStream<
-            tokio_tungstenite::MaybeTlsStream<tokio::net::TcpStream>,
-        >,
+        ws: tokio_tungstenite::WebSocketStream<tokio_tungstenite::MaybeTlsStream<tokio::net::TcpStream>>,
         voice: String,
         instructions: Option<String>,
         modalities: Vec<String>,
@@ -61,8 +57,7 @@ impl OpenAiRealtimeSession {
         use tokio_tungstenite::tungstenite::Message;
 
         let (out_tx, mut out_rx) = mpsc::channel::<OutgoingMsg>(64);
-        let (events_tx, events_rx) =
-            mpsc::channel::<std::result::Result<RealtimeEvent, SttError>>(64);
+        let (events_tx, events_rx) = mpsc::channel::<std::result::Result<RealtimeEvent, SttError>>(64);
         let (mut sink, mut source) = ws.split();
 
         // Seed session.update on connect.
@@ -135,20 +130,15 @@ impl OpenAiRealtimeSession {
                                     .await;
                             }
                             Ok(ServerEvent::SpeechStarted { .. }) => {
-                                let _ = events_tx
-                                    .send(Ok(RealtimeEvent::UserSpeechStarted))
-                                    .await;
+                                let _ = events_tx.send(Ok(RealtimeEvent::UserSpeechStarted)).await;
                             }
                             Ok(ServerEvent::SpeechStopped { .. }) => {
-                                let _ = events_tx
-                                    .send(Ok(RealtimeEvent::UserSpeechEnded))
-                                    .await;
+                                let _ = events_tx.send(Ok(RealtimeEvent::UserSpeechEnded)).await;
                             }
                             Ok(ServerEvent::ResponseCancelled { .. }) => {
                                 let _ = events_tx.send(Ok(RealtimeEvent::BargeIn)).await;
                             }
-                            Ok(ServerEvent::ResponseDone { .. })
-                            | Ok(ServerEvent::AudioDone { .. }) => {
+                            Ok(ServerEvent::ResponseDone { .. }) | Ok(ServerEvent::AudioDone { .. }) => {
                                 // Per-turn done; we surface the global Done
                                 // when the WS closes.
                             }
@@ -163,9 +153,7 @@ impl OpenAiRealtimeSession {
                             Ok(ServerEvent::Other) => {}
                             Err(e) => {
                                 let _ = events_tx
-                                    .send(Err(SttError::transport(format!(
-                                        "openai realtime parse: {e}"
-                                    ))))
+                                    .send(Err(SttError::transport(format!("openai realtime parse: {e}"))))
                                     .await;
                             }
                         }
@@ -198,7 +186,9 @@ impl OpenAiRealtimeSession {
 
 #[async_trait]
 impl RealtimeSession for OpenAiRealtimeSession {
-    fn capabilities(&self) -> &'static Capabilities { &CAPS }
+    fn capabilities(&self) -> &'static Capabilities {
+        &CAPS
+    }
 
     async fn push_text(&mut self, text: &str) -> Result<()> {
         let item = serde_json::json!({
@@ -265,8 +255,7 @@ impl RealtimeSession for OpenAiRealtimeSession {
 
     fn events(
         &mut self,
-    ) -> Pin<Box<dyn Stream<Item = std::result::Result<RealtimeEvent, SttError>> + Send + '_>>
-    {
+    ) -> Pin<Box<dyn Stream<Item = std::result::Result<RealtimeEvent, SttError>> + Send + '_>> {
         let mut guard = self.events_rx.lock();
         let rx = guard.take();
         drop(guard);
@@ -342,8 +331,7 @@ struct ErrorBody {
 // ----- base64 helpers (copy-local to avoid cross-crate coupling) ------------
 
 fn base64_encode(b: &[u8]) -> String {
-    const ALPHABET: &[u8; 64] =
-        b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+    const ALPHABET: &[u8; 64] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
     let mut out = String::with_capacity((b.len() + 2) / 3 * 4);
     for chunk in b.chunks(3) {
         let n = chunk.len();
@@ -353,8 +341,16 @@ fn base64_encode(b: &[u8]) -> String {
         let triple = (b0 << 16) | (b1 << 8) | b2;
         out.push(ALPHABET[((triple >> 18) & 0x3F) as usize] as char);
         out.push(ALPHABET[((triple >> 12) & 0x3F) as usize] as char);
-        if n > 1 { out.push(ALPHABET[((triple >> 6) & 0x3F) as usize] as char); } else { out.push('='); }
-        if n > 2 { out.push(ALPHABET[(triple & 0x3F) as usize] as char); } else { out.push('='); }
+        if n > 1 {
+            out.push(ALPHABET[((triple >> 6) & 0x3F) as usize] as char);
+        } else {
+            out.push('=');
+        }
+        if n > 2 {
+            out.push(ALPHABET[(triple & 0x3F) as usize] as char);
+        } else {
+            out.push('=');
+        }
     }
     out
 }
@@ -380,8 +376,7 @@ fn base64_decode(s: &str) -> Result<Vec<u8>> {
                 pad += 1;
                 continue;
             }
-            buf[i] = val(*c)
-                .ok_or_else(|| SttError::decode("invalid base64 character"))?;
+            buf[i] = val(*c).ok_or_else(|| SttError::decode("invalid base64 character"))?;
         }
         let triple = (buf[0] << 18) | (buf[1] << 12) | (buf[2] << 6) | buf[3];
         out.push(((triple >> 16) & 0xFF) as u8);

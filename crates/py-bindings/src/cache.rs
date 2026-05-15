@@ -63,11 +63,7 @@ pub struct PyCachedTurn {
 impl PyCachedTurn {
     #[new]
     #[pyo3(signature = (text, usage=None, finish_reason=None))]
-    fn new(
-        text: String,
-        usage: Option<PyTokenUsage>,
-        finish_reason: Option<PyFinishReason>,
-    ) -> Self {
+    fn new(text: String, usage: Option<PyTokenUsage>, finish_reason: Option<PyFinishReason>) -> Self {
         let usage = usage
             .map(|u| atomr_infer_core::tokens::TokenUsage {
                 input_tokens: u.input_tokens,
@@ -126,12 +122,7 @@ impl PyLlmCache {
     }
 
     /// Async cache store. No return value.
-    fn put<'py>(
-        &self,
-        py: Python<'py>,
-        key: PyCacheKey,
-        value: PyCachedTurn,
-    ) -> PyResult<Bound<'py, PyAny>> {
+    fn put<'py>(&self, py: Python<'py>, key: PyCacheKey, value: PyCachedTurn) -> PyResult<Bound<'py, PyAny>> {
         let cache = self.inner.clone();
         let k = key.inner;
         let v = value.inner;
@@ -172,12 +163,7 @@ impl PyInMemoryLlmCache {
     }
 
     /// Async cache store. No return value.
-    fn put<'py>(
-        &self,
-        py: Python<'py>,
-        key: PyCacheKey,
-        value: PyCachedTurn,
-    ) -> PyResult<Bound<'py, PyAny>> {
+    fn put<'py>(&self, py: Python<'py>, key: PyCacheKey, value: PyCachedTurn) -> PyResult<Bound<'py, PyAny>> {
         let cache = self.inner.clone();
         let k = key.inner;
         let v = value.inner;

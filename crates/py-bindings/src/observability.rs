@@ -59,10 +59,7 @@ impl PyEvent {
 
     #[getter]
     fn parent_run_id(&self) -> Option<String> {
-        self.inner
-            .parent_run_id
-            .as_ref()
-            .map(|r| r.as_str().to_string())
+        self.inner.parent_run_id.as_ref().map(|r| r.as_str().to_string())
     }
 
     #[getter]
@@ -71,8 +68,7 @@ impl PyEvent {
     }
 
     fn to_dict(&self, py: Python<'_>) -> PyResult<PyObject> {
-        let v = serde_json::to_value(&self.inner)
-            .map_err(|e| PyRuntimeError::new_err(e.to_string()))?;
+        let v = serde_json::to_value(&self.inner).map_err(|e| PyRuntimeError::new_err(e.to_string()))?;
         json_to_py(py, &v)
     }
 
@@ -119,9 +115,7 @@ impl PyEventBus {
             let cb = cb.clone();
             let env = env.clone();
             Python::with_gil(|py| {
-                if let Ok(pyev) =
-                    Py::new(py, PyEvent { inner: env }).map(|e| e.into_py(py))
-                {
+                if let Ok(pyev) = Py::new(py, PyEvent { inner: env }).map(|e| e.into_py(py)) {
                     let _ = cb.call1(py, (pyev,));
                 }
             });
@@ -142,13 +136,7 @@ impl PyEventBus {
         }
     }
 
-    fn emit_tool_invoked(
-        &self,
-        tool_id: String,
-        args_hash: u64,
-        elapsed_ms: u64,
-        ok: bool,
-    ) -> PyResult<()> {
+    fn emit_tool_invoked(&self, tool_id: String, args_hash: u64, elapsed_ms: u64, ok: bool) -> PyResult<()> {
         self.inner.emit(Event::ToolInvoked {
             tool_id: ToolId::from(tool_id),
             args_hash,
@@ -223,10 +211,7 @@ impl PyEventBus {
                     });
                 }
                 Err(_) => {
-                    if let Ok(rt) = tokio::runtime::Builder::new_current_thread()
-                        .enable_all()
-                        .build()
-                    {
+                    if let Ok(rt) = tokio::runtime::Builder::new_current_thread().enable_all().build() {
                         rt.block_on(async move {
                             let _ = tracer.on_event(&env).await;
                         });
@@ -348,11 +333,7 @@ impl PyRunTreeBuilder {
 
     /// Flush accumulated runs as LangSmith records. Returns the JSON
     /// lines (in-memory sink). Async.
-    fn flush_langsmith<'py>(
-        &self,
-        py: Python<'py>,
-        project: String,
-    ) -> PyResult<Bound<'py, PyAny>> {
+    fn flush_langsmith<'py>(&self, py: Python<'py>, project: String) -> PyResult<Bound<'py, PyAny>> {
         let builder = self.inner.clone();
         pyo3_async_runtimes::tokio::future_into_py(py, async move {
             let (tracer, sink) = RustLangSmithTracer::in_memory(builder, project);

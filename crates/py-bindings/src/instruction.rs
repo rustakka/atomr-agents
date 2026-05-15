@@ -9,15 +9,12 @@ use std::collections::HashMap;
 use std::sync::Arc;
 
 use async_trait::async_trait;
-use atomr_agents_core::{
-    AgentContext, AgentError, MessageRole, Result as AgentResult, TokenBudget, Value,
-};
+use atomr_agents_core::{AgentContext, AgentError, MessageRole, Result as AgentResult, TokenBudget, Value};
 use atomr_agents_embed::Embedder;
 use atomr_agents_instruction::{
-    BehaviorStrategy, ChatPromptTemplate, Example, ExampleSelector, FewShotChatTemplate,
-    InstructionStrategy, LengthBasedSelector, MessageTemplate, RenderedInstructions,
-    RenderedMessage, SemanticSimilaritySelector, StringTemplate, StaticBehaviorStrategy,
-    StaticTaskStrategy, TaskStrategy,
+    BehaviorStrategy, ChatPromptTemplate, Example, ExampleSelector, FewShotChatTemplate, InstructionStrategy,
+    LengthBasedSelector, MessageTemplate, RenderedInstructions, RenderedMessage, SemanticSimilaritySelector,
+    StaticBehaviorStrategy, StaticTaskStrategy, StringTemplate, TaskStrategy,
 };
 use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyList};
@@ -110,7 +107,11 @@ impl PyRenderedMessage {
     }
 
     fn __repr__(&self) -> String {
-        format!("RenderedMessage(role={:?}, chars={})", self.role(), self.inner.content.chars().count())
+        format!(
+            "RenderedMessage(role={:?}, chars={})",
+            self.role(),
+            self.inner.content.chars().count()
+        )
     }
 }
 
@@ -226,20 +227,13 @@ impl PyChatPromptTemplate {
         })
     }
 
-    fn render<'py>(
-        &self,
-        py: Python<'py>,
-        vars: &Bound<'py, PyDict>,
-    ) -> PyResult<Vec<PyRenderedMessage>> {
+    fn render<'py>(&self, py: Python<'py>, vars: &Bound<'py, PyDict>) -> PyResult<Vec<PyRenderedMessage>> {
         let v = py_to_json(py, vars.as_any())?;
         let map: HashMap<String, Value> = match v {
             Value::Object(m) => m.into_iter().collect(),
             _ => HashMap::new(),
         };
-        let rendered = self
-            .inner
-            .render(&map)
-            .map_err(crate::errors::map)?;
+        let rendered = self.inner.render(&map).map_err(crate::errors::map)?;
         Ok(rendered
             .into_iter()
             .map(|inner| PyRenderedMessage { inner })
@@ -252,7 +246,10 @@ impl PyChatPromptTemplate {
 }
 
 /// Builder factory pattern: `builder().system(...).user(...).build()`.
-#[pyclass(name = "ChatPromptTemplateBuilder", module = "atomr_agents._native.instruction")]
+#[pyclass(
+    name = "ChatPromptTemplateBuilder",
+    module = "atomr_agents._native.instruction"
+)]
 pub struct PyChatPromptTemplateBuilder {
     messages: Vec<MessageTemplate>,
     partial: HashMap<String, Value>,
@@ -269,14 +266,12 @@ impl PyChatPromptTemplateBuilder {
     }
 
     fn system(&mut self, text: String) -> PyResult<()> {
-        self.messages
-            .push(MessageTemplate::System(StringTemplate(text)));
+        self.messages.push(MessageTemplate::System(StringTemplate(text)));
         Ok(())
     }
 
     fn user(&mut self, text: String) -> PyResult<()> {
-        self.messages
-            .push(MessageTemplate::User(StringTemplate(text)));
+        self.messages.push(MessageTemplate::User(StringTemplate(text)));
         Ok(())
     }
 
@@ -404,8 +399,7 @@ fn semantic_similarity_selector(
         // Allow either a guest factory key (string) or a PyEmbedder handle.
         if let Ok(s) = bound.extract::<String>() {
             let target = crate::guest::must_lookup("embedder", &s)?;
-            Ok(Arc::new(crate::embed::PyEmbedderAdapter { target })
-                as Arc<dyn Embedder>)
+            Ok(Arc::new(crate::embed::PyEmbedderAdapter { target }) as Arc<dyn Embedder>)
         } else {
             let h: crate::embed::PyEmbedder = bound.extract()?;
             Ok(h.inner)
@@ -446,11 +440,7 @@ impl PyFewShotChatTemplate {
         }
     }
 
-    fn render<'py>(
-        &self,
-        py: Python<'py>,
-        vars: &Bound<'py, PyDict>,
-    ) -> PyResult<Bound<'py, PyAny>> {
+    fn render<'py>(&self, py: Python<'py>, vars: &Bound<'py, PyDict>) -> PyResult<Bound<'py, PyAny>> {
         let v = py_to_json(py, vars.as_any())?;
         let map: HashMap<String, Value> = match v {
             Value::Object(m) => m.into_iter().collect(),
@@ -458,10 +448,7 @@ impl PyFewShotChatTemplate {
         };
         let inner = self.inner.clone();
         pyo3_async_runtimes::tokio::future_into_py(py, async move {
-            let rendered = inner
-                .render(&map)
-                .await
-                .map_err(crate::errors::map)?;
+            let rendered = inner.render(&map).await.map_err(crate::errors::map)?;
             Python::with_gil(|py| -> PyResult<PyObject> {
                 let list = PyList::empty_bound(py);
                 for m in rendered {
@@ -541,9 +528,7 @@ impl InstructionStrategy for PyInstructionStrategyAdapter {
                 let d: &Bound<'_, PyDict> = bound.downcast()?;
                 let sp: String = d
                     .get_item("system_prompt")?
-                    .ok_or_else(|| {
-                        pyo3::exceptions::PyKeyError::new_err("missing 'system_prompt'")
-                    })?
+                    .ok_or_else(|| pyo3::exceptions::PyKeyError::new_err("missing 'system_prompt'"))?
                     .extract()?;
                 let est: u32 = match d.get_item("estimated_tokens")? {
                     Some(v) => v.extract()?,
@@ -619,11 +604,7 @@ pub(crate) struct PyTaskStrategyAdapter {
 
 #[async_trait]
 impl TaskStrategy for PyTaskStrategyAdapter {
-    async fn resolve(
-        &self,
-        ctx: &AgentContext,
-        budget: &mut TokenBudget,
-    ) -> AgentResult<String> {
+    async fn resolve(&self, ctx: &AgentContext, budget: &mut TokenBudget) -> AgentResult<String> {
         let target = self.target.clone();
         let ctx_owned = ctx.clone();
         let budget_remaining = budget.remaining;
@@ -655,11 +636,7 @@ pub(crate) struct PyBehaviorStrategyAdapter {
 
 #[async_trait]
 impl BehaviorStrategy for PyBehaviorStrategyAdapter {
-    async fn resolve(
-        &self,
-        ctx: &AgentContext,
-        budget: &mut TokenBudget,
-    ) -> AgentResult<String> {
+    async fn resolve(&self, ctx: &AgentContext, budget: &mut TokenBudget) -> AgentResult<String> {
         let target = self.target.clone();
         let ctx_owned = ctx.clone();
         let budget_remaining = budget.remaining;

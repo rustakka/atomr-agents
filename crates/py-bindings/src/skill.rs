@@ -151,10 +151,7 @@ fn static_skill_strategy(skills: Vec<PySkill>) -> PySkillStrategy {
 /// skill missing from the dict falls back to its own
 /// `Skill.keywords` list.
 #[pyfunction]
-fn keyword_skill_strategy(
-    skills: Vec<PySkill>,
-    keywords: &Bound<'_, PyDict>,
-) -> PyResult<PySkillStrategy> {
+fn keyword_skill_strategy(skills: Vec<PySkill>, keywords: &Bound<'_, PyDict>) -> PyResult<PySkillStrategy> {
     let mut merged: Vec<Skill> = Vec::with_capacity(skills.len());
     for s in skills {
         let mut skill = s.inner;

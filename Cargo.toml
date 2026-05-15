@@ -21,6 +21,8 @@ members = [
     "crates/stt-diarize-sherpa",
     "crates/stt-voice",
     "crates/stt-tool",
+    "crates/stt-harness",
+    "crates/stt-harness-web",
     "crates/tts-core",
     "crates/tts-audio",
     "crates/tts-runtime-openai",
@@ -108,6 +110,12 @@ tokio-tungstenite = { version = "0.23", default-features = false }
 secrecy           = "0.10"
 dirs              = "5"
 
+# Web server (used by stt-harness-web)
+axum       = { version = "0.7", features = ["ws"] }
+tower      = "0.5"
+tower-http = { version = "0.6", features = ["cors", "trace"] }
+rust-embed = { version = "8", features = ["mime-guess"] }
+
 # Python bindings (optional)
 pyo3                 = { version = "0.22", default-features = false, features = ["macros"] }
 pyo3-async-runtimes  = { version = "0.22", default-features = false, features = ["tokio-runtime"] }
@@ -170,6 +178,8 @@ atomr-agents-stt-runtime-assemblyai = { path = "crates/stt-runtime-assemblyai", 
 atomr-agents-stt-diarize-sherpa = { path = "crates/stt-diarize-sherpa", version = "0.9.0" }
 atomr-agents-stt-voice        = { path = "crates/stt-voice", version = "0.9.0" }
 atomr-agents-stt-tool         = { path = "crates/stt-tool", version = "0.9.0" }
+atomr-agents-stt-harness      = { path = "crates/stt-harness", version = "0.9.0" }
+atomr-agents-stt-harness-web  = { path = "crates/stt-harness-web", version = "0.9.0" }
 atomr-agents-tts-core         = { path = "crates/tts-core", version = "0.9.0" }
 atomr-agents-tts-audio        = { path = "crates/tts-audio", version = "0.9.0" }
 atomr-agents-tts-runtime-openai = { path = "crates/tts-runtime-openai", version = "0.9.0" }

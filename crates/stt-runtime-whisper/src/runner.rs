@@ -12,8 +12,8 @@ use std::sync::Arc;
 
 use async_trait::async_trait;
 use atomr_agents_stt_core::{
-    AudioInput, BackendKind, Capabilities, Result, SpeechToText, StreamOptions,
-    StreamingSession, SttError, TranscribeOptions, Transcript, TransportKind,
+    AudioInput, BackendKind, Capabilities, Result, SpeechToText, StreamOptions, StreamingSession, SttError,
+    TranscribeOptions, Transcript, TransportKind,
 };
 
 use crate::caps::CAPS;
@@ -74,11 +74,7 @@ impl SpeechToText for WhisperRunner {
         TransportKind::LocalModel
     }
 
-    async fn transcribe(
-        &self,
-        input: AudioInput,
-        opts: TranscribeOptions,
-    ) -> Result<Transcript> {
+    async fn transcribe(&self, input: AudioInput, opts: TranscribeOptions) -> Result<Transcript> {
         if opts.diarize {
             return Err(SttError::UnsupportedCapability("diarization"));
         }
@@ -108,12 +104,10 @@ impl SpeechToText for WhisperRunner {
                     .lock()
                     .create_state()
                     .map_err(|e| SttError::internal(format!("whisper state: {e}")))?;
-                let mut params = whisper_rs::FullParams::new(
-                    whisper_rs::SamplingStrategy::BeamSearch {
-                        beam_size: beam,
-                        patience: -1.0,
-                    },
-                );
+                let mut params = whisper_rs::FullParams::new(whisper_rs::SamplingStrategy::BeamSearch {
+                    beam_size: beam,
+                    patience: -1.0,
+                });
                 params.set_n_threads(n_threads);
                 params.set_token_timestamps(true);
                 params.set_print_progress(false);
@@ -151,10 +145,9 @@ impl SpeechToText for WhisperRunner {
                     let mut words: Vec<Word> = Vec::new();
                     if let Ok(n_tokens) = state.full_n_tokens(i) {
                         for j in 0..n_tokens {
-                            if let (Ok(t), Ok(td)) = (
-                                state.full_get_token_text(i, j),
-                                state.full_get_token_data(i, j),
-                            ) {
+                            if let (Ok(t), Ok(td)) =
+                                (state.full_get_token_text(i, j), state.full_get_token_data(i, j))
+                            {
                                 if t.starts_with('[') && t.ends_with(']') {
                                     continue;
                                 }
@@ -200,25 +193,18 @@ impl SpeechToText for WhisperRunner {
         }
     }
 
-    async fn open_stream(
-        &self,
-        _opts: StreamOptions,
-    ) -> Result<Box<dyn StreamingSession>> {
+    async fn open_stream(&self, _opts: StreamOptions) -> Result<Box<dyn StreamingSession>> {
         Err(SttError::UnsupportedCapability("streaming_push"))
     }
 }
 
 #[cfg(feature = "whisper-cpp")]
-async fn decode_to_mono_16k(
-    input: AudioInput,
-) -> Result<atomr_agents_stt_core::PcmBuffer> {
+async fn decode_to_mono_16k(input: AudioInput) -> Result<atomr_agents_stt_core::PcmBuffer> {
     let pcm = match input {
         AudioInput::Pcm(p) => p,
-        other => {
-            tokio::task::spawn_blocking(move || atomr_agents_stt_audio::decode::decode_to_pcm(other))
-                .await
-                .map_err(|e| SttError::internal(format!("decode spawn: {e}")))??
-        }
+        other => tokio::task::spawn_blocking(move || atomr_agents_stt_audio::decode::decode_to_pcm(other))
+            .await
+            .map_err(|e| SttError::internal(format!("decode spawn: {e}")))??,
     };
     let mono = atomr_agents_stt_audio::decode::to_mono(&pcm);
     let resampled = atomr_agents_stt_audio::resample::resample_mono(&mono, 16_000)?;

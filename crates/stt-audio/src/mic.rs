@@ -119,10 +119,7 @@ impl MicCaptureSession {
                 .build_input_stream(
                     &stream_config,
                     move |data: &[u16], _| {
-                        let v: Vec<f32> = data
-                            .iter()
-                            .map(|s| ((*s as f32) - 32_768.0) / 32_768.0)
-                            .collect();
+                        let v: Vec<f32> = data.iter().map(|s| ((*s as f32) - 32_768.0) / 32_768.0).collect();
                         push(&tx, &dropped_cb, &seq_cb, v);
                     },
                     err_fn,
@@ -179,12 +176,7 @@ impl MicCaptureSession {
     }
 }
 
-fn push(
-    tx: &mpsc::Sender<AudioFrame>,
-    dropped: &Arc<AtomicU64>,
-    seq: &Arc<AtomicU64>,
-    samples: Vec<f32>,
-) {
+fn push(tx: &mpsc::Sender<AudioFrame>, dropped: &Arc<AtomicU64>, seq: &Arc<AtomicU64>, samples: Vec<f32>) {
     let n = seq.fetch_add(1, Ordering::Relaxed);
     let frame = AudioFrame { samples, seq: n };
     if tx.try_send(frame).is_err() {

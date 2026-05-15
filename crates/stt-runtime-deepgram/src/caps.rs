@@ -1,12 +1,9 @@
 use atomr_agents_stt_core::{AudioFormat, Capabilities, DiarizationSupport, Languages};
 
 const DEEPGRAM_LANGUAGES: &[&str] = &[
-    "en", "en-US", "en-GB", "en-AU", "en-NZ", "en-IN",
-    "es", "es-419",
-    "fr", "fr-CA",
-    "de", "it", "pt", "pt-BR", "pt-PT",
-    "nl", "ru", "tr", "pl", "uk", "sv", "no", "da", "fi",
-    "ja", "zh", "zh-CN", "zh-TW", "ko", "hi", "id", "th", "vi", "ms",
+    "en", "en-US", "en-GB", "en-AU", "en-NZ", "en-IN", "es", "es-419", "fr", "fr-CA", "de", "it", "pt",
+    "pt-BR", "pt-PT", "nl", "ru", "tr", "pl", "uk", "sv", "no", "da", "fi", "ja", "zh", "zh-CN", "zh-TW",
+    "ko", "hi", "id", "th", "vi", "ms",
 ];
 
 pub const CAPS: Capabilities = Capabilities {

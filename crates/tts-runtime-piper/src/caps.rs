@@ -2,9 +2,8 @@ use atomr_agents_stt_core::{AudioFormat, Languages, SampleType};
 use atomr_agents_tts_core::{Capabilities, VoiceCatalog, VoiceCloningSupport};
 
 const PIPER_LANGUAGES: &[&str] = &[
-    "ar", "ca", "cs", "cy", "da", "de", "el", "en", "es", "fa", "fi", "fr", "hu", "is",
-    "it", "ka", "kk", "lb", "ne", "nl", "no", "pl", "pt", "ro", "ru", "sk", "sl", "sr",
-    "sv", "sw", "tr", "uk", "vi", "zh",
+    "ar", "ca", "cs", "cy", "da", "de", "el", "en", "es", "fa", "fi", "fr", "hu", "is", "it", "ka", "kk",
+    "lb", "ne", "nl", "no", "pl", "pt", "ro", "ru", "sk", "sl", "sr", "sv", "sw", "tr", "uk", "vi", "zh",
 ];
 
 pub const CAPS: Capabilities = Capabilities {

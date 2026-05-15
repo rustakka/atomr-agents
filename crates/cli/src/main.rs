@@ -73,7 +73,8 @@ enum HarnessCmd {
     Pin { spec: String },
 }
 
-fn main() -> Result<()> {
+#[tokio::main]
+async fn main() -> Result<()> {
     tracing_subscriber::fmt()
         .with_env_filter(
             tracing_subscriber::EnvFilter::try_from_default_env()
@@ -112,15 +113,65 @@ fn main() -> Result<()> {
                 println!("harness pin {spec}");
             }
         },
-        Cmd::Serve { bind } => {
-            println!("atomr-agents Studio-style inspector — would listen on {bind}");
-            println!("Endpoints (handler functions in `inspector::Inspector`):");
-            println!("  GET  /runs/:wf/:run/checkpoints");
-            println!("  GET  /runs/:wf/:run/checkpoints/:step");
-            println!("  POST /runs/:wf/:run/fork");
-            println!("  POST /runs/:wf/:run/resume");
-            println!("Bind axum onto these (the inspector module is feature-flag-friendly).");
-        }
+        Cmd::Serve { bind } => serve(bind).await?,
     }
+    Ok(())
+}
+
+/// `atomr-agents serve` — run the STT-harness conversation review UI.
+///
+/// Compiled in only with `--features stt-web`. Conversations are
+/// persisted through `crates/state`'s `Checkpointer` — the configured
+/// persistence provider — defaulting to the in-memory backend.
+#[cfg(feature = "stt-web")]
+async fn serve(bind: String) -> Result<()> {
+    use std::net::SocketAddr;
+    use std::sync::Arc;
+
+    use atomr_agents_state::{Checkpointer, InMemoryCheckpointer};
+    use atomr_agents_stt_harness::{CheckpointerConversationStore, ConversationStore};
+    use atomr_agents_stt_harness_web::{WebConfig, WebServer};
+
+    let addr: SocketAddr = bind
+        .parse()
+        .map_err(|e| anyhow::anyhow!("invalid --bind '{bind}': {e}"))?;
+
+    // The configured persistence provider. `InMemoryCheckpointer` is
+    // the default; a deployment can swap in the SQLite/Postgres backend
+    // via `crates/state`'s feature flags.
+    let checkpointer: Arc<dyn Checkpointer> = Arc::new(InMemoryCheckpointer::new());
+    let store: Arc<dyn ConversationStore> = Arc::new(CheckpointerConversationStore::new(checkpointer));
+
+    let server = WebServer::new(
+        WebConfig {
+            bind: addr,
+            ws_channel_capacity: 512,
+        },
+        store,
+    );
+    let handle = server.start().await?;
+    println!("stt-harness-web listening on http://{}", handle.bound_addr);
+    println!("  GET    /api/conversations");
+    println!("  GET    /api/conversations/:id");
+    println!("  PUT    /api/conversations/:id/speakers/:speaker_id");
+    println!("  DELETE /api/conversations/:id");
+    println!("  GET    /ws    (live SttHarnessEvent stream)");
+    println!("Press Ctrl-C to stop.");
+    tokio::signal::ctrl_c().await.ok();
+    println!("shutting down…");
+    handle.shutdown().await;
+    Ok(())
+}
+
+/// Fallback when the web UI is not compiled in.
+#[cfg(not(feature = "stt-web"))]
+async fn serve(bind: String) -> Result<()> {
+    println!("atomr-agents serve — the STT conversation review UI is not compiled in.");
+    println!("Rebuild with `--features stt-web` to serve it on {bind}:");
+    println!("  GET    /api/conversations");
+    println!("  GET    /api/conversations/:id");
+    println!("  PUT    /api/conversations/:id/speakers/:speaker_id");
+    println!("  GET    /ws");
+    println!("(The Studio-style checkpoint inspector — see `inspector::Inspector` — remains TODO.)");
     Ok(())
 }

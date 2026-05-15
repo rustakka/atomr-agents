@@ -23,10 +23,7 @@ You can vocalise your reply by calling the `speak_text` tool with the text you \
 want the user to hear. Reserve this for replies the user expects in voice.";
 
 /// Bundles speak + transcribe into a single Skill.
-pub fn voice_response_skill(
-    stt: DynSpeechToText,
-    tts: DynTextToSpeech,
-) -> (Skill, Vec<DynTool>) {
+pub fn voice_response_skill(stt: DynSpeechToText, tts: DynTextToSpeech) -> (Skill, Vec<DynTool>) {
     let speak: DynTool = Arc::new(SpeakTool::new(tts));
     let transcribe: DynTool = Arc::new(TranscribeTool::new(stt));
     let skill = Skill {

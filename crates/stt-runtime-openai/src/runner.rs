@@ -4,13 +4,11 @@ use std::path::PathBuf;
 
 use async_trait::async_trait;
 use atomr_agents_stt_core::{
-    AudioFormat, AudioInput, BackendKind, Capabilities, DiarizationSupport, Languages, Result,
-    Segment, SpeechToText, StreamOptions, StreamingSession, SttError, TranscribeOptions,
-    Transcript, TransportKind, Word,
+    AudioFormat, AudioInput, BackendKind, Capabilities, DiarizationSupport, Languages, Result, Segment,
+    SpeechToText, StreamOptions, StreamingSession, SttError, TranscribeOptions, Transcript, TransportKind,
+    Word,
 };
-use atomr_agents_stt_remote_core::{
-    build_http_client, classify_status, multipart_filename_for, retry,
-};
+use atomr_agents_stt_remote_core::{build_http_client, classify_status, multipart_filename_for, retry};
 use bytes::Bytes;
 use reqwest::multipart::{Form, Part};
 use reqwest::{header, Client};
@@ -67,11 +65,7 @@ impl OpenAiSttRunner {
         Ok(format!("Bearer {}", secret.expose_secret()))
     }
 
-    async fn build_form(
-        &self,
-        input: AudioInput,
-        opts: &TranscribeOptions,
-    ) -> Result<(Form, String)> {
+    async fn build_form(&self, input: AudioInput, opts: &TranscribeOptions) -> Result<(Form, String)> {
         let model = opts
             .model
             .clone()
@@ -129,10 +123,9 @@ impl OptsExt for TranscribeOptions {
         // We turn this on whenever the caller hasn't explicitly opted out
         // via `extra={"word_timestamps": false}`.
         match &self.extra {
-            Some(serde_json::Value::Object(m)) => m
-                .get("word_timestamps")
-                .and_then(|v| v.as_bool())
-                .unwrap_or(true),
+            Some(serde_json::Value::Object(m)) => {
+                m.get("word_timestamps").and_then(|v| v.as_bool()).unwrap_or(true)
+            }
             _ => true,
         }
     }
@@ -152,11 +145,7 @@ impl SpeechToText for OpenAiSttRunner {
         TransportKind::Rest
     }
 
-    async fn transcribe(
-        &self,
-        input: AudioInput,
-        opts: TranscribeOptions,
-    ) -> Result<Transcript> {
+    async fn transcribe(&self, input: AudioInput, opts: TranscribeOptions) -> Result<Transcript> {
         if opts.diarize {
             return Err(SttError::UnsupportedCapability("diarization"));
         }
@@ -191,9 +180,7 @@ impl SpeechToText for OpenAiSttRunner {
             let this = self;
             async move {
                 let (form, model) = this.build_form(input_clone, &opts_clone).await?;
-                let mut req = client
-                    .post(url.clone())
-                    .header(header::AUTHORIZATION, &auth);
+                let mut req = client.post(url.clone()).header(header::AUTHORIZATION, &auth);
                 if let Some(org) = &org {
                     req = req.header("OpenAI-Organization", org);
                 }
@@ -229,10 +216,7 @@ impl SpeechToText for OpenAiSttRunner {
         Ok(into_transcript(verbose, model_used))
     }
 
-    async fn open_stream(
-        &self,
-        _opts: StreamOptions,
-    ) -> Result<Box<dyn StreamingSession>> {
+    async fn open_stream(&self, _opts: StreamOptions) -> Result<Box<dyn StreamingSession>> {
         Err(SttError::UnsupportedCapability("streaming_push"))
     }
 }

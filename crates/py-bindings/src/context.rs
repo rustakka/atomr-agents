@@ -102,14 +102,10 @@ impl PyRenderedContext {
 /// remaining budget. The budget is mutated in place (use the budget's
 /// `remaining` getter after to see consumption).
 #[pyfunction]
-fn assemble(
-    fragments: Vec<PyContextFragment>,
-    budget: &mut PyTokenBudget,
-) -> PyResult<PyRenderedContext> {
+fn assemble(fragments: Vec<PyContextFragment>, budget: &mut PyTokenBudget) -> PyResult<PyRenderedContext> {
     let frags: Vec<ContextFragment> = fragments.into_iter().map(|f| f.inner).collect();
-    let rendered = ContextAssembler::assemble(frags, &mut budget.inner).map_err(|e| {
-        PyErr::new::<errors::BudgetExhausted, _>(format!("context assemble: {e}"))
-    })?;
+    let rendered = ContextAssembler::assemble(frags, &mut budget.inner)
+        .map_err(|e| PyErr::new::<errors::BudgetExhausted, _>(format!("context assemble: {e}")))?;
     Ok(PyRenderedContext { inner: rendered })
 }
 

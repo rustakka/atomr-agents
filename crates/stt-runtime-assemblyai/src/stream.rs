@@ -4,9 +4,7 @@ use std::pin::Pin;
 use std::sync::Arc;
 
 use async_trait::async_trait;
-use atomr_agents_stt_core::{
-    Capabilities, Result, Segment, StreamEvent, StreamingSession, SttError, Word,
-};
+use atomr_agents_stt_core::{Capabilities, Result, Segment, StreamEvent, StreamingSession, SttError, Word};
 use bytes::Bytes;
 use futures::Stream;
 use parking_lot::Mutex;
@@ -24,9 +22,7 @@ pub(crate) struct AssemblyStreamingSession {
 
 impl AssemblyStreamingSession {
     pub(crate) fn spawn(
-        ws: tokio_tungstenite::WebSocketStream<
-            tokio_tungstenite::MaybeTlsStream<tokio::net::TcpStream>,
-        >,
+        ws: tokio_tungstenite::WebSocketStream<tokio_tungstenite::MaybeTlsStream<tokio::net::TcpStream>>,
     ) -> Self {
         use futures_util::{SinkExt, StreamExt};
         use tokio_tungstenite::tungstenite::Message;
@@ -40,9 +36,7 @@ impl AssemblyStreamingSession {
                 while let Some(chunk) = audio_rx.recv().await {
                     if chunk.is_empty() {
                         let _ = sink
-                            .send(Message::Text(
-                                serde_json::json!({"type":"Terminate"}).to_string(),
-                            ))
+                            .send(Message::Text(serde_json::json!({"type":"Terminate"}).to_string()))
                             .await;
                         let _ = sink.close().await;
                         return;
@@ -56,31 +50,29 @@ impl AssemblyStreamingSession {
 
             while let Some(msg) = source.next().await {
                 match msg {
-                    Ok(Message::Text(text)) => {
-                        match serde_json::from_str::<StreamingMessage>(&text) {
-                            Ok(StreamingMessage::Begin { id, .. }) => {
-                                let _ = events_tx
-                                    .send(Ok(StreamEvent::Metadata(serde_json::json!({
-                                        "session_id": id,
-                                    }))))
-                                    .await;
-                            }
-                            Ok(StreamingMessage::Turn(t)) => {
-                                for ev in lift_turn(t) {
-                                    if events_tx.send(Ok(ev)).await.is_err() {
-                                        break;
-                                    }
+                    Ok(Message::Text(text)) => match serde_json::from_str::<StreamingMessage>(&text) {
+                        Ok(StreamingMessage::Begin { id, .. }) => {
+                            let _ = events_tx
+                                .send(Ok(StreamEvent::Metadata(serde_json::json!({
+                                    "session_id": id,
+                                }))))
+                                .await;
+                        }
+                        Ok(StreamingMessage::Turn(t)) => {
+                            for ev in lift_turn(t) {
+                                if events_tx.send(Ok(ev)).await.is_err() {
+                                    break;
                                 }
                             }
-                            Ok(StreamingMessage::Termination { .. }) => break,
-                            Ok(StreamingMessage::Other) => {}
-                            Err(e) => {
-                                let _ = events_tx
-                                    .send(Err(SttError::transport(format!("ws parse: {e}"))))
-                                    .await;
-                            }
                         }
-                    }
+                        Ok(StreamingMessage::Termination { .. }) => break,
+                        Ok(StreamingMessage::Other) => {}
+                        Err(e) => {
+                            let _ = events_tx
+                                .send(Err(SttError::transport(format!("ws parse: {e}"))))
+                                .await;
+                        }
+                    },
                     Ok(Message::Binary(_)) | Ok(Message::Ping(_)) | Ok(Message::Pong(_)) => {}
                     Ok(Message::Close(_)) => break,
                     Ok(Message::Frame(_)) => {}
@@ -175,15 +167,12 @@ impl StreamingSession for AssemblyStreamingSession {
 
     fn events(
         &mut self,
-    ) -> Pin<Box<dyn Stream<Item = std::result::Result<StreamEvent, SttError>> + Send + '_>>
-    {
+    ) -> Pin<Box<dyn Stream<Item = std::result::Result<StreamEvent, SttError>> + Send + '_>> {
         let mut guard = self.events_rx.lock();
         let rx = guard.take();
         drop(guard);
         match rx {
-            Some(mut rx) => {
-                Box::pin(futures::stream::poll_fn(move |cx| rx.poll_recv(cx)))
-            }
+            Some(mut rx) => Box::pin(futures::stream::poll_fn(move |cx| rx.poll_recv(cx))),
             None => Box::pin(futures::stream::empty()),
         }
     }

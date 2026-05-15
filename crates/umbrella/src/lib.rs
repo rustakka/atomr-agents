@@ -48,16 +48,18 @@ pub mod stt {
     pub use atomr_agents_stt_core::*;
     pub use atomr_agents_stt_tool as tool;
 
-    #[cfg(feature = "stt-openai")]
-    pub use atomr_agents_stt_runtime_openai as openai;
-    #[cfg(feature = "stt-deepgram")]
-    pub use atomr_agents_stt_runtime_deepgram as deepgram;
-    #[cfg(feature = "stt-assemblyai")]
-    pub use atomr_agents_stt_runtime_assemblyai as assemblyai;
-    #[cfg(feature = "stt-whisper")]
-    pub use atomr_agents_stt_runtime_whisper as whisper;
     #[cfg(feature = "stt-diarize")]
     pub use atomr_agents_stt_diarize_sherpa as diarize;
+    #[cfg(feature = "stt-harness")]
+    pub use atomr_agents_stt_harness as harness;
+    #[cfg(feature = "stt-assemblyai")]
+    pub use atomr_agents_stt_runtime_assemblyai as assemblyai;
+    #[cfg(feature = "stt-deepgram")]
+    pub use atomr_agents_stt_runtime_deepgram as deepgram;
+    #[cfg(feature = "stt-openai")]
+    pub use atomr_agents_stt_runtime_openai as openai;
+    #[cfg(feature = "stt-whisper")]
+    pub use atomr_agents_stt_runtime_whisper as whisper;
     #[cfg(feature = "stt-voice")]
     pub use atomr_agents_stt_voice as voice;
 }
@@ -74,20 +76,20 @@ pub mod tts {
     pub use atomr_agents_tts_core::*;
     pub use atomr_agents_tts_tool as tool;
 
-    #[cfg(feature = "tts-openai")]
-    pub use atomr_agents_tts_runtime_openai as openai;
     #[cfg(feature = "tts-elevenlabs")]
     pub use atomr_agents_tts_runtime_elevenlabs as elevenlabs;
-    #[cfg(feature = "tts-openai-realtime")]
-    pub use atomr_agents_tts_runtime_openai_realtime as openai_realtime;
     #[cfg(feature = "tts-gemini-live")]
     pub use atomr_agents_tts_runtime_gemini_live as gemini_live;
-    #[cfg(feature = "tts-piper")]
-    pub use atomr_agents_tts_runtime_piper as piper;
     #[cfg(feature = "tts-kokoro")]
     pub use atomr_agents_tts_runtime_kokoro as kokoro;
     #[cfg(feature = "tts-moss")]
     pub use atomr_agents_tts_runtime_moss as moss;
+    #[cfg(feature = "tts-openai")]
+    pub use atomr_agents_tts_runtime_openai as openai;
+    #[cfg(feature = "tts-openai-realtime")]
+    pub use atomr_agents_tts_runtime_openai_realtime as openai_realtime;
+    #[cfg(feature = "tts-piper")]
+    pub use atomr_agents_tts_runtime_piper as piper;
     #[cfg(feature = "tts-xtts")]
     pub use atomr_agents_tts_runtime_xtts as xtts;
     #[cfg(feature = "tts-voice")]

@@ -16,10 +16,9 @@ use async_trait::async_trait;
 use atomr_agents_core::{AgentContext, AgentError, Result as AgentResult, TokenBudget};
 use atomr_agents_persona::{
     Archetype, AudienceAdaptive, CognitiveFunction, CognitiveStack, CompositePersonaStrategy,
-    GoalConditioned, JungianArchetypeStrategy, MbtiType, MoodState, Persona,
-    PersonaEmphasisStrategy, PersonaMetadata, PersonaReconciler, PersonaSet, PersonaStrategy,
-    RenderedPersona, StaticEmphasis, StaticPersonaStrategy, StyleSpec, TaskAdaptive,
-    TraitFragment,
+    GoalConditioned, JungianArchetypeStrategy, MbtiType, MoodState, Persona, PersonaEmphasisStrategy,
+    PersonaMetadata, PersonaReconciler, PersonaSet, PersonaStrategy, RenderedPersona, StaticEmphasis,
+    StaticPersonaStrategy, StyleSpec, TaskAdaptive, TraitFragment,
 };
 use pyo3::exceptions::{PyNotImplementedError, PyValueError};
 use pyo3::prelude::*;
@@ -691,11 +690,7 @@ pub(crate) struct PyPersonaStrategyAdapter {
 
 #[async_trait]
 impl PersonaStrategy for PyPersonaStrategyAdapter {
-    async fn resolve(
-        &self,
-        ctx: &AgentContext,
-        budget: &mut TokenBudget,
-    ) -> AgentResult<RenderedPersona> {
+    async fn resolve(&self, ctx: &AgentContext, budget: &mut TokenBudget) -> AgentResult<RenderedPersona> {
         let target = self.target.clone();
         let ctx_owned = ctx.clone();
         let budget_remaining = budget.remaining;
@@ -734,10 +729,7 @@ impl PersonaStrategy for PyPersonaStrategyAdapter {
                 .and_then(|v| v.as_str())
                 .unwrap_or("")
                 .to_string();
-            let estimated_tokens = obj
-                .get("estimated_tokens")
-                .and_then(|v| v.as_u64())
-                .unwrap_or(0) as u32;
+            let estimated_tokens = obj.get("estimated_tokens").and_then(|v| v.as_u64()).unwrap_or(0) as u32;
             Ok(RenderedPersona {
                 identity,
                 estimated_tokens,
@@ -857,8 +849,7 @@ fn composite_persona_strategy(
 
     let composite = if let Some(key) = reconciler_key {
         let target = crate::guest::must_lookup("persona_reconciler", &key)?;
-        let reconciler: Box<dyn PersonaReconciler> =
-            Box::new(PyPersonaReconcilerAdapter { target });
+        let reconciler: Box<dyn PersonaReconciler> = Box::new(PyPersonaReconcilerAdapter { target });
         CompositePersonaStrategy::new(boxed, reconciler)
     } else {
         CompositePersonaStrategy::weighted_average(boxed)
@@ -888,11 +879,7 @@ struct ArcForwarder {
 
 #[async_trait]
 impl PersonaStrategy for ArcForwarder {
-    async fn resolve(
-        &self,
-        ctx: &AgentContext,
-        budget: &mut TokenBudget,
-    ) -> AgentResult<RenderedPersona> {
+    async fn resolve(&self, ctx: &AgentContext, budget: &mut TokenBudget) -> AgentResult<RenderedPersona> {
         self.inner.resolve(ctx, budget).await
     }
 }
@@ -904,10 +891,7 @@ pub(crate) struct PyPersonaReconcilerAdapter {
 }
 
 impl PersonaReconciler for PyPersonaReconcilerAdapter {
-    fn reconcile(
-        &self,
-        layers: Vec<(RenderedPersona, f32)>,
-    ) -> Persona {
+    fn reconcile(&self, layers: Vec<(RenderedPersona, f32)>) -> Persona {
         // Convert each (rendered, weight) into a Python tuple and
         // ask the target to reconcile. If the target raises, fall
         // back to an empty Persona.
@@ -915,12 +899,7 @@ impl PersonaReconciler for PyPersonaReconcilerAdapter {
             let bound = self.target.bind(py);
             let py_layers = PyList::empty_bound(py);
             for (r, w) in &layers {
-                let pr = Py::new(
-                    py,
-                    PyRenderedPersona {
-                        inner: r.clone(),
-                    },
-                )?;
+                let pr = Py::new(py, PyRenderedPersona { inner: r.clone() })?;
                 py_layers.append((pr, *w))?;
             }
             let instance: Bound<'_, PyAny> = if bound.hasattr("reconcile")? {

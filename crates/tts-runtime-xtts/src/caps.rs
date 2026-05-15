@@ -2,8 +2,7 @@ use atomr_agents_stt_core::{AudioFormat, Languages, SampleType};
 use atomr_agents_tts_core::{Capabilities, VoiceCatalog, VoiceCloningSupport};
 
 const XTTS_LANGUAGES: &[&str] = &[
-    "en", "es", "fr", "de", "it", "pt", "pl", "tr", "ru", "nl", "cs", "ar", "zh", "ja", "ko",
-    "hu", "hi",
+    "en", "es", "fr", "de", "it", "pt", "pl", "tr", "ru", "nl", "cs", "ar", "zh", "ja", "ko", "hu", "hi",
 ];
 
 pub const CAPS: Capabilities = Capabilities {

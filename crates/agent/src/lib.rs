@@ -44,8 +44,7 @@ pub mod providers {
     #[cfg(feature = "provider-gemini")]
     pub mod gemini {
         pub use atomr_infer_runtime_gemini::{
-            classify_gemini_error, GeminiConfig, GeminiPricing, GeminiRunner, GeminiVariant,
-            SafetySetting,
+            classify_gemini_error, GeminiConfig, GeminiPricing, GeminiRunner, GeminiVariant, SafetySetting,
         };
     }
 }

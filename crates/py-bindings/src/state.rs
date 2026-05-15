@@ -238,9 +238,7 @@ fn sqlite_checkpointer(path: String) -> PyResult<PyCheckpointer> {
         let c = crate::runtime::shared()
             .block_on(async move { SqliteCheckpointer::connect(path).await })
             .map_err(crate::errors::map)?;
-        Ok(PyCheckpointer {
-            inner: Arc::new(c),
-        })
+        Ok(PyCheckpointer { inner: Arc::new(c) })
     }
     #[cfg(not(feature = "state-sqlite"))]
     {
@@ -265,9 +263,7 @@ fn postgres_checkpointer(dsn: String) -> PyResult<PyCheckpointer> {
         let c = crate::runtime::shared()
             .block_on(async move { PostgresCheckpointer::connect(dsn).await })
             .map_err(crate::errors::map)?;
-        Ok(PyCheckpointer {
-            inner: Arc::new(c),
-        })
+        Ok(PyCheckpointer { inner: Arc::new(c) })
     }
     #[cfg(not(feature = "state-postgres"))]
     {

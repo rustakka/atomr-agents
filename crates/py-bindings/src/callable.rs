@@ -13,8 +13,8 @@ use std::time::Duration;
 
 use async_trait::async_trait;
 use atomr_agents_callable::{
-    with_config, with_fallbacks, with_retry, with_timeout, Branch, Callable, CallableHandle,
-    FnCallable, Pipeline, RetryPolicy, RunConfig,
+    with_config, with_fallbacks, with_retry, with_timeout, Branch, Callable, CallableHandle, FnCallable,
+    Pipeline, RetryPolicy, RunConfig,
 };
 use atomr_agents_core::{AgentError, CallCtx, Result as AgentResult, Value};
 use pyo3::prelude::*;
@@ -96,9 +96,10 @@ impl PyCallable {
     /// Identity passthrough: useful as a starting Pipeline node.
     #[staticmethod]
     fn identity() -> Self {
-        let h: CallableHandle = Arc::new(FnCallable::labeled("identity", |v: Value, _ctx| async move {
-            Ok(v)
-        }));
+        let h: CallableHandle = Arc::new(FnCallable::labeled(
+            "identity",
+            |v: Value, _ctx| async move { Ok(v) },
+        ));
         Self { inner: h }
     }
 
@@ -275,19 +276,13 @@ fn fan_out_(branches: &Bound<'_, PyDict>) -> PyResult<PyCallable> {
         let c: PyCallable = v.extract()?;
         entries.push((name, c.inner));
     }
-    Ok(PyCallable::from_handle(
-        atomr_agents_callable::fan_out(entries),
-    ))
+    Ok(PyCallable::from_handle(atomr_agents_callable::fan_out(entries)))
 }
 
 /// Branch on a Python predicate. The predicate is called with the
 /// JSON-decoded input and must return a truthy/falsy value.
 #[pyfunction]
-fn branch_(
-    predicate: PyObject,
-    if_true: PyCallable,
-    if_false: PyCallable,
-) -> PyCallable {
+fn branch_(predicate: PyObject, if_true: PyCallable, if_false: PyCallable) -> PyCallable {
     let predicate = Arc::new(predicate);
     let pred = move |v: &Value| -> bool {
         let predicate = predicate.clone();

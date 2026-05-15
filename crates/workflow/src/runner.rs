@@ -233,14 +233,8 @@ mod tests {
 
     #[tokio::test]
     async fn new_constructor_builds_runner() {
-        let dag: Dag<Step> = Dag::builder("a")
-            .step("a", Step::invoke(echo_callable()))
-            .build();
-        let r = WorkflowRunner::new(
-            WorkflowId::from("wf-new"),
-            dag,
-            Arc::new(InMemoryJournal::new()),
-        );
+        let dag: Dag<Step> = Dag::builder("a").step("a", Step::invoke(echo_callable())).build();
+        let r = WorkflowRunner::new(WorkflowId::from("wf-new"), dag, Arc::new(InMemoryJournal::new()));
         let out = r.run(serde_json::json!({"k": 7})).await.unwrap();
         assert_eq!(out, serde_json::json!({"k": 7}));
     }

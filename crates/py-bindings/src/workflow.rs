@@ -28,9 +28,7 @@ use std::sync::Arc;
 use async_trait::async_trait;
 use atomr_agents_callable::{Callable, CallableHandle};
 use atomr_agents_core::{CallCtx, Result as AgentResult, Value, WorkflowId};
-use atomr_agents_workflow::{
-    BranchPredicate, Dag, InMemoryJournal, Journal, Step, StepId, WorkflowRunner,
-};
+use atomr_agents_workflow::{BranchPredicate, Dag, InMemoryJournal, Journal, Step, StepId, WorkflowRunner};
 use once_cell::sync::Lazy;
 use parking_lot::RwLock;
 use pyo3::exceptions::{PyKeyError, PyValueError};
@@ -201,9 +199,7 @@ impl Callable for PyCallableAdapter {
                     Ok(None)
                 }
             })
-            .map_err(|e| {
-                atomr_agents_core::AgentError::Workflow(format!("guest callable coroutine: {e}"))
-            })?;
+            .map_err(|e| atomr_agents_core::AgentError::Workflow(format!("guest callable coroutine: {e}")))?;
 
             match maybe_future {
                 Some(fut) => fut.await.map_err(|e| {
@@ -301,9 +297,9 @@ impl PyWorkflowRunner {
         let steps_obj = spec
             .get_item("steps")?
             .ok_or_else(|| PyKeyError::new_err("workflow spec: missing 'steps'"))?;
-        let steps_dict = steps_obj.downcast::<PyDict>().map_err(|_| {
-            PyValueError::new_err("workflow spec: 'steps' must be a dict")
-        })?;
+        let steps_dict = steps_obj
+            .downcast::<PyDict>()
+            .map_err(|_| PyValueError::new_err("workflow spec: 'steps' must be a dict"))?;
         let edges_obj = spec.get_item("edges")?;
 
         // 2. Build the DAG.
@@ -315,9 +311,7 @@ impl PyWorkflowRunner {
         for (key, value) in steps_dict.iter() {
             let step_id: String = key.extract()?;
             let step_dict = value.downcast::<PyDict>().map_err(|_| {
-                PyValueError::new_err(format!(
-                    "workflow spec: step {step_id:?} must map to a dict"
-                ))
+                PyValueError::new_err(format!("workflow spec: step {step_id:?} must map to a dict"))
             })?;
             let kind: String = step_dict
                 .get_item("kind")?
@@ -386,9 +380,7 @@ impl PyWorkflowRunner {
                     )));
                 }
                 other => {
-                    return Err(PyValueError::new_err(format!(
-                        "unknown step kind {other:?}"
-                    )));
+                    return Err(PyValueError::new_err(format!("unknown step kind {other:?}")));
                 }
             };
 

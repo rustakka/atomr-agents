@@ -25,12 +25,7 @@ use pyo3::create_exception;
 use pyo3::exceptions::PyException;
 use pyo3::prelude::*;
 
-create_exception!(
-    atomr_agents,
-    AgentError,
-    PyException,
-    "Base atomr-agents error."
-);
+create_exception!(atomr_agents, AgentError, PyException, "Base atomr-agents error.");
 create_exception!(
     atomr_agents,
     RegistryError,

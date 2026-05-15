@@ -2,14 +2,16 @@ use atomr_agents_stt_core::{AudioFormat, Languages};
 use atomr_agents_tts_core::{Capabilities, VoiceCatalog, VoiceCloningSupport};
 
 const ELEVENLABS_LANGUAGES: &[&str] = &[
-    "en", "es", "fr", "de", "it", "pt", "pl", "tr", "ru", "nl", "cs", "ar", "zh", "ja", "hu",
-    "ko", "hi", "id", "fi", "fil", "uk", "el", "vi", "no", "ro", "da", "sk", "sv", "ta", "ms",
+    "en", "es", "fr", "de", "it", "pt", "pl", "tr", "ru", "nl", "cs", "ar", "zh", "ja", "hu", "ko", "hi",
+    "id", "fi", "fil", "uk", "el", "vi", "no", "ro", "da", "sk", "sv", "ta", "ms",
 ];
 
 pub const CAPS: Capabilities = Capabilities {
     plain_tts: true,
     voicegen_from_text: true,
-    voice_cloning: VoiceCloningSupport::Both { min_sample_secs: 60.0 },
+    voice_cloning: VoiceCloningSupport::Both {
+        min_sample_secs: 60.0,
+    },
     dialogue_multispeaker: None,
     sound_effects: true,
     realtime_bidirectional: true,
