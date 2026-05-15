@@ -55,7 +55,7 @@ members = [
 ]
 
 [workspace.package]
-version       = "0.9.0"
+version       = "0.10.0"
 edition       = "2021"
 rust-version  = "1.78"
 license       = "Apache-2.0"
@@ -154,54 +154,54 @@ atomr-accel        = "0.10.0"
 atomr-accel-agents = "0.10.0"
 
 # Internal crates -----------------------------------------------------------
-atomr-agents-core          = { path = "crates/core", version = "0.9.0" }
-atomr-agents-callable      = { path = "crates/callable", version = "0.9.0" }
-atomr-agents-strategy      = { path = "crates/strategy", version = "0.9.0" }
-atomr-agents-context       = { path = "crates/context", version = "0.9.0" }
-atomr-agents-observability = { path = "crates/observability", version = "0.9.0" }
-atomr-agents-state         = { path = "crates/state", version = "0.9.0" }
-atomr-agents-retriever     = { path = "crates/retriever", version = "0.9.0" }
-atomr-agents-ingest        = { path = "crates/ingest", version = "0.9.0" }
-atomr-agents-parser        = { path = "crates/parser", version = "0.9.0" }
-atomr-agents-cache         = { path = "crates/cache", version = "0.9.0" }
-atomr-agents-tool          = { path = "crates/tool", version = "0.9.0" }
-atomr-agents-skill         = { path = "crates/skill", version = "0.9.0" }
-atomr-agents-memory        = { path = "crates/memory", version = "0.9.0" }
-atomr-agents-embed         = { path = "crates/embed", version = "0.9.0" }
-atomr-agents-stt-core         = { path = "crates/stt-core", version = "0.9.0" }
-atomr-agents-stt-remote-core  = { path = "crates/stt-remote-core", version = "0.9.0" }
-atomr-agents-stt-runtime-openai     = { path = "crates/stt-runtime-openai", version = "0.9.0" }
-atomr-agents-stt-audio        = { path = "crates/stt-audio", version = "0.9.0" }
-atomr-agents-stt-runtime-whisper = { path = "crates/stt-runtime-whisper", version = "0.9.0" }
-atomr-agents-stt-runtime-deepgram = { path = "crates/stt-runtime-deepgram", version = "0.9.0" }
-atomr-agents-stt-runtime-assemblyai = { path = "crates/stt-runtime-assemblyai", version = "0.9.0" }
-atomr-agents-stt-diarize-sherpa = { path = "crates/stt-diarize-sherpa", version = "0.9.0" }
-atomr-agents-stt-voice        = { path = "crates/stt-voice", version = "0.9.0" }
-atomr-agents-stt-tool         = { path = "crates/stt-tool", version = "0.9.0" }
-atomr-agents-stt-harness      = { path = "crates/stt-harness", version = "0.9.0" }
-atomr-agents-stt-harness-web  = { path = "crates/stt-harness-web", version = "0.9.0" }
-atomr-agents-tts-core         = { path = "crates/tts-core", version = "0.9.0" }
-atomr-agents-tts-audio        = { path = "crates/tts-audio", version = "0.9.0" }
-atomr-agents-tts-runtime-openai = { path = "crates/tts-runtime-openai", version = "0.9.0" }
-atomr-agents-tts-runtime-elevenlabs = { path = "crates/tts-runtime-elevenlabs", version = "0.9.0" }
-atomr-agents-tts-runtime-piper      = { path = "crates/tts-runtime-piper", version = "0.9.0" }
-atomr-agents-tts-runtime-kokoro     = { path = "crates/tts-runtime-kokoro", version = "0.9.0" }
-atomr-agents-tts-runtime-moss       = { path = "crates/tts-runtime-moss", version = "0.9.0" }
-atomr-agents-tts-runtime-xtts       = { path = "crates/tts-runtime-xtts", version = "0.9.0" }
-atomr-agents-tts-runtime-openai-realtime = { path = "crates/tts-runtime-openai-realtime", version = "0.9.0" }
-atomr-agents-tts-runtime-gemini-live     = { path = "crates/tts-runtime-gemini-live", version = "0.9.0" }
-atomr-agents-tts-voice              = { path = "crates/tts-voice", version = "0.9.0" }
-atomr-agents-tts-tool               = { path = "crates/tts-tool", version = "0.9.0" }
-atomr-agents-persona       = { path = "crates/persona", version = "0.9.0" }
-atomr-agents-instruction   = { path = "crates/instruction", version = "0.9.0" }
-atomr-agents-agent         = { path = "crates/agent", version = "0.9.0" }
-atomr-agents-workflow      = { path = "crates/workflow", version = "0.9.0" }
-atomr-agents-harness       = { path = "crates/harness", version = "0.9.0" }
-atomr-agents-org           = { path = "crates/org", version = "0.9.0" }
-atomr-agents-registry      = { path = "crates/registry", version = "0.9.0" }
-atomr-agents-eval          = { path = "crates/eval", version = "0.9.0" }
-atomr-agents-testkit       = { path = "crates/testkit", version = "0.9.0" }
-atomr-agents               = { path = "crates/umbrella", version = "0.9.0" }
+atomr-agents-core          = { path = "crates/core", version = "0.10.0" }
+atomr-agents-callable      = { path = "crates/callable", version = "0.10.0" }
+atomr-agents-strategy      = { path = "crates/strategy", version = "0.10.0" }
+atomr-agents-context       = { path = "crates/context", version = "0.10.0" }
+atomr-agents-observability = { path = "crates/observability", version = "0.10.0" }
+atomr-agents-state         = { path = "crates/state", version = "0.10.0" }
+atomr-agents-retriever     = { path = "crates/retriever", version = "0.10.0" }
+atomr-agents-ingest        = { path = "crates/ingest", version = "0.10.0" }
+atomr-agents-parser        = { path = "crates/parser", version = "0.10.0" }
+atomr-agents-cache         = { path = "crates/cache", version = "0.10.0" }
+atomr-agents-tool          = { path = "crates/tool", version = "0.10.0" }
+atomr-agents-skill         = { path = "crates/skill", version = "0.10.0" }
+atomr-agents-memory        = { path = "crates/memory", version = "0.10.0" }
+atomr-agents-embed         = { path = "crates/embed", version = "0.10.0" }
+atomr-agents-stt-core         = { path = "crates/stt-core", version = "0.10.0" }
+atomr-agents-stt-remote-core  = { path = "crates/stt-remote-core", version = "0.10.0" }
+atomr-agents-stt-runtime-openai     = { path = "crates/stt-runtime-openai", version = "0.10.0" }
+atomr-agents-stt-audio        = { path = "crates/stt-audio", version = "0.10.0" }
+atomr-agents-stt-runtime-whisper = { path = "crates/stt-runtime-whisper", version = "0.10.0" }
+atomr-agents-stt-runtime-deepgram = { path = "crates/stt-runtime-deepgram", version = "0.10.0" }
+atomr-agents-stt-runtime-assemblyai = { path = "crates/stt-runtime-assemblyai", version = "0.10.0" }
+atomr-agents-stt-diarize-sherpa = { path = "crates/stt-diarize-sherpa", version = "0.10.0" }
+atomr-agents-stt-voice        = { path = "crates/stt-voice", version = "0.10.0" }
+atomr-agents-stt-tool         = { path = "crates/stt-tool", version = "0.10.0" }
+atomr-agents-stt-harness      = { path = "crates/stt-harness", version = "0.10.0" }
+atomr-agents-stt-harness-web  = { path = "crates/stt-harness-web", version = "0.10.0" }
+atomr-agents-tts-core         = { path = "crates/tts-core", version = "0.10.0" }
+atomr-agents-tts-audio        = { path = "crates/tts-audio", version = "0.10.0" }
+atomr-agents-tts-runtime-openai = { path = "crates/tts-runtime-openai", version = "0.10.0" }
+atomr-agents-tts-runtime-elevenlabs = { path = "crates/tts-runtime-elevenlabs", version = "0.10.0" }
+atomr-agents-tts-runtime-piper      = { path = "crates/tts-runtime-piper", version = "0.10.0" }
+atomr-agents-tts-runtime-kokoro     = { path = "crates/tts-runtime-kokoro", version = "0.10.0" }
+atomr-agents-tts-runtime-moss       = { path = "crates/tts-runtime-moss", version = "0.10.0" }
+atomr-agents-tts-runtime-xtts       = { path = "crates/tts-runtime-xtts", version = "0.10.0" }
+atomr-agents-tts-runtime-openai-realtime = { path = "crates/tts-runtime-openai-realtime", version = "0.10.0" }
+atomr-agents-tts-runtime-gemini-live     = { path = "crates/tts-runtime-gemini-live", version = "0.10.0" }
+atomr-agents-tts-voice              = { path = "crates/tts-voice", version = "0.10.0" }
+atomr-agents-tts-tool               = { path = "crates/tts-tool", version = "0.10.0" }
+atomr-agents-persona       = { path = "crates/persona", version = "0.10.0" }
+atomr-agents-instruction   = { path = "crates/instruction", version = "0.10.0" }
+atomr-agents-agent         = { path = "crates/agent", version = "0.10.0" }
+atomr-agents-workflow      = { path = "crates/workflow", version = "0.10.0" }
+atomr-agents-harness       = { path = "crates/harness", version = "0.10.0" }
+atomr-agents-org           = { path = "crates/org", version = "0.10.0" }
+atomr-agents-registry      = { path = "crates/registry", version = "0.10.0" }
+atomr-agents-eval          = { path = "crates/eval", version = "0.10.0" }
+atomr-agents-testkit       = { path = "crates/testkit", version = "0.10.0" }
+atomr-agents               = { path = "crates/umbrella", version = "0.10.0" }
 
 [profile.release]
 opt-level     = 3
