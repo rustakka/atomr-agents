@@ -1,0 +1,55 @@
+[package]
+name          = "atomr-agents-coding-cli-harness-web"
+version       = { workspace = true }
+edition       = { workspace = true }
+rust-version  = { workspace = true }
+license       = { workspace = true }
+repository    = { workspace = true }
+homepage      = { workspace = true }
+authors       = { workspace = true }
+description   = "Axum + embedded SPA companion for the coding-cli harness. Start runs, browse results, follow SSE events, and attach an xterm.js terminal to tmux-wrapped interactive sessions over WebSocket."
+
+keywords      = ["agents", "cli", "web", "atomr"]
+categories    = ["web-programming::http-server"]
+readme        = "README.md"
+
+[features]
+default = ["embed-ui"]
+embed-ui = ["dep:rust-embed"]
+
+[[bin]]
+name = "atomr-agents-coding-cli-harness-web"
+path = "src/bin/server.rs"
+
+[dependencies]
+atomr-agents-core               = { workspace = true }
+atomr-agents-callable           = { workspace = true }
+atomr-agents-observability      = { workspace = true }
+atomr-agents-coding-cli-core    = { workspace = true }
+atomr-agents-coding-cli-harness = { workspace = true }
+atomr-agents-coding-cli-isolator = { workspace = true }
+
+async-trait  = { workspace = true }
+tokio        = { workspace = true, features = ["full"] }
+futures      = { workspace = true }
+futures-util = { workspace = true }
+tokio-stream = { version = "0.1", features = ["sync"] }
+serde        = { workspace = true }
+serde_json   = { workspace = true }
+thiserror    = { workspace = true }
+tracing      = { workspace = true }
+tracing-subscriber = { workspace = true }
+parking_lot  = { workspace = true }
+uuid         = { workspace = true }
+chrono       = { workspace = true }
+
+axum       = { workspace = true }
+tower      = { workspace = true }
+tower-http = { workspace = true }
+rust-embed = { workspace = true, optional = true }
+
+[dev-dependencies]
+tokio = { workspace = true, features = ["full", "test-util"] }
+tower = { workspace = true, features = ["util"] }
+http-body-util = "0.1"
+tempfile = "3"

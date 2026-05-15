@@ -1,0 +1,28 @@
+[package]
+name          = "atomr-agents-coding-cli-vendor-codex"
+version       = { workspace = true }
+edition       = { workspace = true }
+rust-version  = { workspace = true }
+license       = { workspace = true }
+repository    = { workspace = true }
+homepage      = { workspace = true }
+authors       = { workspace = true }
+description   = "OpenAI Codex CLI adapter for the coding-cli harness: `codex exec` headless invocation + AGENTS.md projection."
+
+keywords      = ["agents", "codex", "cli", "atomr"]
+categories    = ["asynchronous"]
+readme        = "README.md"
+
+[dependencies]
+atomr-agents-coding-cli-core = { workspace = true }
+
+async-trait  = { workspace = true }
+serde        = { workspace = true }
+serde_json   = { workspace = true }
+thiserror    = { workspace = true }
+tokio        = { workspace = true, features = ["fs", "process"] }
+tracing      = { workspace = true }
+
+[dev-dependencies]
+tokio = { workspace = true, features = ["full", "test-util"] }
+tempfile = "3"

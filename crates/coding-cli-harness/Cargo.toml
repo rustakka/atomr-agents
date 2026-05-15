@@ -1,0 +1,48 @@
+[package]
+name          = "atomr-agents-coding-cli-harness"
+version       = { workspace = true }
+edition       = { workspace = true }
+rust-version  = { workspace = true }
+license       = { workspace = true }
+repository    = { workspace = true }
+homepage      = { workspace = true }
+authors       = { workspace = true }
+description   = "Harness wrapping local AI coding CLIs (Claude Code, Codex, Gemini) as atomr-agents Callables. Headless mode parses structured streams; interactive mode bridges a tmux session to clients."
+
+keywords      = ["agents", "cli", "harness", "atomr"]
+categories    = ["asynchronous"]
+readme        = "README.md"
+
+[features]
+default = ["vendors-all"]
+vendors-all = ["vendor-claude", "vendor-codex", "vendor-gemini"]
+vendor-claude = ["dep:atomr-agents-coding-cli-vendor-claude"]
+vendor-codex  = ["dep:atomr-agents-coding-cli-vendor-codex"]
+vendor-gemini = ["dep:atomr-agents-coding-cli-vendor-gemini"]
+
+[dependencies]
+atomr-agents-core              = { workspace = true }
+atomr-agents-callable          = { workspace = true }
+atomr-agents-observability     = { workspace = true }
+atomr-agents-coding-cli-core   = { workspace = true }
+atomr-agents-coding-cli-isolator = { workspace = true }
+
+atomr-agents-coding-cli-vendor-claude = { workspace = true, optional = true }
+atomr-agents-coding-cli-vendor-codex  = { workspace = true, optional = true }
+atomr-agents-coding-cli-vendor-gemini = { workspace = true, optional = true }
+
+async-trait  = { workspace = true }
+tokio        = { workspace = true, features = ["full"] }
+futures      = { workspace = true }
+serde        = { workspace = true }
+serde_json   = { workspace = true }
+thiserror    = { workspace = true }
+tracing      = { workspace = true }
+parking_lot  = { workspace = true }
+chrono       = { workspace = true }
+uuid         = { workspace = true }
+dashmap      = { workspace = true }
+
+[dev-dependencies]
+tokio = { workspace = true, features = ["full", "test-util"] }
+tempfile = "3"

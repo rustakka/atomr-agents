@@ -1,0 +1,79 @@
+:root {
+  --bg: #111418;
+  --panel: #1a1f25;
+  --muted: #8aa1b0;
+  --fg: #e7eef3;
+  --accent: #61c7ff;
+  --line: #28323b;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  font: 14px/1.5 -apple-system, "Segoe UI", system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--fg);
+}
+header {
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--line);
+}
+header h1 { margin: 0 0 4px; font-size: 18px; }
+.muted { color: var(--muted); }
+main {
+  display: grid;
+  grid-template-columns: 360px 1fr;
+  grid-template-rows: auto 1fr;
+  gap: 16px;
+  padding: 16px 24px;
+  height: calc(100vh - 78px);
+}
+section { background: var(--panel); border-radius: 8px; padding: 16px; }
+.panel { overflow: auto; }
+.hidden { display: none !important; }
+#composer { grid-row: 1 / span 2; }
+#events { grid-column: 2; }
+#terminal { grid-column: 2; }
+#sessions { grid-column: 1 / span 2; }
+
+form label { display: block; margin-bottom: 12px; }
+form input, form select, form textarea {
+  width: 100%;
+  padding: 6px 8px;
+  background: #0d1115;
+  color: var(--fg);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  font: inherit;
+}
+button {
+  background: var(--accent);
+  color: #001;
+  border: 0;
+  border-radius: 4px;
+  padding: 6px 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+#event-log {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 12px;
+  margin: 0;
+  padding-left: 18px;
+  white-space: pre-wrap;
+}
+#event-log li { margin-bottom: 2px; }
+.tag {
+  display: inline-block;
+  padding: 0 4px;
+  margin-right: 6px;
+  border-radius: 3px;
+  font-weight: 600;
+}
+.tag.delta   { background: #2d4f2d; color: #cfe9cf; }
+.tag.tool    { background: #555520; color: #f2e6a8; }
+.tag.init    { background: #335; color: #cfd; }
+.tag.usage   { background: #444; color: #ccc; }
+.tag.done    { background: #1c4f80; color: #cfe5ff; }
+.tag.error   { background: #5b1f1f; color: #f5d6d6; }
+.tag.raw     { background: #333; color: #bbb; }
+#xterm { width: 100%; height: 60vh; }

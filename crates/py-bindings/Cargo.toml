@@ -43,6 +43,8 @@ atomr-agents-stt-voice             = { workspace = true }
 atomr-agents-stt-diarize-sherpa    = { workspace = true }
 atomr-agents-stt-tool              = { workspace = true }
 atomr-agents-stt-harness           = { workspace = true, features = ["decode"] }
+atomr-agents-coding-cli-core       = { workspace = true }
+atomr-agents-coding-cli-harness    = { workspace = true }
 atomr-agents-tts-core              = { workspace = true }
 atomr-agents-tts-audio             = { workspace = true }
 atomr-agents-tts-runtime-openai    = { workspace = true }

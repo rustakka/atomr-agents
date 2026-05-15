@@ -78,6 +78,7 @@ if _native is not None:
     guest = _native.guest
     stt = _native.stt
     stt_harness = _native.stt_harness
+    coding_cli = _native.coding_cli
     tts = _native.tts
     voice = _native.voice
     voice_extras = _native.voice_extras

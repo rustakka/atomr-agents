@@ -30,6 +30,13 @@ members = [
     "crates/deep-research-core",
     "crates/deep-research-harness",
     "crates/deep-research-harness-web",
+    "crates/coding-cli-core",
+    "crates/coding-cli-isolator",
+    "crates/coding-cli-vendor-claude",
+    "crates/coding-cli-vendor-codex",
+    "crates/coding-cli-vendor-gemini",
+    "crates/coding-cli-harness",
+    "crates/coding-cli-harness-web",
     "crates/tts-core",
     "crates/tts-audio",
     "crates/tts-runtime-openai",
@@ -194,6 +201,13 @@ atomr-agents-web-search-tool      = { path = "crates/web-search-tool", version =
 atomr-agents-deep-research-core         = { path = "crates/deep-research-core", version = "0.12.0" }
 atomr-agents-deep-research-harness      = { path = "crates/deep-research-harness", version = "0.12.0" }
 atomr-agents-deep-research-harness-web  = { path = "crates/deep-research-harness-web", version = "0.12.0" }
+atomr-agents-coding-cli-core            = { path = "crates/coding-cli-core", version = "0.12.0" }
+atomr-agents-coding-cli-isolator        = { path = "crates/coding-cli-isolator", version = "0.12.0" }
+atomr-agents-coding-cli-vendor-claude   = { path = "crates/coding-cli-vendor-claude", version = "0.12.0" }
+atomr-agents-coding-cli-vendor-codex    = { path = "crates/coding-cli-vendor-codex", version = "0.12.0" }
+atomr-agents-coding-cli-vendor-gemini   = { path = "crates/coding-cli-vendor-gemini", version = "0.12.0" }
+atomr-agents-coding-cli-harness         = { path = "crates/coding-cli-harness", version = "0.12.0" }
+atomr-agents-coding-cli-harness-web     = { path = "crates/coding-cli-harness-web", version = "0.12.0" }
 atomr-agents-tts-core         = { path = "crates/tts-core", version = "0.12.0" }
 atomr-agents-tts-audio        = { path = "crates/tts-audio", version = "0.12.0" }
 atomr-agents-tts-runtime-openai = { path = "crates/tts-runtime-openai", version = "0.12.0" }

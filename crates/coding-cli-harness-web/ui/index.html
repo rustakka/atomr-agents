@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>atomr-agents · coding-cli harness</title>
+  <link rel="stylesheet" href="/styles.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@xterm/xterm@5.5.0/css/xterm.css" />
+</head>
+<body>
+  <header>
+    <h1>coding-cli harness</h1>
+    <p class="muted">Wrap local AI coding CLIs (Claude Code, Codex, Gemini) as atomr-agents actors.</p>
+  </header>
+
+  <main>
+    <section id="composer">
+      <h2>New run</h2>
+      <form id="run-form">
+        <label>Vendor
+          <select name="vendor" id="vendor-select" required></select>
+        </label>
+        <label>Workdir
+          <input type="text" name="workdir" value="/tmp" required />
+        </label>
+        <label>Mode
+          <select name="mode">
+            <option value="headless">headless (NDJSON stream)</option>
+            <option value="interactive">interactive (tmux + xterm.js)</option>
+          </select>
+        </label>
+        <label>Model (optional)
+          <input type="text" name="model" placeholder="e.g. claude-sonnet-4-6" />
+        </label>
+        <label>Prompt
+          <textarea name="prompt" rows="3" placeholder="list files in src/"></textarea>
+        </label>
+        <button type="submit">Start</button>
+      </form>
+      <p id="run-status" class="muted"></p>
+    </section>
+
+    <section id="events" class="panel">
+      <h2>Live events</h2>
+      <ol id="event-log"></ol>
+    </section>
+
+    <section id="terminal" class="panel hidden">
+      <h2>Interactive session</h2>
+      <p id="term-meta" class="muted"></p>
+      <div id="xterm"></div>
+      <button id="detach-btn">Detach</button>
+    </section>
+
+    <section id="sessions" class="panel">
+      <h2>Active sessions</h2>
+      <ul id="session-list"></ul>
+    </section>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@xterm/xterm@5.5.0/lib/xterm.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@xterm/addon-fit@0.10.0/lib/addon-fit.min.js"></script>
+  <script src="/app.js"></script>
+</body>
+</html>

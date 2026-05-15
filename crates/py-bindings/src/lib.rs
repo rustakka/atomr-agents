@@ -38,6 +38,7 @@ use pyo3::prelude::*;
 mod agent;
 mod cache;
 mod callable;
+mod coding_cli;
 mod context;
 mod conv;
 mod core;
@@ -106,6 +107,7 @@ fn _native(py: Python<'_>, m: &Bound<'_, PyModule>) -> PyResult<()> {
     harness_adapters::register_into(py, m)?;
     stt::register(py, m)?;
     stt_harness::register(py, m)?;
+    coding_cli::register(py, m)?;
     tts::register(py, m)?;
     voice::register(py, m)?;
     voice_extras::register(py, m)?;
