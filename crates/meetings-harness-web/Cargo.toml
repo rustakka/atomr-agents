@@ -1,0 +1,47 @@
+[package]
+name          = "atomr-agents-meetings-harness-web"
+version       = { workspace = true }
+edition       = { workspace = true }
+rust-version  = { workspace = true }
+license       = { workspace = true }
+repository    = { workspace = true }
+homepage      = { workspace = true }
+authors       = { workspace = true }
+description   = "Optional axum backend + embedded React SPA for reviewing and editing meeting analyses (attendees, notes, actions, summaries)."
+
+keywords      = ["agents", "meetings", "dashboard", "axum", "atomr"]
+categories    = ["web-programming"]
+readme        = "../../README.md"
+
+[features]
+default = []
+# Bake the built React SPA (`ui/dist`) into the binary via rust-embed.
+embed-ui = ["dep:rust-embed"]
+# Persist analyses through `crates/state`'s configured backend.
+state = ["atomr-agents-meetings-harness/state"]
+
+[dependencies]
+atomr-agents-core              = { workspace = true }
+atomr-agents-observability     = { workspace = true }
+atomr-agents-stt-harness       = { workspace = true }
+atomr-agents-meetings-harness  = { workspace = true }
+
+axum         = { workspace = true }
+tower        = { workspace = true }
+tower-http   = { workspace = true }
+tokio        = { workspace = true }
+futures-util = { workspace = true }
+serde        = { workspace = true }
+serde_json   = { workspace = true }
+thiserror    = { workspace = true }
+tracing      = { workspace = true }
+parking_lot  = { workspace = true }
+
+rust-embed = { workspace = true, optional = true }
+
+[dev-dependencies]
+tokio = { workspace = true, features = ["full", "test-util"] }
+tower = { workspace = true, features = ["util"] }
+tokio-tungstenite = "0.23"
+atomr-agents-stt-core = { workspace = true }
+atomr-agents-stt-harness = { workspace = true }

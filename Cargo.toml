@@ -23,6 +23,8 @@ members = [
     "crates/stt-tool",
     "crates/stt-harness",
     "crates/stt-harness-web",
+    "crates/meetings-harness",
+    "crates/meetings-harness-web",
     "crates/tts-core",
     "crates/tts-audio",
     "crates/tts-runtime-openai",
@@ -180,6 +182,8 @@ atomr-agents-stt-voice        = { path = "crates/stt-voice", version = "0.10.0" 
 atomr-agents-stt-tool         = { path = "crates/stt-tool", version = "0.10.0" }
 atomr-agents-stt-harness      = { path = "crates/stt-harness", version = "0.10.0" }
 atomr-agents-stt-harness-web  = { path = "crates/stt-harness-web", version = "0.10.0" }
+atomr-agents-meetings-harness     = { path = "crates/meetings-harness", version = "0.10.0" }
+atomr-agents-meetings-harness-web = { path = "crates/meetings-harness-web", version = "0.10.0" }
 atomr-agents-tts-core         = { path = "crates/tts-core", version = "0.10.0" }
 atomr-agents-tts-audio        = { path = "crates/tts-audio", version = "0.10.0" }
 atomr-agents-tts-runtime-openai = { path = "crates/tts-runtime-openai", version = "0.10.0" }

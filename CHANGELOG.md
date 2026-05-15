@@ -6,6 +6,34 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+### Added — Meetings harness: structured extraction from diarized transcripts
+
+A downstream harness that turns a diarized `SttConversation` into a
+structured `MeetingAnalysis` — attendee roster, linear append-only
+notes/actions ledgers, and a tiered dynamic summary stack. See
+[`docs/meetings-harness.md`](docs/meetings-harness.md).
+
+- **`crates/meetings-harness`** — the harness core: typed +
+  `Boxed*` split mirroring `stt-harness`; `RuleBasedExtractor`
+  default that is deterministic and LLM-free; pluggable
+  `MeetingExtractor` trait for LLM-driven implementations;
+  `MeetingsToolSet` of `Tool` impls (`list_turns`, `upsert_attendee`,
+  `append_note`, `append_action`, `update_action`, `revise_tail_segment`,
+  `finalize_segment`, `regenerate_running`, `set_title`, `finalize`).
+  `BatchExtractionLoop` and `StreamingExtractionLoop` — the latter
+  subscribes to an STT harness's broadcast and maintains an append-only
+  ledger with a revisable in-flight tail segment summary. Persistence
+  via `MeetingsStore` and (feature `state`) `CheckpointerMeetingsStore`,
+  filed under the **same `conversation_id`** as the source transcript.
+- **`crates/meetings-harness-web`** — an optional axum backend plus an
+  embedded React + Vite SPA (port 7100) for reviewing and editing
+  analyses: REST CRUD, attendee rename, action patch, run trigger / stop,
+  WebSocket live feed of `MeetingsHarnessEvent`s, SPA fallback.
+- **`atomr-agents meetings`** — new CLI subcommand. `meetings analyze
+  --conversation-id <id> --model <model_id>` runs the harness against
+  an existing transcript; `meetings serve` boots the web UI. Gated by
+  `--features meetings` / `--features meetings-web`.
+
 ### Added — STT harness: agentic streaming speech-to-text pipeline
 
 A new capability layer that diarizes, transcribes, and accumulates a

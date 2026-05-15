@@ -26,6 +26,18 @@ stt-web = [
     "dep:atomr-agents-stt-harness-web",
     "atomr-agents-stt-harness/state",
 ]
+# Compile in the meetings-harness CLI + web UI for `atomr-agents meetings`.
+meetings = [
+    "dep:atomr-agents-stt-harness",
+    "atomr-agents-stt-harness/state",
+    "dep:atomr-agents-meetings-harness",
+    "atomr-agents-meetings-harness/state",
+]
+meetings-web = [
+    "meetings",
+    "dep:atomr-agents-meetings-harness-web",
+    "atomr-agents-meetings-harness-web/state",
+]
 
 [dependencies]
 atomr-agents-core     = { workspace = true }
@@ -35,6 +47,8 @@ atomr-agents-registry = { workspace = true }
 atomr-agents-state    = { workspace = true }
 atomr-agents-stt-harness     = { workspace = true, optional = true }
 atomr-agents-stt-harness-web = { workspace = true, optional = true }
+atomr-agents-meetings-harness     = { workspace = true, optional = true }
+atomr-agents-meetings-harness-web = { workspace = true, optional = true }
 clap                  = { workspace = true }
 tokio                 = { workspace = true }
 anyhow                = { workspace = true }
