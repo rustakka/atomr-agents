@@ -104,11 +104,7 @@ impl SpeechToText for MockSpeechToText {
         TransportKind::LocalModel
     }
 
-    async fn transcribe(
-        &self,
-        input: AudioInput,
-        opts: TranscribeOptions,
-    ) -> Result<Transcript> {
+    async fn transcribe(&self, input: AudioInput, opts: TranscribeOptions) -> Result<Transcript> {
         let (input_bytes, dur) = match &input {
             AudioInput::File(path) => {
                 let meta = tokio::fs::metadata(path).await?;
@@ -124,10 +120,7 @@ impl SpeechToText for MockSpeechToText {
         Ok(t)
     }
 
-    async fn open_stream(
-        &self,
-        _opts: StreamOptions,
-    ) -> Result<Box<dyn StreamingSession>> {
+    async fn open_stream(&self, _opts: StreamOptions) -> Result<Box<dyn StreamingSession>> {
         Ok(Box::new(MockStreamingSession::new(self.text_for(0))))
     }
 }
@@ -199,8 +192,7 @@ impl StreamingSession for MockStreamingSession {
 
     fn events(
         &mut self,
-    ) -> Pin<Box<dyn Stream<Item = std::result::Result<StreamEvent, SttError>> + Send + '_>>
-    {
+    ) -> Pin<Box<dyn Stream<Item = std::result::Result<StreamEvent, SttError>> + Send + '_>> {
         let stream = futures::stream::poll_fn(move |cx| self.queue.poll_recv(cx));
         Box::pin(stream)
     }

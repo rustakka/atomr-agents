@@ -9,9 +9,7 @@ use atomr_agents_stt_core::{AudioFormat, PcmBuffer, Result, SampleType, SttError
 use bytes::Bytes;
 use futures::Stream;
 
-use crate::capabilities::{
-    Capabilities, Gender, VoiceCatalog, VoiceCloningSupport, VoiceDescriptor,
-};
+use crate::capabilities::{Capabilities, Gender, VoiceCatalog, VoiceCloningSupport, VoiceDescriptor};
 use crate::kinds::BackendKind;
 use crate::realtime::{RealtimeEvent, RealtimeOptions, RealtimeSession};
 use crate::request::SynthesisRequest;
@@ -38,9 +36,7 @@ const MOCK_VOICES: &[VoiceDescriptor] = &[
 pub const MOCK_CAPS: Capabilities = Capabilities {
     plain_tts: true,
     voicegen_from_text: true,
-    voice_cloning: VoiceCloningSupport::ZeroShot {
-        min_sample_secs: 3.0,
-    },
+    voice_cloning: VoiceCloningSupport::ZeroShot { min_sample_secs: 3.0 },
     dialogue_multispeaker: Some(5),
     sound_effects: true,
     realtime_bidirectional: true,
@@ -141,19 +137,13 @@ impl TextToSpeech for MockTextToSpeech {
         Ok(out)
     }
 
-    async fn synthesize_stream(
-        &self,
-        request: SynthesisRequest,
-    ) -> Result<Box<dyn SynthesisStream>> {
+    async fn synthesize_stream(&self, request: SynthesisRequest) -> Result<Box<dyn SynthesisStream>> {
         let chars = char_count(&request);
         let pcm = self.render_silence(chars);
         Ok(Box::new(MockSynthesisStream::new(pcm, self.sample_rate)))
     }
 
-    async fn open_realtime(
-        &self,
-        _opts: RealtimeOptions,
-    ) -> Result<Box<dyn RealtimeSession>> {
+    async fn open_realtime(&self, _opts: RealtimeOptions) -> Result<Box<dyn RealtimeSession>> {
         Ok(Box::new(MockRealtimeSession::new(self.sample_rate)))
     }
 }
@@ -217,8 +207,7 @@ impl SynthesisStream for MockSynthesisStream {
 
     fn events(
         &mut self,
-    ) -> Pin<Box<dyn Stream<Item = std::result::Result<AudioChunk, SttError>> + Send + '_>>
-    {
+    ) -> Pin<Box<dyn Stream<Item = std::result::Result<AudioChunk, SttError>> + Send + '_>> {
         Box::pin(futures::stream::poll_fn(move |cx| self.queue.poll_recv(cx)))
     }
 
@@ -296,8 +285,7 @@ impl RealtimeSession for MockRealtimeSession {
 
     fn events(
         &mut self,
-    ) -> Pin<Box<dyn Stream<Item = std::result::Result<RealtimeEvent, SttError>> + Send + '_>>
-    {
+    ) -> Pin<Box<dyn Stream<Item = std::result::Result<RealtimeEvent, SttError>> + Send + '_>> {
         Box::pin(futures::stream::poll_fn(move |cx| self.rx.poll_recv(cx)))
     }
 }
@@ -330,10 +318,7 @@ mod tests {
     async fn stream_emits_chunks_then_final() {
         use futures::StreamExt;
         let m = MockTextToSpeech::new();
-        let req = SynthesisRequest::tts(
-            "This is a streaming test sentence",
-            VoiceRef::library("alpha"),
-        );
+        let req = SynthesisRequest::tts("This is a streaming test sentence", VoiceRef::library("alpha"));
         let mut s = m.synthesize_stream(req).await.unwrap();
         let mut chunks = 0;
         let mut got_final = false;

@@ -12,8 +12,8 @@ use std::time::Duration;
 use async_trait::async_trait;
 use atomr_agents_agent::{AgentSpec, InferenceClient, TurnResult};
 use atomr_agents_core::{
-    AgentContext, AgentError, AgentId, CallCtx, IterationBudget, MemoryChunk, MemoryItem,
-    MoneyBudget, Result as AgentResult, TimeBudget, TokenBudget,
+    AgentContext, AgentError, AgentId, CallCtx, IterationBudget, MemoryChunk, MemoryItem, MoneyBudget,
+    Result as AgentResult, TimeBudget, TokenBudget,
 };
 use atomr_agents_instruction::{InstructionStrategy, RenderedInstructions};
 use atomr_agents_strategy::{MemoryStrategy, SkillRef, SkillStrategy, ToolStrategy};
@@ -184,9 +184,7 @@ impl PyTurnResult {
 
     #[getter]
     fn finish_reason(&self) -> Option<crate::core::PyFinishReason> {
-        self.inner
-            .finish_reason
-            .map(crate::core::PyFinishReason::from)
+        self.inner.finish_reason.map(crate::core::PyFinishReason::from)
     }
 
     #[getter]
@@ -234,11 +232,7 @@ impl InstructionStrategy for ArcInstructionStrategy {
 struct ArcMemoryStrategy(Arc<dyn MemoryStrategy>);
 #[async_trait]
 impl MemoryStrategy for ArcMemoryStrategy {
-    async fn retrieve(
-        &self,
-        ctx: &AgentContext,
-        budget: &mut TokenBudget,
-    ) -> AgentResult<Vec<MemoryChunk>> {
+    async fn retrieve(&self, ctx: &AgentContext, budget: &mut TokenBudget) -> AgentResult<Vec<MemoryChunk>> {
         self.0.retrieve(ctx, budget).await
     }
 
@@ -250,11 +244,7 @@ impl MemoryStrategy for ArcMemoryStrategy {
 struct ArcSkillStrategy(Arc<dyn SkillStrategy>);
 #[async_trait]
 impl SkillStrategy for ArcSkillStrategy {
-    async fn applicable(
-        &self,
-        ctx: &AgentContext,
-        budget: &mut TokenBudget,
-    ) -> AgentResult<Vec<SkillRef>> {
+    async fn applicable(&self, ctx: &AgentContext, budget: &mut TokenBudget) -> AgentResult<Vec<SkillRef>> {
         self.0.applicable(ctx, budget).await
     }
 }
@@ -314,8 +304,7 @@ impl PyAgent {
         let mem_handle = build_guest_memory_strategy(memory_key)?;
         let skill_handle = build_guest_skill_strategy(skill_key)?;
 
-        let instructions: Box<dyn InstructionStrategy> =
-            Box::new(ArcInstructionStrategy(inst_handle.inner));
+        let instructions: Box<dyn InstructionStrategy> = Box::new(ArcInstructionStrategy(inst_handle.inner));
         let memory: Box<dyn MemoryStrategy> = Box::new(ArcMemoryStrategy(mem_handle.inner));
         let skills: Box<dyn SkillStrategy> = Box::new(ArcSkillStrategy(skill_handle.inner));
 
@@ -330,8 +319,11 @@ impl PyAgent {
             // id + a "0.0.0" version since the toolset id only matters
             // for downstream artifact tracking and a per-spec value is
             // descriptive enough.
-            let toolset =
-                build_guest_toolset(format!("agent:{}", spec.inner.id.as_str()), "0.0.0", Some(tool_keys))?;
+            let toolset = build_guest_toolset(
+                format!("agent:{}", spec.inner.id.as_str()),
+                "0.0.0",
+                Some(tool_keys),
+            )?;
             toolset_to_strategy(toolset.inner)
         };
 
@@ -383,10 +375,7 @@ impl PyAgent {
                 .turn(user, ctx)
                 .await
                 .map_err(|e: AgentError| PyErr::new::<crate::errors::AgentError, _>(e.to_string()))?;
-            Python::with_gil(|py| {
-                Py::new(py, PyTurnResult { inner: result })
-                    .map(|p| p.into_any())
-            })
+            Python::with_gil(|py| Py::new(py, PyTurnResult { inner: result }).map(|p| p.into_any()))
         })
     }
 

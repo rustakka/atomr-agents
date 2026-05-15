@@ -41,19 +41,12 @@ pub trait SpeechToText: Send + Sync + 'static {
 
     /// Single-shot transcription. Backends without batch support
     /// should return [`crate::SttError::UnsupportedCapability`].
-    async fn transcribe(
-        &self,
-        input: AudioInput,
-        opts: TranscribeOptions,
-    ) -> Result<Transcript>;
+    async fn transcribe(&self, input: AudioInput, opts: TranscribeOptions) -> Result<Transcript>;
 
     /// Open a streaming-push session. Backends without streaming
     /// return [`crate::SttError::UnsupportedCapability`]; callers
     /// gate via `capabilities().streaming_push` first.
-    async fn open_stream(
-        &self,
-        opts: StreamOptions,
-    ) -> Result<Box<dyn StreamingSession>>;
+    async fn open_stream(&self, opts: StreamOptions) -> Result<Box<dyn StreamingSession>>;
 }
 
 pub type DynSpeechToText = Arc<dyn SpeechToText>;

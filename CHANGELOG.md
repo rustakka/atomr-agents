@@ -6,6 +6,31 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+### Added — STT harness: agentic streaming speech-to-text pipeline
+
+A new capability layer that diarizes, transcribes, and accumulates a
+conversation record aligned to agentic structures. See
+[`docs/stt-harness.md`](docs/stt-harness.md).
+
+- **`crates/stt-harness`** — the harness core: audio sources (mic /
+  file / bytes), a streaming session actor, diarization + voice-mode
+  coalescing, the loop/termination strategies, and a `ConversationStore`
+  with a `Checkpointer`-backed implementation (`state` feature).
+  `BoxedSttHarness` mirrors the Agent/Harness boxed-handle pattern.
+- **`crates/stt-harness-web`** — an optional axum backend plus an
+  embedded React SPA (`embed-ui` feature, via `rust-embed`) for
+  reviewing and editing diarized conversations: REST routes, a
+  WebSocket live feed, and the SPA fallback handler.
+- **`atomr-agents serve`** now runs the real review UI when the CLI is
+  built with `--features stt-web`, persisting conversations through the
+  configured `crates/state` checkpointer.
+- **`xtask stt-web-build`** — builds the React SPA into `ui/dist` so
+  `stt-harness-web` can be compiled with `--features embed-ui`.
+- **Python bindings** — `atomr_agents.stt_harness` wraps the harness;
+  the top-level facade now resolves native names defensively so a name
+  not yet bound on the Rust side degrades to `None` instead of failing
+  the whole package import.
+
 ### Added — Phase C: async scorers, guest adapters, boxed Agent/Harness, Python workflow runner
 
 Closes the "Phase B" deferral comments scattered across `crates/agent`,

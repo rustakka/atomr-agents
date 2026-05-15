@@ -19,15 +19,13 @@ use std::collections::HashMap;
 use std::sync::Arc;
 
 use atomr_agents_callable::{CallableHandle, FnCallable};
-use atomr_agents_core::{
-    AgentError, AgentId, CallCtx, DepartmentId, OrgId, TeamId, ToolSetId, Value,
-};
+use atomr_agents_core::{AgentError, AgentId, CallCtx, DepartmentId, OrgId, TeamId, ToolSetId, Value};
 use atomr_agents_memory::InMemoryStore;
+use atomr_agents_org as org_crate;
 use atomr_agents_org::{
     ActiveAgent, CapabilityMatchRouter, LoadAwareRouter, NamespacedMemory, OrgRoutingStrategy,
     RoundRobinRouter,
 };
-use atomr_agents_org as org_crate;
 use atomr_agents_strategy::Policy;
 use pyo3::prelude::*;
 use pyo3::types::PyDict;
@@ -99,9 +97,7 @@ fn load_aware_router(size: usize, metric: Option<String>) -> PyOrgRoutingStrateg
 /// as a forward-compatible hook.
 #[pyfunction]
 #[pyo3(signature = (capability_map=None))]
-fn capability_match_router(
-    capability_map: Option<&Bound<'_, PyDict>>,
-) -> PyResult<PyOrgRoutingStrategy> {
+fn capability_match_router(capability_map: Option<&Bound<'_, PyDict>>) -> PyResult<PyOrgRoutingStrategy> {
     // Validate the shape if provided so callers fail fast.
     if let Some(d) = capability_map {
         for (k, v) in d.iter() {
@@ -190,11 +186,7 @@ impl PyTeam {
                 let children = children.clone();
                 let unit_label = unit_label.clone();
                 async move {
-                    let label = v
-                        .get("route")
-                        .and_then(|x| x.as_str())
-                        .unwrap_or("")
-                        .to_string();
+                    let label = v.get("route").and_then(|x| x.as_str()).unwrap_or("").to_string();
                     if children.is_empty() {
                         return Err(AgentError::Internal(format!("{unit_label}: no children")));
                     }
@@ -288,11 +280,7 @@ impl PyDepartment {
                 let children = children.clone();
                 let unit_label = unit_label.clone();
                 async move {
-                    let label = v
-                        .get("route")
-                        .and_then(|x| x.as_str())
-                        .unwrap_or("")
-                        .to_string();
+                    let label = v.get("route").and_then(|x| x.as_str()).unwrap_or("").to_string();
                     if children.is_empty() {
                         return Err(AgentError::Internal(format!("{unit_label}: no children")));
                     }
@@ -400,11 +388,7 @@ impl PyOrg {
                 let children = children.clone();
                 let unit_label = unit_label.clone();
                 async move {
-                    let label = v
-                        .get("route")
-                        .and_then(|x| x.as_str())
-                        .unwrap_or("")
-                        .to_string();
+                    let label = v.get("route").and_then(|x| x.as_str()).unwrap_or("").to_string();
                     if children.is_empty() {
                         return Err(AgentError::Internal(format!("{unit_label}: no children")));
                     }
@@ -468,9 +452,7 @@ fn namespaced_memory(
         nm = nm.with_team(TeamId::from(t));
     }
     nm = nm.with_team_write(allow_team_write);
-    Ok(PyMemoryStore {
-        inner: Arc::new(nm),
-    })
+    Ok(PyMemoryStore { inner: Arc::new(nm) })
 }
 
 // ----- ActiveAgent + swarm_loop -------------------------------------------
@@ -515,11 +497,7 @@ impl PyActiveAgent {
 /// identified by its label.
 #[pyfunction]
 #[pyo3(signature = (initial_agent, agents, max_steps=16))]
-fn swarm_loop(
-    initial_agent: String,
-    agents: Vec<PyCallable>,
-    max_steps: u32,
-) -> PyResult<PyCallable> {
+fn swarm_loop(initial_agent: String, agents: Vec<PyCallable>, max_steps: u32) -> PyResult<PyCallable> {
     let mut map: HashMap<String, CallableHandle> = HashMap::new();
     for a in agents.into_iter() {
         let label = a.inner.label().to_string();
@@ -568,4 +546,3 @@ pub fn register(py: Python<'_>, parent: &Bound<'_, PyModule>) -> PyResult<()> {
     parent.add_submodule(&m)?;
     Ok(())
 }
-

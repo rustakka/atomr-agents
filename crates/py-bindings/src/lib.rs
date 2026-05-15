@@ -62,6 +62,7 @@ mod skill;
 mod state;
 mod strategy;
 mod stt;
+mod stt_harness;
 mod tool;
 mod tts;
 mod voice;
@@ -104,6 +105,7 @@ fn _native(py: Python<'_>, m: &Bound<'_, PyModule>) -> PyResult<()> {
     // their submodules first; attach into them.
     harness_adapters::register_into(py, m)?;
     stt::register(py, m)?;
+    stt_harness::register(py, m)?;
     tts::register(py, m)?;
     voice::register(py, m)?;
     voice_extras::register(py, m)?;

@@ -4,9 +4,8 @@ use std::time::Duration;
 
 use async_trait::async_trait;
 use atomr_agents_stt_core::{
-    AudioInput, BackendKind, Capabilities, Result, Segment, SpeakerTag, SpeechToText,
-    StreamOptions, StreamingSession, SttError, TranscribeOptions, Transcript, TransportKind,
-    Word,
+    AudioInput, BackendKind, Capabilities, Result, Segment, SpeakerTag, SpeechToText, StreamOptions,
+    StreamingSession, SttError, TranscribeOptions, Transcript, TransportKind, Word,
 };
 use atomr_agents_stt_remote_core::{build_http_client, classify_status, retry, ws};
 use bytes::Bytes;
@@ -17,9 +16,7 @@ use tokio::time::sleep;
 use crate::caps::CAPS;
 use crate::config::AssemblyAiConfig;
 use crate::stream::AssemblyStreamingSession;
-use crate::wire::{
-    AssemblyWord, CreateTranscriptRequest, TranscriptResult, TranscriptStub, UploadResponse,
-};
+use crate::wire::{AssemblyWord, CreateTranscriptRequest, TranscriptResult, TranscriptStub, UploadResponse};
 
 pub struct AssemblyAiRunner {
     config: AssemblyAiConfig,
@@ -52,11 +49,7 @@ impl SpeechToText for AssemblyAiRunner {
         TransportKind::Hybrid
     }
 
-    async fn transcribe(
-        &self,
-        input: AudioInput,
-        opts: TranscribeOptions,
-    ) -> Result<Transcript> {
+    async fn transcribe(&self, input: AudioInput, opts: TranscribeOptions) -> Result<Transcript> {
         let bytes = read_input(input).await?;
         let auth = self.auth_header()?;
 
@@ -185,10 +178,7 @@ impl SpeechToText for AssemblyAiRunner {
         }
     }
 
-    async fn open_stream(
-        &self,
-        opts: StreamOptions,
-    ) -> Result<Box<dyn StreamingSession>> {
+    async fn open_stream(&self, opts: StreamOptions) -> Result<Box<dyn StreamingSession>> {
         let mut url = self.config.ws_endpoint.clone();
         let sample_rate = match &opts.format {
             Some(atomr_agents_stt_core::AudioFormat::Pcm { sample_rate, .. }) => *sample_rate,

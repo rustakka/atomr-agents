@@ -8,12 +8,10 @@ use std::sync::Arc;
 
 use async_trait::async_trait;
 use atomr_agents_callable::{Callable, CallableHandle};
-use atomr_agents_core::{
-    AgentError, CallCtx, HarnessId, Result as AgentResult, TokenBudget, Value,
-};
+use atomr_agents_core::{AgentError, CallCtx, HarnessId, Result as AgentResult, TokenBudget, Value};
 use atomr_agents_harness::{
-    Harness, HarnessSpec, HarnessState, IterationCapTermination, LoopStrategy, StepEvent,
-    StepOutcome, Termination, TerminationStrategy,
+    Harness, HarnessSpec, HarnessState, IterationCapTermination, LoopStrategy, StepEvent, StepOutcome,
+    Termination, TerminationStrategy,
 };
 use atomr_agents_observability::EventBus;
 use pyo3::prelude::*;
@@ -186,9 +184,7 @@ impl TerminationStrategy for PyTerminationStrategyAdapter {
                 });
             }
             if r.is_truthy()? {
-                let reason: String = r
-                    .extract::<String>()
-                    .unwrap_or_else(|_| "done".to_string());
+                let reason: String = r.extract::<String>().unwrap_or_else(|_| "done".to_string());
                 Ok(Termination::Done(Box::leak(reason.into_boxed_str())))
             } else {
                 Ok(Termination::Continue)
@@ -419,16 +415,11 @@ impl PyHarness {
         }
         let h = Harness {
             spec: spec.inner,
-            loop_strategy: Box::new(ArcLoop(loop_strategy.inner))
-                as Box<dyn LoopStrategy>,
+            loop_strategy: Box::new(ArcLoop(loop_strategy.inner)) as Box<dyn LoopStrategy>,
             termination: Box::new(ArcTerm(termination.inner)) as Box<dyn TerminationStrategy>,
-            bus: bus
-                .map(|b| b.inner)
-                .unwrap_or_else(EventBus::new),
+            bus: bus.map(|b| b.inner).unwrap_or_else(EventBus::new),
         };
-        Self {
-            inner: Arc::new(h),
-        }
+        Self { inner: Arc::new(h) }
     }
 
     /// Run the harness loop to completion. Returns the final value

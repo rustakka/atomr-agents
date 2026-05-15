@@ -20,9 +20,7 @@ pub use atomr_agents_strategy::{ChainedMemoryStrategy, MemoryStrategy};
 /// `atomr_persistence::Journal` with `query::SimpleReadJournal` to get
 /// `events_by_tag`, `events_by_persistence_id`, `all_persistence_ids`.
 pub mod query {
-    pub use atomr_persistence_query::{
-        EventEnvelope, Offset, ReadJournal, SimpleReadJournal,
-    };
+    pub use atomr_persistence_query::{EventEnvelope, Offset, ReadJournal, SimpleReadJournal};
 }
 
 #[cfg(feature = "chroma")]

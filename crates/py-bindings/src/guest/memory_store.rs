@@ -50,11 +50,7 @@ impl MemoryStore for PyMemoryStoreAdapter {
         Ok(())
     }
 
-    async fn list(
-        &self,
-        namespace: &MemoryNamespace,
-        limit: usize,
-    ) -> AgentResult<Vec<MemoryItem>> {
+    async fn list(&self, namespace: &MemoryNamespace, limit: usize) -> AgentResult<Vec<MemoryItem>> {
         let target = self.target.clone();
         let label = self.label.clone();
 
@@ -73,15 +69,14 @@ impl MemoryStore for PyMemoryStoreAdapter {
             .map_err(|e| AgentError::Memory(format!("guest memory_store {label}: {e}")))?;
 
         let arr = value.as_array().ok_or_else(|| {
-            AgentError::Memory(format!(
-                "guest memory_store {label}: expected array, got {value}"
-            ))
+            AgentError::Memory(format!("guest memory_store {label}: expected array, got {value}"))
         })?;
         let mut out = Vec::with_capacity(arr.len());
         for v in arr {
-            out.push(parse_memory_item_value(v).map_err(|e| {
-                AgentError::Memory(format!("guest memory_store {label}: {e}"))
-            })?);
+            out.push(
+                parse_memory_item_value(v)
+                    .map_err(|e| AgentError::Memory(format!("guest memory_store {label}: {e}")))?,
+            );
         }
         Ok(out)
     }
@@ -107,13 +102,9 @@ impl PyMemoryStoreHandle {
 
 #[pyfunction]
 pub(super) fn build_guest_memory_store(key: String) -> PyResult<PyMemoryStoreHandle> {
-    let entry = GUESTS
-        .get(&("memory".to_string(), key.clone()))
-        .ok_or_else(|| {
-            pyo3::exceptions::PyKeyError::new_err(format!(
-                "no memory store registered with key {key:?}"
-            ))
-        })?;
+    let entry = GUESTS.get(&("memory".to_string(), key.clone())).ok_or_else(|| {
+        pyo3::exceptions::PyKeyError::new_err(format!("no memory store registered with key {key:?}"))
+    })?;
     let target = entry.value().clone();
     let adapter = PyMemoryStoreAdapter::new(target, key.clone());
     Ok(PyMemoryStoreHandle {

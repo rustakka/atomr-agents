@@ -31,13 +31,7 @@ pub struct BoxedHarness {
 impl BoxedHarness {
     /// Drive the harness loop. Identical semantics to `Harness::run`.
     pub async fn run(&self) -> Result<Value> {
-        run_impl(
-            &self.spec,
-            &*self.loop_strategy,
-            &*self.termination,
-            &self.bus,
-        )
-        .await
+        run_impl(&self.spec, &*self.loop_strategy, &*self.termination, &self.bus).await
     }
 }
 

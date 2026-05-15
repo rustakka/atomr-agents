@@ -10,9 +10,7 @@ use std::sync::Arc;
 
 use async_trait::async_trait;
 use atomr_agents_stt_core::{AudioFormat, Result, SttError};
-use atomr_agents_tts_core::{
-    AudioChunk, Capabilities, RealtimeEvent, RealtimeSession, SynthesisStream,
-};
+use atomr_agents_tts_core::{AudioChunk, Capabilities, RealtimeEvent, RealtimeSession, SynthesisStream};
 use bytes::Bytes;
 use futures::Stream;
 use parking_lot::Mutex;
@@ -30,9 +28,7 @@ pub(crate) struct ElevenLabsHttpStream {
 
 impl ElevenLabsHttpStream {
     pub(crate) fn spawn(
-        body_stream: impl Stream<Item = std::result::Result<Bytes, reqwest::Error>>
-            + Send
-            + 'static,
+        body_stream: impl Stream<Item = std::result::Result<Bytes, reqwest::Error>> + Send + 'static,
         format: AudioFormat,
     ) -> Self {
         let (tx, rx) = mpsc::channel::<std::result::Result<AudioChunk, SttError>>(64);
@@ -50,7 +46,12 @@ impl ElevenLabsHttpStream {
                         if let Some(prev) = last.take() {
                             let _ = tx.send(Ok(prev)).await;
                         }
-                        last = Some(AudioChunk { bytes, seq, is_final: false, words: Vec::new() });
+                        last = Some(AudioChunk {
+                            bytes,
+                            seq,
+                            is_final: false,
+                            words: Vec::new(),
+                        });
                         seq += 1;
                     }
                     Err(e) => {
@@ -84,13 +85,16 @@ impl ElevenLabsHttpStream {
 
 #[async_trait]
 impl SynthesisStream for ElevenLabsHttpStream {
-    fn capabilities(&self) -> &'static Capabilities { &CAPS }
-    fn format(&self) -> &AudioFormat { &self.format }
+    fn capabilities(&self) -> &'static Capabilities {
+        &CAPS
+    }
+    fn format(&self) -> &AudioFormat {
+        &self.format
+    }
 
     fn events(
         &mut self,
-    ) -> Pin<Box<dyn Stream<Item = std::result::Result<AudioChunk, SttError>> + Send + '_>>
-    {
+    ) -> Pin<Box<dyn Stream<Item = std::result::Result<AudioChunk, SttError>> + Send + '_>> {
         let mut guard = self.rx.lock();
         let rx = guard.take();
         drop(guard);
@@ -116,15 +120,17 @@ pub(crate) enum ConvaiMessage {
     #[serde(rename = "conversation_initiation_metadata")]
     InitMeta { conversation_id: Option<String> },
     #[serde(rename = "audio")]
-    Audio {
-        audio_event: AudioEvent,
-    },
+    Audio { audio_event: AudioEvent },
     #[serde(rename = "user_transcript")]
-    UserTranscript { user_transcription_event: TranscriptEvent },
+    UserTranscript {
+        user_transcription_event: TranscriptEvent,
+    },
     #[serde(rename = "agent_response")]
     AgentResponse { agent_response_event: TextEvent },
     #[serde(rename = "agent_response_correction")]
-    AgentCorrection { agent_response_correction_event: TextEvent },
+    AgentCorrection {
+        agent_response_correction_event: TextEvent,
+    },
     #[serde(rename = "interruption")]
     Interruption,
     #[serde(rename = "ping")]
@@ -160,9 +166,7 @@ pub(crate) struct ElevenLabsConvaiSession {
 
 impl ElevenLabsConvaiSession {
     pub(crate) fn spawn(
-        ws: tokio_tungstenite::WebSocketStream<
-            tokio_tungstenite::MaybeTlsStream<tokio::net::TcpStream>,
-        >,
+        ws: tokio_tungstenite::WebSocketStream<tokio_tungstenite::MaybeTlsStream<tokio::net::TcpStream>>,
     ) -> Self {
         use futures_util::{SinkExt, StreamExt};
         use tokio_tungstenite::tungstenite::Message;
@@ -191,68 +195,59 @@ impl ElevenLabsConvaiSession {
             let mut seq = 0u64;
             while let Some(msg) = source.next().await {
                 match msg {
-                    Ok(Message::Text(text)) => {
-                        match serde_json::from_str::<ConvaiMessage>(&text) {
-                            Ok(ConvaiMessage::Audio { audio_event }) => {
-                                let bytes = base64_decode(&audio_event.audio_base_64)
-                                    .unwrap_or_default();
+                    Ok(Message::Text(text)) => match serde_json::from_str::<ConvaiMessage>(&text) {
+                        Ok(ConvaiMessage::Audio { audio_event }) => {
+                            let bytes = base64_decode(&audio_event.audio_base_64).unwrap_or_default();
+                            let _ = events_tx
+                                .send(Ok(RealtimeEvent::AudioOut {
+                                    chunk: AudioChunk {
+                                        bytes: Bytes::from(bytes),
+                                        seq,
+                                        is_final: false,
+                                        words: Vec::new(),
+                                    },
+                                }))
+                                .await;
+                            seq += 1;
+                        }
+                        Ok(ConvaiMessage::UserTranscript {
+                            user_transcription_event,
+                        }) => {
+                            let _ = events_tx
+                                .send(Ok(RealtimeEvent::InboundTranscript {
+                                    text: user_transcription_event.user_transcript,
+                                    is_final: true,
+                                }))
+                                .await;
+                        }
+                        Ok(ConvaiMessage::AgentResponse { agent_response_event }) => {
+                            if let Some(text) = agent_response_event.agent_response {
                                 let _ = events_tx
-                                    .send(Ok(RealtimeEvent::AudioOut {
-                                        chunk: AudioChunk {
-                                            bytes: Bytes::from(bytes),
-                                            seq,
-                                            is_final: false,
-                                            words: Vec::new(),
-                                        },
-                                    }))
-                                    .await;
-                                seq += 1;
-                            }
-                            Ok(ConvaiMessage::UserTranscript { user_transcription_event }) => {
-                                let _ = events_tx
-                                    .send(Ok(RealtimeEvent::InboundTranscript {
-                                        text: user_transcription_event.user_transcript,
-                                        is_final: true,
-                                    }))
-                                    .await;
-                            }
-                            Ok(ConvaiMessage::AgentResponse { agent_response_event }) => {
-                                if let Some(text) = agent_response_event.agent_response {
-                                    let _ = events_tx
-                                        .send(Ok(RealtimeEvent::OutboundText {
-                                            text,
-                                            is_final: true,
-                                        }))
-                                        .await;
-                                }
-                            }
-                            Ok(ConvaiMessage::AgentCorrection {
-                                agent_response_correction_event,
-                            }) => {
-                                if let Some(text) =
-                                    agent_response_correction_event.corrected_response
-                                {
-                                    let _ = events_tx
-                                        .send(Ok(RealtimeEvent::OutboundText {
-                                            text,
-                                            is_final: true,
-                                        }))
-                                        .await;
-                                }
-                            }
-                            Ok(ConvaiMessage::Interruption) => {
-                                let _ = events_tx.send(Ok(RealtimeEvent::BargeIn)).await;
-                            }
-                            Ok(ConvaiMessage::InitMeta { .. })
-                            | Ok(ConvaiMessage::Ping { .. })
-                            | Ok(ConvaiMessage::Other) => {}
-                            Err(e) => {
-                                let _ = events_tx
-                                    .send(Err(SttError::transport(format!("convai parse: {e}"))))
+                                    .send(Ok(RealtimeEvent::OutboundText { text, is_final: true }))
                                     .await;
                             }
                         }
-                    }
+                        Ok(ConvaiMessage::AgentCorrection {
+                            agent_response_correction_event,
+                        }) => {
+                            if let Some(text) = agent_response_correction_event.corrected_response {
+                                let _ = events_tx
+                                    .send(Ok(RealtimeEvent::OutboundText { text, is_final: true }))
+                                    .await;
+                            }
+                        }
+                        Ok(ConvaiMessage::Interruption) => {
+                            let _ = events_tx.send(Ok(RealtimeEvent::BargeIn)).await;
+                        }
+                        Ok(ConvaiMessage::InitMeta { .. })
+                        | Ok(ConvaiMessage::Ping { .. })
+                        | Ok(ConvaiMessage::Other) => {}
+                        Err(e) => {
+                            let _ = events_tx
+                                .send(Err(SttError::transport(format!("convai parse: {e}"))))
+                                .await;
+                        }
+                    },
                     Ok(Message::Binary(_)) | Ok(Message::Ping(_)) | Ok(Message::Pong(_)) => {}
                     Ok(Message::Close(_)) => break,
                     Ok(Message::Frame(_)) => {}
@@ -279,7 +274,9 @@ impl ElevenLabsConvaiSession {
 
 #[async_trait]
 impl RealtimeSession for ElevenLabsConvaiSession {
-    fn capabilities(&self) -> &'static Capabilities { &CAPS }
+    fn capabilities(&self) -> &'static Capabilities {
+        &CAPS
+    }
 
     async fn push_text(&mut self, _text: &str) -> Result<()> {
         // ConvAI is mic-driven; the agent responds to user audio.
@@ -301,7 +298,9 @@ impl RealtimeSession for ElevenLabsConvaiSession {
             .map_err(|_| SttError::transport("convai: stream closed"))
     }
 
-    async fn commit_input(&mut self) -> Result<()> { Ok(()) }
+    async fn commit_input(&mut self) -> Result<()> {
+        Ok(())
+    }
 
     async fn interrupt(&mut self) -> Result<()> {
         // No client-side interrupt frame in convai; the server
@@ -319,8 +318,7 @@ impl RealtimeSession for ElevenLabsConvaiSession {
 
     fn events(
         &mut self,
-    ) -> Pin<Box<dyn Stream<Item = std::result::Result<RealtimeEvent, SttError>> + Send + '_>>
-    {
+    ) -> Pin<Box<dyn Stream<Item = std::result::Result<RealtimeEvent, SttError>> + Send + '_>> {
         let mut guard = self.events_rx.lock();
         let rx = guard.take();
         drop(guard);
@@ -334,8 +332,7 @@ impl RealtimeSession for ElevenLabsConvaiSession {
 // ----- base64 helpers -------------------------------------------------------
 
 fn base64_encode(b: &[u8]) -> String {
-    const ALPHABET: &[u8; 64] =
-        b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+    const ALPHABET: &[u8; 64] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
     let mut out = String::with_capacity((b.len() + 2) / 3 * 4);
     for chunk in b.chunks(3) {
         let n = chunk.len();
@@ -345,8 +342,16 @@ fn base64_encode(b: &[u8]) -> String {
         let triple = (b0 << 16) | (b1 << 8) | b2;
         out.push(ALPHABET[((triple >> 18) & 0x3F) as usize] as char);
         out.push(ALPHABET[((triple >> 12) & 0x3F) as usize] as char);
-        if n > 1 { out.push(ALPHABET[((triple >> 6) & 0x3F) as usize] as char); } else { out.push('='); }
-        if n > 2 { out.push(ALPHABET[(triple & 0x3F) as usize] as char); } else { out.push('='); }
+        if n > 1 {
+            out.push(ALPHABET[((triple >> 6) & 0x3F) as usize] as char);
+        } else {
+            out.push('=');
+        }
+        if n > 2 {
+            out.push(ALPHABET[(triple & 0x3F) as usize] as char);
+        } else {
+            out.push('=');
+        }
     }
     out
 }
@@ -368,14 +373,20 @@ fn base64_decode(s: &str) -> Result<Vec<u8>> {
         let mut buf = [0u32; 4];
         let mut pad = 0;
         for (i, c) in chunk.iter().enumerate() {
-            if *c == b'=' { pad += 1; continue; }
-            buf[i] = val(*c)
-                .ok_or_else(|| SttError::decode("invalid base64 character"))?;
+            if *c == b'=' {
+                pad += 1;
+                continue;
+            }
+            buf[i] = val(*c).ok_or_else(|| SttError::decode("invalid base64 character"))?;
         }
         let triple = (buf[0] << 18) | (buf[1] << 12) | (buf[2] << 6) | buf[3];
         out.push(((triple >> 16) & 0xFF) as u8);
-        if pad < 2 { out.push(((triple >> 8) & 0xFF) as u8); }
-        if pad < 1 { out.push((triple & 0xFF) as u8); }
+        if pad < 2 {
+            out.push(((triple >> 8) & 0xFF) as u8);
+        }
+        if pad < 1 {
+            out.push((triple & 0xFF) as u8);
+        }
     }
     Ok(out)
 }

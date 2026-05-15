@@ -6,9 +6,7 @@ use std::sync::Arc;
 
 use async_trait::async_trait;
 use atomr_agents_core::{AgentError, InvokeCtx, Result, ToolId, Value};
-use atomr_agents_stt_core::{
-    AudioInput, DynSpeechToText, TranscribeOptions,
-};
+use atomr_agents_stt_core::{AudioInput, DynSpeechToText, TranscribeOptions};
 use atomr_agents_tool::{Tool, ToolDescriptor, ToolSchema};
 use serde::Deserialize;
 
@@ -76,9 +74,8 @@ impl Tool for TranscribeTool {
     }
 
     async fn invoke(&self, args: Value, _ctx: &InvokeCtx) -> Result<Value> {
-        let parsed: Args = serde_json::from_value(args).map_err(|e| {
-            AgentError::Tool(format!("transcribe_audio: bad args: {e}"))
-        })?;
+        let parsed: Args = serde_json::from_value(args)
+            .map_err(|e| AgentError::Tool(format!("transcribe_audio: bad args: {e}")))?;
         let opts = TranscribeOptions {
             language: parsed.language,
             diarize: parsed.diarize,
@@ -100,9 +97,7 @@ impl Tool for TranscribeTool {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use atomr_agents_core::{
-        CallCtx, InvokeCtx, IterationBudget, MoneyBudget, TimeBudget, TokenBudget,
-    };
+    use atomr_agents_core::{CallCtx, InvokeCtx, IterationBudget, MoneyBudget, TimeBudget, TokenBudget};
     use atomr_agents_stt_core::MockSpeechToText;
     use std::sync::Arc;
     use std::time::Duration;
@@ -141,10 +136,7 @@ mod tests {
         let stt: DynSpeechToText = Arc::new(MockSpeechToText::new().with_text("hello"));
         let t = TranscribeTool::new(stt);
         let v = t
-            .invoke(
-                serde_json::json!({"audio_path": p.to_str().unwrap()}),
-                &ctx(),
-            )
+            .invoke(serde_json::json!({"audio_path": p.to_str().unwrap()}), &ctx())
             .await
             .unwrap();
         assert_eq!(v["text"], "hello");

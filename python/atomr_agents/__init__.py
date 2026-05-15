@@ -77,107 +77,115 @@ if _native is not None:
     eval = _native.eval  # noqa: A001 - shadowing intentional
     guest = _native.guest
     stt = _native.stt
+    stt_harness = _native.stt_harness
     tts = _native.tts
     voice = _native.voice
     voice_extras = _native.voice_extras
 
     # ----- top-level convenience re-exports -----------------------------
-    AgentId = core.AgentId
-    TeamId = core.TeamId
-    DepartmentId = core.DepartmentId
-    OrgId = core.OrgId
-    WorkflowId = core.WorkflowId
-    HarnessId = core.HarnessId
-    ToolId = core.ToolId
-    ToolSetId = core.ToolSetId
-    SkillId = core.SkillId
-    PersonaId = core.PersonaId
-    RunId = core.RunId
-    TokenBudget = core.TokenBudget
-    TimeBudget = core.TimeBudget
-    MoneyBudget = core.MoneyBudget
-    IterationBudget = core.IterationBudget
-    MemoryNamespace = core.MemoryNamespace
-    MemoryKind = core.MemoryKind
-    MemoryItem = core.MemoryItem
-    MemoryChunk = core.MemoryChunk
-    TokenUsage = core.TokenUsage
-    FinishReason = core.FinishReason
+    # Each name is resolved defensively: the native submodule surface
+    # evolves independently of this facade, so a name that is not (yet)
+    # bound on the Rust side degrades to `None` rather than crashing the
+    # whole package import.
+    def _opt(_module, _name):
+        return getattr(_module, _name, None)
 
-    Event = observability.Event
-    EventBus = observability.EventBus
-    EventStream = observability.EventStream
-    RunTreeBuilder = observability.RunTreeBuilder
+    AgentId = _opt(core, "AgentId")
+    TeamId = _opt(core, "TeamId")
+    DepartmentId = _opt(core, "DepartmentId")
+    OrgId = _opt(core, "OrgId")
+    WorkflowId = _opt(core, "WorkflowId")
+    HarnessId = _opt(core, "HarnessId")
+    ToolId = _opt(core, "ToolId")
+    ToolSetId = _opt(core, "ToolSetId")
+    SkillId = _opt(core, "SkillId")
+    PersonaId = _opt(core, "PersonaId")
+    RunId = _opt(core, "RunId")
+    TokenBudget = _opt(core, "TokenBudget")
+    TimeBudget = _opt(core, "TimeBudget")
+    MoneyBudget = _opt(core, "MoneyBudget")
+    IterationBudget = _opt(core, "IterationBudget")
+    MemoryNamespace = _opt(core, "MemoryNamespace")
+    MemoryKind = _opt(core, "MemoryKind")
+    MemoryItem = _opt(core, "MemoryItem")
+    MemoryChunk = _opt(core, "MemoryChunk")
+    TokenUsage = _opt(core, "TokenUsage")
+    FinishReason = _opt(core, "FinishReason")
 
-    Registry = registry.Registry
-    ArtifactKind = registry.ArtifactKind
-    ArtifactRecord = registry.ArtifactRecord
-    EvalSummary = registry.EvalSummary
+    Event = _opt(observability, "Event")
+    EventBus = _opt(observability, "EventBus")
+    EventStream = _opt(observability, "EventStream")
+    RunTreeBuilder = _opt(observability, "RunTreeBuilder")
 
-    ToolDescriptor = tool.ToolDescriptor
-    ToolSchema = tool.ToolSchema
-    ToolSet = tool.ToolSet
-    Provider = tool.Provider
-    ParsedToolCall = tool.ParsedToolCall
-    ToolCallParser = tool.ToolCallParser
+    Registry = _opt(registry, "Registry")
+    ArtifactKind = _opt(registry, "ArtifactKind")
+    ArtifactRecord = _opt(registry, "ArtifactRecord")
+    EvalSummary = _opt(registry, "EvalSummary")
 
-    Skill = skill.Skill
-    SkillSet = skill.SkillSet
+    ToolDescriptor = _opt(tool, "ToolDescriptor")
+    ToolSchema = _opt(tool, "ToolSchema")
+    ToolSet = _opt(tool, "ToolSet")
+    Provider = _opt(tool, "Provider")
+    ParsedToolCall = _opt(tool, "ParsedToolCall")
+    ToolCallParser = _opt(tool, "ToolCallParser")
 
-    RenderedPersona = persona.RenderedPersona
+    Skill = _opt(skill, "Skill")
+    SkillSet = _opt(skill, "SkillSet")
 
-    AgentSpec = agent.AgentSpec
-    AgentBudgets = agent.AgentBudgets
-    TurnResult = agent.TurnResult
-    AgentBuilder = agent.AgentBuilder
-    AgentRef = agent.AgentRef
-    InferenceClient = agent.InferenceClient
-    AgentMiddleware = agent.AgentMiddleware
-    logging_middleware = agent.logging_middleware
-    tool_error_recovery_middleware = agent.tool_error_recovery_middleware
-    redaction_middleware = agent.redaction_middleware
-    rate_limit_middleware = agent.rate_limit_middleware
+    RenderedPersona = _opt(persona, "RenderedPersona")
 
-    StepKind = workflow.StepKind
-    Dag = workflow.Dag
-    Step = workflow.Step
-    StepId = workflow.StepId
-    WorkflowRunner = workflow.WorkflowRunner
-    WorkflowState = workflow.WorkflowState
-    Journal = workflow.Journal
-    in_memory_journal = workflow.in_memory_journal
+    AgentSpec = _opt(agent, "AgentSpec")
+    AgentBudgets = _opt(agent, "AgentBudgets")
+    TurnResult = _opt(agent, "TurnResult")
+    AgentBuilder = _opt(agent, "AgentBuilder")
+    AgentRef = _opt(agent, "AgentRef")
+    InferenceClient = _opt(agent, "InferenceClient")
+    AgentMiddleware = _opt(agent, "AgentMiddleware")
+    logging_middleware = _opt(agent, "logging_middleware")
+    tool_error_recovery_middleware = _opt(agent, "tool_error_recovery_middleware")
+    redaction_middleware = _opt(agent, "redaction_middleware")
+    rate_limit_middleware = _opt(agent, "rate_limit_middleware")
 
-    HarnessSpec = harness.HarnessSpec
-    IterationCapTermination = harness.IterationCapTermination
-    Harness = harness.Harness
-    HarnessState = harness.HarnessState
-    StepEvent = harness.StepEvent
-    LoopStrategy = harness.LoopStrategy
-    TerminationStrategy = harness.TerminationStrategy
-    iteration_cap = harness.iteration_cap
+    StepKind = _opt(workflow, "StepKind")
+    Dag = _opt(workflow, "Dag")
+    Step = _opt(workflow, "Step")
+    StepId = _opt(workflow, "StepId")
+    WorkflowRunner = _opt(workflow, "WorkflowRunner")
+    WorkflowState = _opt(workflow, "WorkflowState")
+    Journal = _opt(workflow, "Journal")
+    in_memory_journal = _opt(workflow, "in_memory_journal")
 
-    PairwiseChoice = eval.PairwiseChoice
-    Verdict = eval.Verdict
+    HarnessSpec = _opt(harness, "HarnessSpec")
+    IterationCapTermination = _opt(harness, "IterationCapTermination")
+    Harness = _opt(harness, "Harness")
+    HarnessState = _opt(harness, "HarnessState")
+    StepEvent = _opt(harness, "StepEvent")
+    LoopStrategy = _opt(harness, "LoopStrategy")
+    TerminationStrategy = _opt(harness, "TerminationStrategy")
+    iteration_cap = _opt(harness, "iteration_cap")
+
+    PairwiseChoice = _opt(eval, "PairwiseChoice")
+    Verdict = _opt(eval, "Verdict")
 
     # ----- callable -----------------------------------------------------
-    Callable = callable_.Callable
-    Pipeline = callable_.Pipeline
-    with_retry = callable_.with_retry
-    with_timeout = callable_.with_timeout
-    with_fallbacks = callable_.with_fallbacks
-    with_config = callable_.with_config
-    fan_out = callable_.fan_out
-    branch = callable_.branch
-    lambda_ = callable_.lambda_
-    passthrough = callable_.passthrough
+    Callable = _opt(callable_, "Callable")
+    Pipeline = _opt(callable_, "Pipeline")
+    with_retry = _opt(callable_, "with_retry")
+    with_timeout = _opt(callable_, "with_timeout")
+    with_fallbacks = _opt(callable_, "with_fallbacks")
+    with_config = _opt(callable_, "with_config")
+    fan_out = _opt(callable_, "fan_out")
+    branch = _opt(callable_, "branch")
+    lambda_ = _opt(callable_, "lambda_")
+    passthrough = _opt(callable_, "passthrough")
 
     # ----- strategy -----------------------------------------------------
-    Termination = strategy.Termination
-    RoutingTarget = strategy.RoutingTarget
-    SkillRef = strategy.SkillRef
-    ToolRef = strategy.ToolRef
-    Policy = strategy.Policy
-    PolicyDecision = strategy.PolicyDecision
+    Termination = _opt(strategy, "Termination")
+    RoutingTarget = _opt(strategy, "RoutingTarget")
+    SkillRef = _opt(strategy, "SkillRef")
+    ToolRef = _opt(strategy, "ToolRef")
+    Policy = _opt(strategy, "Policy")
+    PolicyDecision = _opt(strategy, "PolicyDecision")
 
 try:
     __version__ = _metadata.version("atomr-agents")
@@ -204,6 +212,7 @@ __all__ = [
     "eval",
     "guest",
     "stt",
+    "stt_harness",
     "tts",
     "voice",
     "voice_extras",

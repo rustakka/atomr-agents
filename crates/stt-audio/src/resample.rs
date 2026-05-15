@@ -22,14 +22,17 @@ pub fn resample_mono(pcm: &PcmBuffer, target_sr: u32) -> Result<PcmBuffer, SttEr
         interpolation: SincInterpolationType::Linear,
         window: WindowFunction::Blackman2,
     };
-    let mut resampler =
-        SincFixedIn::<f32>::new(ratio, 2.0, params, pcm.samples.len(), 1)
-            .map_err(|e| SttError::decode(format!("rubato init: {e}")))?;
+    let mut resampler = SincFixedIn::<f32>::new(ratio, 2.0, params, pcm.samples.len(), 1)
+        .map_err(|e| SttError::decode(format!("rubato init: {e}")))?;
     let waves_in = vec![pcm.samples.clone()];
     let waves_out = resampler
         .process(&waves_in, None)
         .map_err(|e| SttError::decode(format!("rubato process: {e}")))?;
-    Ok(PcmBuffer::new(waves_out.into_iter().next().unwrap_or_default(), target_sr, 1))
+    Ok(PcmBuffer::new(
+        waves_out.into_iter().next().unwrap_or_default(),
+        target_sr,
+        1,
+    ))
 }
 
 #[cfg(test)]

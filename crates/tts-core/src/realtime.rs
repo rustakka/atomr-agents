@@ -61,13 +61,23 @@ pub trait RealtimeSession: Send {
 #[serde(tag = "kind", rename_all = "snake_case")]
 pub enum RealtimeEvent {
     /// Audio frame emitted by the assistant.
-    AudioOut { chunk: AudioChunk },
+    AudioOut {
+        chunk: AudioChunk,
+    },
     /// Inbound transcript (user speech ASR).
-    InboundTranscript { text: String, is_final: bool },
+    InboundTranscript {
+        text: String,
+        is_final: bool,
+    },
     /// Outbound text the assistant is about to / just did say.
-    OutboundText { text: String, is_final: bool },
+    OutboundText {
+        text: String,
+        is_final: bool,
+    },
     /// Aligned word timing for the most recent outbound utterance.
-    OutboundWords { words: Vec<WordTiming> },
+    OutboundWords {
+        words: Vec<WordTiming>,
+    },
     UserSpeechStarted,
     UserSpeechEnded,
     /// User barged in; current assistant turn was cancelled.

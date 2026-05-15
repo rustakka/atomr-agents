@@ -18,10 +18,10 @@
 //! - [`pump_mic_to_stream`] (`mic` feature) — convenience that
 //!   wires `MicCaptureSession` → `StreamingSession::push_audio`.
 
-mod session;
-mod vad;
 #[cfg(feature = "mic")]
 mod pump;
+mod session;
+mod vad;
 
 pub use session::{VoiceEvent, VoiceMode, VoiceSession};
 pub use vad::{EnergyVad, Vad};

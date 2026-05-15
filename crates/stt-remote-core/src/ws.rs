@@ -14,10 +14,7 @@ pub type Ws = WebSocketStream<MaybeTlsStream<TcpStream>>;
 
 /// Open a WebSocket connection to `url` with optional extra headers
 /// (e.g. `Authorization: Token …` for Deepgram).
-pub async fn connect(
-    url: &str,
-    headers: &[(&str, &str)],
-) -> Result<Ws, SttError> {
+pub async fn connect(url: &str, headers: &[(&str, &str)]) -> Result<Ws, SttError> {
     let mut req: Request = url
         .into_client_request()
         .map_err(|e| SttError::transport(format!("ws build request: {e}")))?;

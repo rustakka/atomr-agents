@@ -23,9 +23,9 @@ use atomr_agents_callable::{CallableHandle, FnCallable};
 use atomr_agents_core::{AgentError, CallCtx, Result as AgentResult, Value};
 use atomr_agents_embed::Embedder;
 use atomr_agents_ingest::{
-    ingest as ingest_fn, CachedEmbedder, CodeLang, CodeSplitter, CsvLoader, InMemoryKvCache,
-    IngestPipeline, JsonLoader, KvCache, Loader, MarkdownHeaderSplitter, MarkdownLoader,
-    RecursiveCharacterSplitter, SemanticSplitter, Splitter, TextLoader, TokenSplitter,
+    ingest as ingest_fn, CachedEmbedder, CodeLang, CodeSplitter, CsvLoader, InMemoryKvCache, IngestPipeline,
+    JsonLoader, KvCache, Loader, MarkdownHeaderSplitter, MarkdownLoader, RecursiveCharacterSplitter,
+    SemanticSplitter, Splitter, TextLoader, TokenSplitter,
 };
 use atomr_agents_memory::{LongStore, Namespace};
 use atomr_agents_retriever::Document;
@@ -355,9 +355,7 @@ fn markdown_header_splitter() -> PySplitter {
 #[pyfunction]
 fn code_splitter(lang: PyCodeLang) -> PySplitter {
     PySplitter {
-        inner: Arc::new(CodeSplitter {
-            lang: lang.into(),
-        }),
+        inner: Arc::new(CodeSplitter { lang: lang.into() }),
     }
 }
 
@@ -421,12 +419,7 @@ impl PyKvCache {
         })
     }
 
-    fn put<'py>(
-        &self,
-        py: Python<'py>,
-        key: String,
-        value: Vec<f32>,
-    ) -> PyResult<Bound<'py, PyAny>> {
+    fn put<'py>(&self, py: Python<'py>, key: String, value: Vec<f32>) -> PyResult<Bound<'py, PyAny>> {
         let inner = self.inner.clone();
         pyo3_async_runtimes::tokio::future_into_py(py, async move {
             inner.put(key, value).await.map_err(crate::errors::map)?;

@@ -18,8 +18,8 @@ use atomr_agents_core::{
     SkillId, TokenBudget, ToolId, ToolSetId, Value,
 };
 use atomr_agents_strategy::{
-    MemoryStrategy, Policy, PolicyDecision, PolicyStrategy, RoutingStrategy, RoutingTarget,
-    SkillRef, SkillStrategy, Termination, ToolRef, ToolStrategy,
+    MemoryStrategy, Policy, PolicyDecision, PolicyStrategy, RoutingStrategy, RoutingTarget, SkillRef,
+    SkillStrategy, Termination, ToolRef, ToolStrategy,
 };
 use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyList};
@@ -463,11 +463,7 @@ pub(crate) struct PyMemoryStrategyAdapter {
 
 #[async_trait]
 impl MemoryStrategy for PyMemoryStrategyAdapter {
-    async fn retrieve(
-        &self,
-        ctx: &AgentContext,
-        budget: &mut TokenBudget,
-    ) -> AgentResult<Vec<MemoryChunk>> {
+    async fn retrieve(&self, ctx: &AgentContext, budget: &mut TokenBudget) -> AgentResult<Vec<MemoryChunk>> {
         let target = self.target.clone();
         let ctx_owned = ctx.clone();
         let budget_remaining = budget.remaining;
@@ -499,10 +495,8 @@ impl MemoryStrategy for PyMemoryStrategyAdapter {
                         source_id: m.get("source_id")?.as_str()?.to_string(),
                         text: m.get("text")?.as_str().unwrap_or_default().to_string(),
                         score: m.get("score").and_then(|v| v.as_f64()).unwrap_or(0.0) as f32,
-                        estimated_tokens: m
-                            .get("estimated_tokens")
-                            .and_then(|v| v.as_u64())
-                            .unwrap_or(0) as u32,
+                        estimated_tokens: m.get("estimated_tokens").and_then(|v| v.as_u64()).unwrap_or(0)
+                            as u32,
                     })
                 })
                 .collect(),
@@ -560,11 +554,7 @@ pub(crate) struct PySkillStrategyAdapter {
 
 #[async_trait]
 impl SkillStrategy for PySkillStrategyAdapter {
-    async fn applicable(
-        &self,
-        ctx: &AgentContext,
-        budget: &mut TokenBudget,
-    ) -> AgentResult<Vec<SkillRef>> {
+    async fn applicable(&self, ctx: &AgentContext, budget: &mut TokenBudget) -> AgentResult<Vec<SkillRef>> {
         let target = self.target.clone();
         let ctx_owned = ctx.clone();
         let budget_remaining = budget.remaining;
@@ -594,11 +584,7 @@ impl SkillStrategy for PySkillStrategyAdapter {
                     let m = item.as_object()?;
                     Some(SkillRef {
                         id: SkillId::from(m.get("id")?.as_str()?.to_string()),
-                        name: m
-                            .get("name")
-                            .and_then(|v| v.as_str())
-                            .unwrap_or("")
-                            .to_string(),
+                        name: m.get("name").and_then(|v| v.as_str()).unwrap_or("").to_string(),
                         priority: m.get("priority").and_then(|v| v.as_u64()).unwrap_or(0) as u8,
                     })
                 })
@@ -615,11 +601,7 @@ pub(crate) struct PyToolStrategyAdapter {
 
 #[async_trait]
 impl ToolStrategy for PyToolStrategyAdapter {
-    async fn select(
-        &self,
-        ctx: &AgentContext,
-        budget: &mut TokenBudget,
-    ) -> AgentResult<Vec<ToolRef>> {
+    async fn select(&self, ctx: &AgentContext, budget: &mut TokenBudget) -> AgentResult<Vec<ToolRef>> {
         let target = self.target.clone();
         let ctx_owned = ctx.clone();
         let budget_remaining = budget.remaining;
@@ -706,9 +688,7 @@ impl PolicyStrategy for PyPolicyStrategyAdapter {
         let requested = requested_toolset.map(|t| t.as_str().to_string());
         Python::with_gil(|py| -> PyResult<PolicyDecision> {
             let bound = target.bind(py);
-            let py_policy = PyPolicy {
-                inner: policy_clone,
-            };
+            let py_policy = PyPolicy { inner: policy_clone };
             let arg_policy = Py::new(py, py_policy)?;
             let arg_ts = match &requested {
                 Some(s) => s.clone().into_py(py),
@@ -746,9 +726,7 @@ pub(crate) async fn await_if_coro(value: PyObject) -> AgentResult<PyObject> {
     })
     .map_err(|e| AgentError::Internal(format!("inspect coroutine: {e}")))?;
     match maybe_future {
-        Some(fut) => fut
-            .await
-            .map_err(|e| AgentError::Internal(format!("await: {e}"))),
+        Some(fut) => fut.await.map_err(|e| AgentError::Internal(format!("await: {e}"))),
         None => Ok(value),
     }
 }

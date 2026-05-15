@@ -28,9 +28,15 @@ impl MossTtsRunner {
 
 #[async_trait]
 impl TextToSpeech for MossTtsRunner {
-    fn capabilities(&self) -> &'static Capabilities { &CAPS }
-    fn backend_kind(&self) -> BackendKind { BackendKind::MossTts }
-    fn transport_kind(&self) -> TransportKind { TransportKind::Hybrid }
+    fn capabilities(&self) -> &'static Capabilities {
+        &CAPS
+    }
+    fn backend_kind(&self) -> BackendKind {
+        BackendKind::MossTts
+    }
+    fn transport_kind(&self) -> TransportKind {
+        TransportKind::Hybrid
+    }
 
     async fn synthesize(&self, _request: SynthesisRequest) -> Result<AudioOutput> {
         let _ = &self.config;
@@ -41,20 +47,14 @@ impl TextToSpeech for MossTtsRunner {
         ))
     }
 
-    async fn synthesize_stream(
-        &self,
-        _request: SynthesisRequest,
-    ) -> Result<Box<dyn SynthesisStream>> {
+    async fn synthesize_stream(&self, _request: SynthesisRequest) -> Result<Box<dyn SynthesisStream>> {
         Err(SttError::model_load(
             "atomr-agents-tts-runtime-moss: streaming HTTP client pending; rebuild with \
              --features moss-http once the binding lands.",
         ))
     }
 
-    async fn open_realtime(
-        &self,
-        _opts: RealtimeOptions,
-    ) -> Result<Box<dyn RealtimeSession>> {
+    async fn open_realtime(&self, _opts: RealtimeOptions) -> Result<Box<dyn RealtimeSession>> {
         Err(SttError::model_load(
             "atomr-agents-tts-runtime-moss: realtime WS client pending; rebuild with \
              --features moss-http once the binding lands.",
@@ -71,7 +71,10 @@ mod tests {
     async fn caps_advertise_all_five_surfaces() {
         assert!(CAPS.plain_tts);
         assert!(CAPS.voicegen_from_text);
-        assert!(matches!(CAPS.voice_cloning, atomr_agents_tts_core::VoiceCloningSupport::ZeroShot { .. }));
+        assert!(matches!(
+            CAPS.voice_cloning,
+            atomr_agents_tts_core::VoiceCloningSupport::ZeroShot { .. }
+        ));
         assert_eq!(CAPS.dialogue_multispeaker, Some(5));
         assert!(CAPS.sound_effects);
         assert!(CAPS.realtime_bidirectional);

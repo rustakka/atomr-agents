@@ -30,9 +30,7 @@ pub(crate) struct DeepgramStreamingSession {
 
 impl DeepgramStreamingSession {
     pub(crate) fn spawn(
-        ws: tokio_tungstenite::WebSocketStream<
-            tokio_tungstenite::MaybeTlsStream<tokio::net::TcpStream>,
-        >,
+        ws: tokio_tungstenite::WebSocketStream<tokio_tungstenite::MaybeTlsStream<tokio::net::TcpStream>>,
     ) -> Self {
         let (audio_tx, mut audio_rx) = mpsc::channel::<Bytes>(64);
         let (events_tx, events_rx) = mpsc::channel::<std::result::Result<StreamEvent, SttError>>(64);
@@ -82,9 +80,7 @@ impl DeepgramStreamingSession {
                             }
                             Ok(WsMessage::UtteranceEnd(u)) => {
                                 let at_ms = (u.last_word_end.unwrap_or(0.0) * 1000.0) as u32;
-                                let _ = events_tx
-                                    .send(Ok(StreamEvent::UtteranceEnd { at_ms }))
-                                    .await;
+                                let _ = events_tx.send(Ok(StreamEvent::UtteranceEnd { at_ms })).await;
                             }
                             Ok(WsMessage::Metadata(m)) => {
                                 let v = serde_json::json!({
@@ -137,10 +133,7 @@ fn lift_results(r: ResultsMessage) -> Vec<StreamEvent> {
             if let Some(spk) = w_speaker(w, &alt) {
                 if Some(spk) != prev_speaker {
                     out.push(StreamEvent::SpeakerTurn {
-                        speaker: SpeakerTag {
-                            id: spk,
-                            label: None,
-                        },
+                        speaker: SpeakerTag { id: spk, label: None },
                         at_ms: w.start_ms,
                     });
                     prev_speaker = Some(spk);
@@ -226,8 +219,7 @@ impl StreamingSession for DeepgramStreamingSession {
 
     fn events(
         &mut self,
-    ) -> Pin<Box<dyn Stream<Item = std::result::Result<StreamEvent, SttError>> + Send + '_>>
-    {
+    ) -> Pin<Box<dyn Stream<Item = std::result::Result<StreamEvent, SttError>> + Send + '_>> {
         // Take ownership of the receiver lazily so re-entry returns
         // the same stream.
         let mut guard = self.events_rx.lock();

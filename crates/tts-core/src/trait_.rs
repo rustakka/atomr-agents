@@ -24,17 +24,11 @@ pub trait TextToSpeech: Send + Sync + 'static {
 
     /// Streaming output. Backends without streaming should return
     /// [`atomr_agents_stt_core::SttError::UnsupportedCapability`].
-    async fn synthesize_stream(
-        &self,
-        request: SynthesisRequest,
-    ) -> Result<Box<dyn SynthesisStream>>;
+    async fn synthesize_stream(&self, request: SynthesisRequest) -> Result<Box<dyn SynthesisStream>>;
 
     /// Open a bidirectional realtime session. Backends without
     /// realtime return UnsupportedCapability.
-    async fn open_realtime(
-        &self,
-        opts: RealtimeOptions,
-    ) -> Result<Box<dyn RealtimeSession>>;
+    async fn open_realtime(&self, opts: RealtimeOptions) -> Result<Box<dyn RealtimeSession>>;
 }
 
 pub type DynTextToSpeech = Arc<dyn TextToSpeech>;
@@ -66,11 +60,7 @@ impl AudioOutput {
     /// Construct from a PCM buffer. Sets `format` to a matching
     /// `AudioFormat::Pcm` and computes `duration_secs` from the
     /// buffer.
-    pub fn from_pcm(
-        pcm: PcmBuffer,
-        backend: BackendKind,
-        characters_processed: u32,
-    ) -> Self {
+    pub fn from_pcm(pcm: PcmBuffer, backend: BackendKind, characters_processed: u32) -> Self {
         use atomr_agents_stt_core::SampleType;
         let format = AudioFormat::Pcm {
             sample_rate: pcm.sample_rate,

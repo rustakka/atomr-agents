@@ -2,13 +2,10 @@
 
 use async_trait::async_trait;
 use atomr_agents_stt_core::{
-    AudioFormat, AudioInput, BackendKind, Capabilities, Result, Segment, SpeakerTag,
-    SpeechToText, StreamOptions, StreamingSession, SttError, TranscribeOptions, Transcript,
-    TransportKind, Word,
+    AudioFormat, AudioInput, BackendKind, Capabilities, Result, Segment, SpeakerTag, SpeechToText,
+    StreamOptions, StreamingSession, SttError, TranscribeOptions, Transcript, TransportKind, Word,
 };
-use atomr_agents_stt_remote_core::{
-    build_http_client, classify_status, retry, ws,
-};
+use atomr_agents_stt_remote_core::{build_http_client, classify_status, retry, ws};
 use bytes::Bytes;
 use reqwest::{header, Client};
 use secrecy::ExposeSecret;
@@ -83,11 +80,7 @@ impl SpeechToText for DeepgramRunner {
         TransportKind::Hybrid
     }
 
-    async fn transcribe(
-        &self,
-        input: AudioInput,
-        opts: TranscribeOptions,
-    ) -> Result<Transcript> {
+    async fn transcribe(&self, input: AudioInput, opts: TranscribeOptions) -> Result<Transcript> {
         let url = self
             .config
             .rest_endpoint
@@ -141,10 +134,7 @@ impl SpeechToText for DeepgramRunner {
         ))
     }
 
-    async fn open_stream(
-        &self,
-        opts: StreamOptions,
-    ) -> Result<Box<dyn StreamingSession>> {
+    async fn open_stream(&self, opts: StreamOptions) -> Result<Box<dyn StreamingSession>> {
         let mut url = self.config.ws_endpoint.clone();
         let model = opts
             .model
@@ -188,9 +178,7 @@ impl SpeechToText for DeepgramRunner {
 fn encoding_hint(f: &AudioFormat) -> (&'static str, Option<u32>) {
     match f {
         AudioFormat::Pcm {
-            sample_rate,
-            sample,
-            ..
+            sample_rate, sample, ..
         } => (
             match sample {
                 atomr_agents_stt_core::SampleType::I16 => "linear16",
@@ -234,11 +222,7 @@ async fn read_input(input: AudioInput) -> Result<(Bytes, String)> {
     }
 }
 
-fn into_transcript(
-    r: ListenResponse,
-    cfg_model: String,
-    opt_model: Option<String>,
-) -> Transcript {
+fn into_transcript(r: ListenResponse, cfg_model: String, opt_model: Option<String>) -> Transcript {
     let language = r
         .results
         .as_ref()
@@ -261,10 +245,7 @@ fn into_transcript(
                     .words
                     .iter()
                     .map(|w| Word {
-                        text: w
-                            .punctuated_word
-                            .clone()
-                            .unwrap_or_else(|| w.word.clone()),
+                        text: w.punctuated_word.clone().unwrap_or_else(|| w.word.clone()),
                         start_ms: (w.start * 1000.0) as u32,
                         end_ms: (w.end * 1000.0) as u32,
                         confidence: w.confidence,

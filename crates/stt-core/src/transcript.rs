@@ -45,11 +45,7 @@ impl Transcript {
     /// Construct a single-segment transcript from text + timing —
     /// useful for backends that only return aggregate text and
     /// duration.
-    pub fn from_text(
-        text: impl Into<String>,
-        backend: BackendKind,
-        duration_secs: f32,
-    ) -> Self {
+    pub fn from_text(text: impl Into<String>, backend: BackendKind, duration_secs: f32) -> Self {
         let text = text.into();
         let end_ms = (duration_secs * 1000.0) as u32;
         let segment = Segment {

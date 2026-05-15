@@ -56,10 +56,7 @@ pub fn parse_version(s: &str) -> PyResult<Version> {
 /// `money_usd` / `money_budget_usd`, `iterations` / `iteration_budget`,
 /// `trace` (list of strings). Used by every async adapter that
 /// receives a ctx from Python.
-pub fn callctx_from_pydict(
-    py: Python<'_>,
-    ctx_dict: Option<&Bound<'_, PyAny>>,
-) -> PyResult<CallCtx> {
+pub fn callctx_from_pydict(py: Python<'_>, ctx_dict: Option<&Bound<'_, PyAny>>) -> PyResult<CallCtx> {
     let mut agent_id: Option<atomr_agents_core::AgentId> = None;
     let mut tokens = TokenBudget::new(1_000_000);
     let mut time = TimeBudget::new(Duration::from_secs(3600));
@@ -123,9 +120,7 @@ pub fn callctx_from_pydict(
                 }
             }
         } else {
-            return Err(PyValueError::new_err(
-                "ctx must be a dict or None",
-            ));
+            return Err(PyValueError::new_err("ctx must be a dict or None"));
         }
     }
     let _ = py;

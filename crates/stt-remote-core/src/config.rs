@@ -67,9 +67,7 @@ impl SecretRef {
     /// The returned `SecretString` keeps the value zeroized on drop.
     pub fn bearer(&self) -> Result<SecretString, SttError> {
         let s = self.resolve()?;
-        Ok(SecretString::new(
-            format!("Bearer {}", s.expose_secret()).into(),
-        ))
+        Ok(SecretString::new(format!("Bearer {}", s.expose_secret()).into()))
     }
 }
 

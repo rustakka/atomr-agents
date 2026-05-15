@@ -18,5 +18,9 @@ pub struct KokoroConfig {
     pub use_gpu: bool,
 }
 
-fn default_voice() -> String { "af_alloy".to_string() }
-fn default_speed() -> f32 { 1.0 }
+fn default_voice() -> String {
+    "af_alloy".to_string()
+}
+fn default_speed() -> f32 {
+    1.0
+}

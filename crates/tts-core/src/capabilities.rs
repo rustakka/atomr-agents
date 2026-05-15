@@ -102,11 +102,15 @@ pub enum VoiceCloningSupport {
     None,
     /// Single-shot clone from a reference clip of at least
     /// `min_sample_secs` seconds.
-    ZeroShot { min_sample_secs: f32 },
+    ZeroShot {
+        min_sample_secs: f32,
+    },
     /// Requires a finetune step (slower, longer enrollment).
     Finetune,
     /// Backend supports both modes.
-    Both { min_sample_secs: f32 },
+    Both {
+        min_sample_secs: f32,
+    },
 }
 
 #[derive(Debug, Clone, Serialize)]

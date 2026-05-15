@@ -28,9 +28,15 @@ impl XttsRunner {
 
 #[async_trait]
 impl TextToSpeech for XttsRunner {
-    fn capabilities(&self) -> &'static Capabilities { &CAPS }
-    fn backend_kind(&self) -> BackendKind { BackendKind::XttsV2 }
-    fn transport_kind(&self) -> TransportKind { TransportKind::Hybrid }
+    fn capabilities(&self) -> &'static Capabilities {
+        &CAPS
+    }
+    fn backend_kind(&self) -> BackendKind {
+        BackendKind::XttsV2
+    }
+    fn transport_kind(&self) -> TransportKind {
+        TransportKind::Hybrid
+    }
 
     async fn synthesize(&self, _request: SynthesisRequest) -> Result<AudioOutput> {
         let _ = &self.config;
@@ -41,20 +47,14 @@ impl TextToSpeech for XttsRunner {
         ))
     }
 
-    async fn synthesize_stream(
-        &self,
-        _request: SynthesisRequest,
-    ) -> Result<Box<dyn SynthesisStream>> {
+    async fn synthesize_stream(&self, _request: SynthesisRequest) -> Result<Box<dyn SynthesisStream>> {
         Err(SttError::model_load(
             "atomr-agents-tts-runtime-xtts: streaming pipeline pending; rebuild with \
              --features xtts-http.",
         ))
     }
 
-    async fn open_realtime(
-        &self,
-        _opts: RealtimeOptions,
-    ) -> Result<Box<dyn RealtimeSession>> {
+    async fn open_realtime(&self, _opts: RealtimeOptions) -> Result<Box<dyn RealtimeSession>> {
         Err(SttError::UnsupportedCapability("realtime_bidirectional"))
     }
 }

@@ -10,10 +10,7 @@ use crate::config::Timeouts;
 /// Build a `reqwest::Client` with the configured timeouts and the
 /// TLS backend chosen via Cargo features (rustls by default).
 pub fn build_http_client(timeouts: &Timeouts) -> Result<Client, SttError> {
-    let mut b = Client::builder().user_agent(concat!(
-        "atomr-agents-stt/",
-        env!("CARGO_PKG_VERSION"),
-    ));
+    let mut b = Client::builder().user_agent(concat!("atomr-agents-stt/", env!("CARGO_PKG_VERSION"),));
     if let Some(t) = timeouts.total() {
         b = b.timeout(t);
     }

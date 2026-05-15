@@ -15,9 +15,7 @@ use atomr_agents_core::{AgentContext, AgentError, Result as AgentResult, TokenBu
 use atomr_agents_instruction::{InstructionStrategy, RenderedInstructions};
 use pyo3::prelude::*;
 
-use super::conv_helpers::{
-    await_and_jsonify, build_agent_ctx_dict, build_budget_dict, resolve_instance,
-};
+use super::conv_helpers::{await_and_jsonify, build_agent_ctx_dict, build_budget_dict, resolve_instance};
 use super::registry::GUESTS;
 
 pub struct PyInstructionAdapter {
@@ -57,19 +55,14 @@ impl InstructionStrategy for PyInstructionAdapter {
             .map_err(|e| AgentError::Strategy(format!("guest instruction {label}: {e}")))?;
 
         let map = value.as_object().ok_or_else(|| {
-            AgentError::Strategy(format!(
-                "guest instruction {label}: expected object, got {value}"
-            ))
+            AgentError::Strategy(format!("guest instruction {label}: expected object, got {value}"))
         })?;
         let system_prompt = map
             .get("system_prompt")
             .and_then(|v| v.as_str())
             .unwrap_or("")
             .to_string();
-        let estimated_tokens = map
-            .get("estimated_tokens")
-            .and_then(|v| v.as_u64())
-            .unwrap_or(0) as u32;
+        let estimated_tokens = map.get("estimated_tokens").and_then(|v| v.as_u64()).unwrap_or(0) as u32;
         Ok(RenderedInstructions {
             system_prompt,
             estimated_tokens,

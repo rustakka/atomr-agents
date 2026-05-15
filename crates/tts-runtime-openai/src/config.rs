@@ -36,10 +36,18 @@ pub struct OpenAiTtsConfig {
     pub rate_limits: RateLimits,
 }
 
-fn default_endpoint() -> Url { Url::parse(OPENAI_BASE_URL).expect("OPENAI_BASE_URL") }
-fn default_model() -> String { DEFAULT_MODEL.to_string() }
-fn default_voice() -> String { DEFAULT_VOICE.to_string() }
-fn default_format() -> String { "mp3".to_string() }
+fn default_endpoint() -> Url {
+    Url::parse(OPENAI_BASE_URL).expect("OPENAI_BASE_URL")
+}
+fn default_model() -> String {
+    DEFAULT_MODEL.to_string()
+}
+fn default_voice() -> String {
+    DEFAULT_VOICE.to_string()
+}
+fn default_format() -> String {
+    "mp3".to_string()
+}
 
 impl OpenAiTtsConfig {
     pub fn from_env() -> Self {

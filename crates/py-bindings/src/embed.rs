@@ -35,11 +35,7 @@ impl PyEmbedder {
         })
     }
 
-    fn embed_batch<'py>(
-        &self,
-        py: Python<'py>,
-        texts: Vec<String>,
-    ) -> PyResult<Bound<'py, PyAny>> {
+    fn embed_batch<'py>(&self, py: Python<'py>, texts: Vec<String>) -> PyResult<Bound<'py, PyAny>> {
         let inner = self.inner.clone();
         pyo3_async_runtimes::tokio::future_into_py(py, async move {
             inner.embed_batch(&texts).await.map_err(crate::errors::map)
@@ -122,12 +118,7 @@ pub struct PyAnnIndex {
 
 #[pymethods]
 impl PyAnnIndex {
-    fn upsert<'py>(
-        &self,
-        py: Python<'py>,
-        id: AnnId,
-        vec: Vec<f32>,
-    ) -> PyResult<Bound<'py, PyAny>> {
+    fn upsert<'py>(&self, py: Python<'py>, id: AnnId, vec: Vec<f32>) -> PyResult<Bound<'py, PyAny>> {
         let inner = self.inner.clone();
         pyo3_async_runtimes::tokio::future_into_py(py, async move {
             inner.upsert(id, vec).await.map_err(crate::errors::map)?;
@@ -135,12 +126,7 @@ impl PyAnnIndex {
         })
     }
 
-    fn search<'py>(
-        &self,
-        py: Python<'py>,
-        query: Vec<f32>,
-        top_k: usize,
-    ) -> PyResult<Bound<'py, PyAny>> {
+    fn search<'py>(&self, py: Python<'py>, query: Vec<f32>, top_k: usize) -> PyResult<Bound<'py, PyAny>> {
         let inner = self.inner.clone();
         pyo3_async_runtimes::tokio::future_into_py(py, async move {
             let r = inner.search(&query, top_k).await.map_err(crate::errors::map)?;

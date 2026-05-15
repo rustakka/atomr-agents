@@ -9,14 +9,13 @@ use std::sync::Arc;
 use async_trait::async_trait;
 use atomr_agents_callable::CallableHandle;
 use atomr_agents_core::{
-    AgentContext, AgentError, InvokeCtx, Result as AgentResult, ToolId, ToolSetId, TokenBudget,
-    Value,
+    AgentContext, AgentError, InvokeCtx, Result as AgentResult, TokenBudget, ToolId, ToolSetId, Value,
 };
+use atomr_agents_strategy::{ToolRef, ToolStrategy};
 use atomr_agents_tool::{
     HandoffTool, ParsedToolCall, PermissionSpec, Provider, RichTool, StaticToolStrategy, Tool,
     ToolCallParser, ToolControl, ToolDescriptor, ToolReturn, ToolSchema, ToolSet,
 };
-use atomr_agents_strategy::{ToolRef, ToolStrategy};
 use pyo3::exceptions::{PyNotImplementedError, PyValueError};
 use pyo3::prelude::*;
 use pyo3::types::PyDict;
@@ -39,9 +38,7 @@ impl PyToolSchema {
     #[new]
     fn new(value: &Bound<'_, PyAny>) -> PyResult<Self> {
         let v = py_to_json(value.py(), value)?;
-        Ok(Self {
-            inner: ToolSchema(v),
-        })
+        Ok(Self { inner: ToolSchema(v) })
     }
 
     #[staticmethod]
@@ -70,12 +67,7 @@ pub struct PyToolDescriptor {
 impl PyToolDescriptor {
     #[new]
     #[pyo3(signature = (id, name, description, schema=None))]
-    fn new(
-        id: String,
-        name: String,
-        description: String,
-        schema: Option<PyToolSchema>,
-    ) -> PyResult<Self> {
+    fn new(id: String, name: String, description: String, schema: Option<PyToolSchema>) -> PyResult<Self> {
         Ok(Self {
             inner: ToolDescriptor {
                 id: ToolId::from(id),
@@ -132,9 +124,7 @@ impl PyProvider {
             "openai" | "open_ai" => Provider::OpenAi,
             "anthropic" => Provider::Anthropic,
             other => {
-                return Err(PyValueError::new_err(format!(
-                    "unknown provider: {other:?}"
-                )));
+                return Err(PyValueError::new_err(format!("unknown provider: {other:?}")));
             }
         };
         Ok(Self { inner })
@@ -225,9 +215,10 @@ impl PyToolCallParser {
     /// Feed a streaming tool-call delta. `delta` is a JSON-serialisable
     /// Python value.
     fn feed(&mut self, delta: &Bound<'_, PyAny>) -> PyResult<()> {
-        let p = self.inner.as_mut().ok_or_else(|| {
-            PyValueError::new_err("ToolCallParser: parser already finished")
-        })?;
+        let p = self
+            .inner
+            .as_mut()
+            .ok_or_else(|| PyValueError::new_err("ToolCallParser: parser already finished"))?;
         let v = py_to_json(delta.py(), delta)?;
         p.feed(&v).map_err(crate::errors::map)?;
         Ok(())
@@ -236,9 +227,10 @@ impl PyToolCallParser {
     /// Drain accumulated tool calls. After `finish()` the parser is
     /// consumed; create a new one for the next stream.
     fn finish(&mut self) -> PyResult<Vec<PyParsedToolCall>> {
-        let p = self.inner.take().ok_or_else(|| {
-            PyValueError::new_err("ToolCallParser: parser already finished")
-        })?;
+        let p = self
+            .inner
+            .take()
+            .ok_or_else(|| PyValueError::new_err("ToolCallParser: parser already finished"))?;
         Ok(p.finish()
             .into_iter()
             .map(|inner| PyParsedToolCall { inner })
@@ -336,10 +328,7 @@ impl PyHandoffTool {
     }
 
     fn __repr__(&self) -> String {
-        format!(
-            "HandoffTool(target={:?})",
-            self.inner.default_target.as_str()
-        )
+        format!("HandoffTool(target={:?})", self.inner.default_target.as_str())
     }
 }
 
@@ -369,11 +358,7 @@ impl PyToolControl {
     /// `ToolControl.handoff(target, payload=None)`.
     #[staticmethod]
     #[pyo3(signature = (target, payload=None))]
-    fn handoff(
-        py: Python<'_>,
-        target: String,
-        payload: Option<&Bound<'_, PyAny>>,
-    ) -> PyResult<Self> {
+    fn handoff(py: Python<'_>, target: String, payload: Option<&Bound<'_, PyAny>>) -> PyResult<Self> {
         let payload = match payload {
             Some(p) if !p.is_none() => py_to_json(py, p)?,
             _ => Value::Null,
@@ -616,15 +601,11 @@ impl Tool for DescriptorOnlyTool {
     }
 }
 
-fn descriptors_to_dyn_tools(
-    tools: Vec<PyToolDescriptor>,
-) -> Vec<atomr_agents_tool::DynTool> {
+fn descriptors_to_dyn_tools(tools: Vec<PyToolDescriptor>) -> Vec<atomr_agents_tool::DynTool> {
     tools
         .into_iter()
         .map(|d| {
-            let t: atomr_agents_tool::DynTool = Arc::new(DescriptorOnlyTool {
-                descriptor: d.inner,
-            });
+            let t: atomr_agents_tool::DynTool = Arc::new(DescriptorOnlyTool { descriptor: d.inner });
             t
         })
         .collect()
@@ -658,18 +639,11 @@ struct KeywordOverlayStrategy {
 
 #[async_trait]
 impl ToolStrategy for KeywordOverlayStrategy {
-    async fn select(
-        &self,
-        ctx: &AgentContext,
-        _budget: &mut TokenBudget,
-    ) -> AgentResult<Vec<ToolRef>> {
+    async fn select(&self, ctx: &AgentContext, _budget: &mut TokenBudget) -> AgentResult<Vec<ToolRef>> {
         let needle = ctx.turn.user.to_lowercase();
         let mut out: Vec<ToolRef> = Vec::new();
         for (desc, keywords) in &self.entries {
-            if keywords
-                .iter()
-                .any(|k| needle.contains(&k.to_lowercase()))
-            {
+            if keywords.iter().any(|k| needle.contains(&k.to_lowercase())) {
                 let stub: atomr_agents_tool::DynTool = Arc::new(DescriptorOnlyTool {
                     descriptor: desc.clone(),
                 });
@@ -690,11 +664,7 @@ fn descriptor_only_callable(t: atomr_agents_tool::DynTool) -> CallableHandle {
     }
     #[async_trait]
     impl atomr_agents_callable::Callable for Adapter {
-        async fn call(
-            &self,
-            input: Value,
-            ctx: atomr_agents_core::CallCtx,
-        ) -> AgentResult<Value> {
+        async fn call(&self, input: Value, ctx: atomr_agents_core::CallCtx) -> AgentResult<Value> {
             let ictx = InvokeCtx {
                 call: ctx,
                 tool_call_id: String::new(),

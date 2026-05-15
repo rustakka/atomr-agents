@@ -42,6 +42,7 @@ atomr-agents-stt-runtime-whisper   = { workspace = true }
 atomr-agents-stt-voice             = { workspace = true }
 atomr-agents-stt-diarize-sherpa    = { workspace = true }
 atomr-agents-stt-tool              = { workspace = true }
+atomr-agents-stt-harness           = { workspace = true, features = ["decode"] }
 atomr-agents-tts-core              = { workspace = true }
 atomr-agents-tts-audio             = { workspace = true }
 atomr-agents-tts-runtime-openai    = { workspace = true }
@@ -96,9 +97,11 @@ default = []
 # backend crates. Build with e.g.
 # `maturin develop --features stt-whisper-cpp` to link whisper.cpp.
 stt-whisper-cpp = ["atomr-agents-stt-runtime-whisper/whisper-cpp"]
-stt-mic         = ["atomr-agents-stt-audio/mic"]
+stt-mic         = ["atomr-agents-stt-audio/mic", "atomr-agents-stt-harness/mic"]
 stt-vad-silero  = ["atomr-agents-stt-voice/vad-silero"]
 stt-diarize-sherpa-onnx = ["atomr-agents-stt-diarize-sherpa/sherpa-onnx"]
+# STT harness persistence through the configured `crates/state` backend.
+stt-harness-state = ["atomr-agents-stt-harness/state"]
 # LLM cache backends.
 cache-sqlite    = ["atomr-agents-cache/sqlite"]
 cache-redis     = ["atomr-agents-cache/redis"]

@@ -20,9 +20,8 @@ use std::sync::Arc;
 use async_trait::async_trait;
 use atomr_agents_core::{AgentError, Result as AgentResult, Value};
 use atomr_agents_parser::{
-    CommaListParser, EnumParser, JsonParser, JsonSchemaParser, OutputFixingParser, Parser,
-    RepairModel, RetryWithErrorParser, SchemaParser, StreamingPartialJsonParser, XmlParser,
-    YamlParser,
+    CommaListParser, EnumParser, JsonParser, JsonSchemaParser, OutputFixingParser, Parser, RepairModel,
+    RetryWithErrorParser, SchemaParser, StreamingPartialJsonParser, XmlParser, YamlParser,
 };
 use pyo3::prelude::*;
 
@@ -321,18 +320,10 @@ pub struct PyRepairModel {
 #[pymethods]
 impl PyRepairModel {
     /// Invoke the repair model. Returns the corrected raw string.
-    fn repair<'py>(
-        &self,
-        py: Python<'py>,
-        original: String,
-        hint: String,
-    ) -> PyResult<Bound<'py, PyAny>> {
+    fn repair<'py>(&self, py: Python<'py>, original: String, hint: String) -> PyResult<Bound<'py, PyAny>> {
         let inner = self.inner.clone();
         pyo3_async_runtimes::tokio::future_into_py(py, async move {
-            inner
-                .repair(&original, &hint)
-                .await
-                .map_err(crate::errors::map)
+            inner.repair(&original, &hint).await.map_err(crate::errors::map)
         })
     }
 
@@ -422,12 +413,8 @@ fn retry_with_error_parser(
             self.0.format_instructions()
         }
     }
-    let wrapped: RetryWithErrorParser<DynInner, Value> = RetryWithErrorParser::new(
-        DynInner(inner.inner),
-        repair.inner,
-        max_retries,
-        original_prompt,
-    );
+    let wrapped: RetryWithErrorParser<DynInner, Value> =
+        RetryWithErrorParser::new(DynInner(inner.inner), repair.inner, max_retries, original_prompt);
     PyParser {
         inner: Arc::new(wrapped),
     }

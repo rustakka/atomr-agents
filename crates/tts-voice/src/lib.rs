@@ -23,6 +23,5 @@
 mod conversation;
 
 pub use conversation::{
-    Conversation, ConversationAgent, ConversationEvent, ConversationMode, ConversationOptions,
-    NoopAgent,
+    Conversation, ConversationAgent, ConversationEvent, ConversationMode, ConversationOptions, NoopAgent,
 };

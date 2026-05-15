@@ -12,8 +12,8 @@ use std::sync::Arc;
 use async_trait::async_trait;
 use atomr_agents_core::{AgentError, HarnessId, Result as AgentResult, Value};
 use atomr_agents_harness::{
-    BoxedHarness, HarnessDispatch, HarnessState, IterationCapTermination, LoopStrategy,
-    StepOutcome, Termination, TerminationStrategy,
+    BoxedHarness, HarnessDispatch, HarnessState, IterationCapTermination, LoopStrategy, StepOutcome,
+    Termination, TerminationStrategy,
 };
 use atomr_agents_observability::EventBus;
 use pyo3::prelude::*;
@@ -115,10 +115,7 @@ impl LoopStrategy for PyLoopStrategyAdapter {
             Ok(result.unbind())
         })
         .map_err(|e| {
-            AgentError::Strategy(format!(
-                "guest loop_strategy {:?}.step() raised: {e}",
-                self.label
-            ))
+            AgentError::Strategy(format!("guest loop_strategy {:?}.step() raised: {e}", self.label))
         })?;
 
         // 2. If the return value is a coroutine, await it.
@@ -144,10 +141,7 @@ impl LoopStrategy for PyLoopStrategyAdapter {
 
             match maybe_future {
                 Some(fut) => fut.await.map_err(|e| {
-                    AgentError::Strategy(format!(
-                        "guest loop_strategy {:?} await: {e}",
-                        self.label
-                    ))
+                    AgentError::Strategy(format!("guest loop_strategy {:?} await: {e}", self.label))
                 })?,
                 None => returned,
             }
@@ -156,12 +150,8 @@ impl LoopStrategy for PyLoopStrategyAdapter {
         // 3. Convert Python result to JSON, then parse into StepOutcome
         //    (accepting both the kind-tagged ergonomic form and the
         //    plain serde-default enum form).
-        let json = Python::with_gil(|py| py_to_json(py, final_val.bind(py))).map_err(|e| {
-            AgentError::Strategy(format!(
-                "guest loop_strategy {:?} result: {e}",
-                self.label
-            ))
-        })?;
+        let json = Python::with_gil(|py| py_to_json(py, final_val.bind(py)))
+            .map_err(|e| AgentError::Strategy(format!("guest loop_strategy {:?} result: {e}", self.label)))?;
         parse_step_outcome(json).map_err(|e| {
             AgentError::Strategy(format!(
                 "guest loop_strategy {:?} returned invalid StepOutcome: {e}",
@@ -183,8 +173,7 @@ fn parse_step_outcome(v: Value) -> Result<StepOutcome, String> {
                 .to_string();
             return match kind.to_ascii_lowercase().as_str() {
                 "continue" => {
-                    let working_memory =
-                        map.get("working_memory").cloned().unwrap_or(Value::Null);
+                    let working_memory = map.get("working_memory").cloned().unwrap_or(Value::Null);
                     Ok(StepOutcome::Continue {
                         working_memory,
                         label,
@@ -330,44 +319,38 @@ impl PyHarness {
                  register one via guest.register_loop_strategy_factory()"
             ))
         })?;
-        let loop_strategy: Box<dyn LoopStrategy> = Box::new(PyLoopStrategyAdapter::new(
-            loop_target,
-            loop_key.clone(),
-        ));
+        let loop_strategy: Box<dyn LoopStrategy> =
+            Box::new(PyLoopStrategyAdapter::new(loop_target, loop_key.clone()));
 
         // 2. Termination: special-case "iteration_cap" / "iteration_cap:N",
         //    otherwise look up a guest-registered factory.
-        let termination: Box<dyn TerminationStrategy> = if let Some(rest) =
-            termination_key.strip_prefix("iteration_cap")
-        {
-            let cap: u64 = if rest.is_empty() {
-                100
-            } else if let Some(n_str) = rest.strip_prefix(':') {
-                n_str.parse().map_err(|e| {
-                    pyo3::exceptions::PyValueError::new_err(format!(
-                        "iteration_cap requires an integer N (got {n_str:?}): {e}"
-                    ))
-                })?
-            } else {
-                return Err(pyo3::exceptions::PyValueError::new_err(format!(
-                    "unrecognized termination key {termination_key:?}; \
+        let termination: Box<dyn TerminationStrategy> =
+            if let Some(rest) = termination_key.strip_prefix("iteration_cap") {
+                let cap: u64 = if rest.is_empty() {
+                    100
+                } else if let Some(n_str) = rest.strip_prefix(':') {
+                    n_str.parse().map_err(|e| {
+                        pyo3::exceptions::PyValueError::new_err(format!(
+                            "iteration_cap requires an integer N (got {n_str:?}): {e}"
+                        ))
+                    })?
+                } else {
+                    return Err(pyo3::exceptions::PyValueError::new_err(format!(
+                        "unrecognized termination key {termination_key:?}; \
                      expected \"iteration_cap\" or \"iteration_cap:<N>\""
-                )));
-            };
-            Box::new(IterationCapTermination { cap })
-        } else {
-            let term_target = lookup_guest("termination", &termination_key).ok_or_else(|| {
-                pyo3::exceptions::PyKeyError::new_err(format!(
-                    "no termination registered with key {termination_key:?}; \
+                    )));
+                };
+                Box::new(IterationCapTermination { cap })
+            } else {
+                let term_target = lookup_guest("termination", &termination_key).ok_or_else(|| {
+                    pyo3::exceptions::PyKeyError::new_err(format!(
+                        "no termination registered with key {termination_key:?}; \
                      register one via guest.register_termination_factory() or use \
                      \"iteration_cap[:<N>]\""
-                ))
-            })?;
-            Box::new(PyTerminationAdapter::new(
-                term_target,
-                termination_key.clone(),
-            ))
-        };
+                    ))
+                })?;
+                Box::new(PyTerminationAdapter::new(term_target, termination_key.clone()))
+            };
 
         // 3. Build a BoxedHarness directly so we can hand the
         //    `Arc<dyn HarnessDispatch>` straight to PyHarness without
@@ -391,9 +374,10 @@ impl PyHarness {
     fn run<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyAny>> {
         let inner = self.inner.clone();
         pyo3_async_runtimes::tokio::future_into_py(py, async move {
-            let result = inner.dispatch().await.map_err(|e| {
-                PyErr::new::<crate::errors::HarnessError, _>(e.to_string())
-            })?;
+            let result = inner
+                .dispatch()
+                .await
+                .map_err(|e| PyErr::new::<crate::errors::HarnessError, _>(e.to_string()))?;
             Python::with_gil(|py| crate::conv::json_to_py(py, &result))
         })
     }

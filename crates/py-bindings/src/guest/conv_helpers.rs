@@ -7,9 +7,7 @@
 //! coroutine, and await it on the shared tokio runtime. Centralizing
 //! that here keeps each adapter file under 100 LOC.
 
-use atomr_agents_core::{
-    AgentContext, MemoryItem, MemoryKind, MemoryNamespace, TokenBudget, Value,
-};
+use atomr_agents_core::{AgentContext, MemoryItem, MemoryKind, MemoryNamespace, TokenBudget, Value};
 use pyo3::prelude::*;
 use pyo3::types::PyDict;
 
@@ -18,10 +16,7 @@ use crate::conv::{json_to_py, py_to_json};
 /// Project an `AgentContext` to a Python dict. Mirrors
 /// `PyToolAdapter::build_ctx_dict` (originally in guest.rs:178-189) but
 /// for the per-turn pipeline context, not the per-tool invoke context.
-pub(crate) fn build_agent_ctx_dict<'py>(
-    py: Python<'py>,
-    ctx: &AgentContext,
-) -> PyResult<Bound<'py, PyDict>> {
+pub(crate) fn build_agent_ctx_dict<'py>(py: Python<'py>, ctx: &AgentContext) -> PyResult<Bound<'py, PyDict>> {
     let d = PyDict::new_bound(py);
     d.set_item("agent_id", ctx.agent_id.as_str())?;
     if let Some(t) = &ctx.team_id {
@@ -53,10 +48,7 @@ pub(crate) fn build_agent_ctx_dict<'py>(
 /// Project a `TokenBudget` to a Python dict. Strategies normally only
 /// read `remaining`, but we include both fields for parity with the
 /// Rust struct.
-pub(crate) fn build_budget_dict<'py>(
-    py: Python<'py>,
-    budget: &TokenBudget,
-) -> PyResult<Bound<'py, PyDict>> {
+pub(crate) fn build_budget_dict<'py>(py: Python<'py>, budget: &TokenBudget) -> PyResult<Bound<'py, PyDict>> {
     let d = PyDict::new_bound(py);
     d.set_item("remaining", budget.remaining)?;
     d.set_item("reserved", budget.reserved)?;
@@ -102,10 +94,7 @@ fn memory_kind_from_str(s: &str) -> Option<MemoryKind> {
     }
 }
 
-fn build_namespace_dict<'py>(
-    py: Python<'py>,
-    ns: &MemoryNamespace,
-) -> PyResult<Bound<'py, PyDict>> {
+fn build_namespace_dict<'py>(py: Python<'py>, ns: &MemoryNamespace) -> PyResult<Bound<'py, PyDict>> {
     let d = PyDict::new_bound(py);
     match ns {
         MemoryNamespace::Agent(a) => {
@@ -128,18 +117,15 @@ fn build_namespace_dict<'py>(
 /// Used by the `MemoryStore::list` adapter return path. Reuses
 /// `py_to_json` for the heavy lifting then validates field shapes.
 #[allow(dead_code)] // used by future adapters expecting Python input
-pub(crate) fn parse_memory_item(
-    _py: Python<'_>,
-    obj: &Bound<'_, PyAny>,
-) -> PyResult<MemoryItem> {
+pub(crate) fn parse_memory_item(_py: Python<'_>, obj: &Bound<'_, PyAny>) -> PyResult<MemoryItem> {
     let v = py_to_json(obj.py(), obj)?;
     parse_memory_item_value(&v)
 }
 
 pub(crate) fn parse_memory_item_value(v: &Value) -> PyResult<MemoryItem> {
-    let map = v.as_object().ok_or_else(|| {
-        pyo3::exceptions::PyValueError::new_err("memory item must be an object")
-    })?;
+    let map = v
+        .as_object()
+        .ok_or_else(|| pyo3::exceptions::PyValueError::new_err("memory item must be an object"))?;
     let id = map
         .get("id")
         .and_then(|x| x.as_str())
@@ -152,17 +138,12 @@ pub(crate) fn parse_memory_item_value(v: &Value) -> PyResult<MemoryItem> {
     let kind = memory_kind_from_str(kind_str).ok_or_else(|| {
         pyo3::exceptions::PyValueError::new_err(format!("unknown memory kind {kind_str:?}"))
     })?;
-    let ns = parse_namespace_value(map.get("namespace").ok_or_else(|| {
-        pyo3::exceptions::PyValueError::new_err("memory item missing namespace")
-    })?)?;
-    let payload = map
-        .get("payload")
-        .cloned()
-        .unwrap_or(serde_json::Value::Null);
-    let timestamp_ms = map
-        .get("timestamp_ms")
-        .and_then(|x| x.as_i64())
-        .unwrap_or(0);
+    let ns = parse_namespace_value(
+        map.get("namespace")
+            .ok_or_else(|| pyo3::exceptions::PyValueError::new_err("memory item missing namespace"))?,
+    )?;
+    let payload = map.get("payload").cloned().unwrap_or(serde_json::Value::Null);
+    let timestamp_ms = map.get("timestamp_ms").and_then(|x| x.as_i64()).unwrap_or(0);
     let tags: Vec<String> = map
         .get("tags")
         .and_then(|x| x.as_array())
@@ -179,9 +160,9 @@ pub(crate) fn parse_memory_item_value(v: &Value) -> PyResult<MemoryItem> {
 }
 
 fn parse_namespace_value(v: &Value) -> PyResult<MemoryNamespace> {
-    let map = v.as_object().ok_or_else(|| {
-        pyo3::exceptions::PyValueError::new_err("memory namespace must be an object")
-    })?;
+    let map = v
+        .as_object()
+        .ok_or_else(|| pyo3::exceptions::PyValueError::new_err("memory namespace must be an object"))?;
     let scope = map
         .get("scope")
         .and_then(|x| x.as_str())
@@ -224,10 +205,7 @@ pub(crate) fn is_coroutine(py: Python<'_>, obj: &Bound<'_, PyAny>) -> PyResult<b
 /// Mirrors the heuristic in `PyToolAdapter::invoke`: if the target has
 /// the named method directly (i.e. it's an instance), use it as-is;
 /// otherwise treat it as a class and invoke the zero-arg ctor first.
-pub(crate) fn resolve_instance<'py>(
-    target: &Bound<'py, PyAny>,
-    method: &str,
-) -> PyResult<Bound<'py, PyAny>> {
+pub(crate) fn resolve_instance<'py>(target: &Bound<'py, PyAny>, method: &str) -> PyResult<Bound<'py, PyAny>> {
     if target.hasattr(method)? {
         Ok(target.clone())
     } else if target.is_callable() {

@@ -13,8 +13,7 @@ const HF_BASE: &str = "https://huggingface.co/ggerganov/whisper.cpp/resolve/main
 
 /// Default cache location: `<dirs::cache_dir>/atomr-agents/whisper/`.
 pub fn default_cache_dir() -> Result<PathBuf> {
-    let base = dirs::cache_dir()
-        .ok_or_else(|| SttError::internal("dirs::cache_dir unavailable"))?;
+    let base = dirs::cache_dir().ok_or_else(|| SttError::internal("dirs::cache_dir unavailable"))?;
     let dir = base.join("atomr-agents").join("whisper");
     std::fs::create_dir_all(&dir)?;
     Ok(dir)
@@ -23,10 +22,7 @@ pub fn default_cache_dir() -> Result<PathBuf> {
 /// Download `model` from Hugging Face into `cache_dir` (or the
 /// default cache dir if `None`). Returns the local path; if the
 /// file already exists, no network call is made.
-pub async fn download_model(
-    model: WhisperModel,
-    cache_dir: Option<PathBuf>,
-) -> Result<PathBuf> {
+pub async fn download_model(model: WhisperModel, cache_dir: Option<PathBuf>) -> Result<PathBuf> {
     let dir = match cache_dir {
         Some(d) => d,
         None => default_cache_dir()?,
@@ -51,8 +47,7 @@ pub async fn download_model(
     let mut file = tokio::fs::File::create(&target).await?;
     use futures_util::StreamExt;
     while let Some(chunk) = stream.next().await {
-        let chunk = chunk
-            .map_err(|e| SttError::transport(format!("download read: {e}")))?;
+        let chunk = chunk.map_err(|e| SttError::transport(format!("download read: {e}")))?;
         file.write_all(&chunk).await?;
     }
     file.flush().await?;

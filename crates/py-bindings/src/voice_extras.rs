@@ -81,10 +81,7 @@ impl PyDiarizationSpan {
     fn __repr__(&self) -> String {
         format!(
             "DiarizationSpan(start_ms={}, end_ms={}, speaker={}, confidence={:?})",
-            self.inner.start_ms,
-            self.inner.end_ms,
-            self.inner.speaker_id,
-            self.inner.confidence,
+            self.inner.start_ms, self.inner.end_ms, self.inner.speaker_id, self.inner.confidence,
         )
     }
 }
@@ -224,9 +221,7 @@ fn sherpa_diarizer(
             use_gpu,
         };
         let d = SherpaDiarizer::new(config).map_err(crate::errors::map)?;
-        Ok(PyDiarizer {
-            inner: Arc::new(d),
-        })
+        Ok(PyDiarizer { inner: Arc::new(d) })
     }
     #[cfg(not(feature = "stt-diarize-sherpa-onnx"))]
     {
@@ -294,9 +289,7 @@ impl Vad for PyVadAdapter {
             } else {
                 bound.clone()
             };
-            let r = instance
-                .getattr("is_speech")?
-                .call1((frame_vec, sample_rate))?;
+            let r = instance.getattr("is_speech")?.call1((frame_vec, sample_rate))?;
             r.extract::<bool>()
         })
         .unwrap_or(false)
@@ -316,12 +309,7 @@ fn energy_vad(threshold: f32) -> PyVad {
 
 #[pyfunction]
 #[pyo3(signature = (_model_path, sample_rate=16_000, chunk_size=512, threshold=0.5))]
-fn silero_vad(
-    _model_path: PathBuf,
-    sample_rate: u32,
-    chunk_size: usize,
-    threshold: f32,
-) -> PyResult<PyVad> {
+fn silero_vad(_model_path: PathBuf, sample_rate: u32, chunk_size: usize, threshold: f32) -> PyResult<PyVad> {
     #[cfg(feature = "stt-vad-silero")]
     {
         // The `voice_activity_detector` crate ships its own bundled
@@ -406,12 +394,7 @@ impl PyPhonemizer {
     /// `phonemize(text, language="en-us")` — returns a `PhonemizedText`.
     /// Awaitable.
     #[pyo3(signature = (text, language="en-us"))]
-    fn phonemize<'py>(
-        &self,
-        py: Python<'py>,
-        text: String,
-        language: &str,
-    ) -> PyResult<Bound<'py, PyAny>> {
+    fn phonemize<'py>(&self, py: Python<'py>, text: String, language: &str) -> PyResult<Bound<'py, PyAny>> {
         let inner = self.inner.clone();
         let language = language.to_string();
         pyo3_async_runtimes::tokio::future_into_py(py, async move {

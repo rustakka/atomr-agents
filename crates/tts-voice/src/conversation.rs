@@ -4,8 +4,7 @@ use std::sync::Arc;
 use async_trait::async_trait;
 use atomr_agents_stt_core::{Result, SttError};
 use atomr_agents_tts_core::{
-    AudioChunk, DynTextToSpeech, RealtimeEvent, RealtimeOptions, RealtimeSession, SynthesisRequest,
-    VoiceRef,
+    AudioChunk, DynTextToSpeech, RealtimeEvent, RealtimeOptions, RealtimeSession, SynthesisRequest, VoiceRef,
 };
 use bytes::Bytes;
 use futures::Stream;
@@ -98,8 +97,7 @@ impl Conversation {
         };
         let session = tts.open_realtime(realtime_opts).await?;
         let realtime = Arc::new(tokio::sync::Mutex::new(session));
-        let (events_tx, events_rx) =
-            mpsc::channel::<std::result::Result<ConversationEvent, SttError>>(64);
+        let (events_tx, events_rx) = mpsc::channel::<std::result::Result<ConversationEvent, SttError>>(64);
 
         let realtime_for_task = realtime.clone();
         let events_tx_for_task = events_tx.clone();
@@ -124,8 +122,7 @@ impl Conversation {
         agent: Arc<dyn ConversationAgent>,
         opts: ConversationOptions,
     ) -> Self {
-        let (events_tx, events_rx) =
-            mpsc::channel::<std::result::Result<ConversationEvent, SttError>>(64);
+        let (events_tx, events_rx) = mpsc::channel::<std::result::Result<ConversationEvent, SttError>>(64);
         Self {
             mode: ConversationMode::TurnBased,
             realtime: None,
@@ -141,7 +138,9 @@ impl Conversation {
         }
     }
 
-    pub fn mode(&self) -> ConversationMode { self.mode }
+    pub fn mode(&self) -> ConversationMode {
+        self.mode
+    }
 
     pub async fn push_audio(&mut self, chunk: Bytes) -> Result<()> {
         if let Some(rt) = &self.realtime {
@@ -177,24 +176,23 @@ impl Conversation {
                 .voice_id
                 .clone()
                 .map(|id| VoiceRef::Library { id })
-                .unwrap_or(VoiceRef::Library { id: "default".to_string() });
+                .unwrap_or(VoiceRef::Library {
+                    id: "default".to_string(),
+                });
             let req = SynthesisRequest::tts(reply, voice);
             let out = turn.tts.synthesize(req).await?;
-            let chunk_bytes = out
-                .container_bytes
-                .clone()
-                .unwrap_or_else(|| {
-                    // Pack the f32 PCM samples as raw little-endian
-                    // i16 so downstream consumers have a portable
-                    // wire shape. The underlying format is on
-                    // out.format.
-                    let mut buf = Vec::with_capacity(out.audio.samples.len() * 2);
-                    for s in &out.audio.samples {
-                        let q = (s.clamp(-1.0, 1.0) * i16::MAX as f32) as i16;
-                        buf.extend_from_slice(&q.to_le_bytes());
-                    }
-                    Bytes::from(buf)
-                });
+            let chunk_bytes = out.container_bytes.clone().unwrap_or_else(|| {
+                // Pack the f32 PCM samples as raw little-endian
+                // i16 so downstream consumers have a portable
+                // wire shape. The underlying format is on
+                // out.format.
+                let mut buf = Vec::with_capacity(out.audio.samples.len() * 2);
+                for s in &out.audio.samples {
+                    let q = (s.clamp(-1.0, 1.0) * i16::MAX as f32) as i16;
+                    buf.extend_from_slice(&q.to_le_bytes());
+                }
+                Bytes::from(buf)
+            });
             let _ = self
                 .events_tx
                 .send(Ok(ConversationEvent::AssistantAudio {
@@ -232,8 +230,7 @@ impl Conversation {
 
     pub fn events(
         &mut self,
-    ) -> Pin<Box<dyn Stream<Item = std::result::Result<ConversationEvent, SttError>> + Send + '_>>
-    {
+    ) -> Pin<Box<dyn Stream<Item = std::result::Result<ConversationEvent, SttError>> + Send + '_>> {
         let mut guard = self.events_rx.lock();
         let rx = guard.take();
         drop(guard);
@@ -349,11 +346,7 @@ mod tests {
     #[tokio::test]
     async fn mode_introspection_works() {
         let tts: DynTextToSpeech = Arc::new(MockTextToSpeech::default());
-        let conv = Conversation::open_turn_based(
-            tts,
-            Arc::new(NoopAgent),
-            ConversationOptions::default(),
-        );
+        let conv = Conversation::open_turn_based(tts, Arc::new(NoopAgent), ConversationOptions::default());
         assert_eq!(conv.mode(), ConversationMode::TurnBased);
     }
 }

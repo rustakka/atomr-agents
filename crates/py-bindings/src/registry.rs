@@ -16,7 +16,13 @@ use crate::errors;
 
 // ----- ArtifactKind ---------------------------------------------------------
 
-#[pyclass(name = "ArtifactKind", module = "atomr_agents._native.registry", eq, hash, frozen)]
+#[pyclass(
+    name = "ArtifactKind",
+    module = "atomr_agents._native.registry",
+    eq,
+    hash,
+    frozen
+)]
 #[derive(Clone, PartialEq, Eq, Hash)]
 pub struct PyArtifactKind {
     pub(crate) inner: ArtifactKind,
@@ -33,9 +39,7 @@ impl PyArtifactKind {
             "harness" => ArtifactKind::Harness,
             "harness_set" => ArtifactKind::HarnessSet,
             other => {
-                return Err(PyValueError::new_err(format!(
-                    "unknown artifact kind: {other:?}"
-                )));
+                return Err(PyValueError::new_err(format!("unknown artifact kind: {other:?}")));
             }
         };
         Ok(Self { inner })
@@ -225,13 +229,7 @@ impl PyRegistry {
 
     /// Publish an artifact unconditionally. Sync — the underlying
     /// registry is in-memory.
-    fn publish(
-        &self,
-        kind: &str,
-        id: String,
-        version: &str,
-        payload: &Bound<'_, PyAny>,
-    ) -> PyResult<()> {
+    fn publish(&self, kind: &str, id: String, version: &str, payload: &Bound<'_, PyAny>) -> PyResult<()> {
         let kind = PyArtifactKind::from_str(kind)?.inner;
         let version = parse_version(version)?;
         let payload_v = py_to_json(payload.py(), payload)?;
@@ -310,21 +308,13 @@ impl PyRegistry {
                 &current,
                 tolerance,
             )
-            .map_err(|e: AgentError| {
-                PyErr::new::<errors::RegistryError, _>(e.to_string())
-            })?;
+            .map_err(|e: AgentError| PyErr::new::<errors::RegistryError, _>(e.to_string()))?;
         Ok(())
     }
 
     /// Get a specific version. Returns the payload as a Python dict
     /// or `None` when the version does not exist.
-    fn get(
-        &self,
-        py: Python<'_>,
-        kind: &str,
-        id: &str,
-        version: &str,
-    ) -> PyResult<Option<PyObject>> {
+    fn get(&self, py: Python<'_>, kind: &str, id: &str, version: &str) -> PyResult<Option<PyObject>> {
         let kind = PyArtifactKind::from_str(kind)?.inner;
         let version = parse_version(version)?;
         Ok(self

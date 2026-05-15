@@ -80,15 +80,11 @@ mod tests {
     use atomr_agents_core::{
         InvokeCtx, IterationBudget, MoneyBudget, TimeBudget, TokenBudget, ToolId, Value,
     };
-    use atomr_agents_instruction::{
-        ComposedInstructionStrategy, StaticBehaviorStrategy, StaticTaskStrategy,
-    };
+    use atomr_agents_instruction::{ComposedInstructionStrategy, StaticBehaviorStrategy, StaticTaskStrategy};
     use atomr_agents_memory::{InMemoryStore, RecencyMemoryStrategy};
     use atomr_agents_persona::StaticPersonaStrategy;
     use atomr_agents_skill::StaticSkillStrategy;
-    use atomr_agents_tool::{
-        DynTool, Provider, StaticToolStrategy, Tool, ToolDescriptor, ToolSchema,
-    };
+    use atomr_agents_tool::{DynTool, Provider, StaticToolStrategy, Tool, ToolDescriptor, ToolSchema};
 
     use crate::inference::LocalRunnerClient;
     use atomr_infer_testkit::{MockRunner, MockScript};
@@ -133,8 +129,7 @@ mod tests {
             StaticBehaviorStrategy("Reply tersely.".into()),
         );
         let skill_strat = StaticSkillStrategy::new(vec![]);
-        let inference: Arc<dyn InferenceClient> =
-            Arc::new(LocalRunnerClient::new(runner, Provider::OpenAi));
+        let inference: Arc<dyn InferenceClient> = Arc::new(LocalRunnerClient::new(runner, Provider::OpenAi));
         BoxedAgent {
             id: AgentId::from("boxed-1"),
             model: "mock".into(),
@@ -180,9 +175,7 @@ mod tests {
             iterations: IterationBudget::new(5),
             trace: vec![],
         };
-        let r = AgentDispatch::dispatch(&agent, "ping".into(), ctx)
-            .await
-            .unwrap();
+        let r = AgentDispatch::dispatch(&agent, "ping".into(), ctx).await.unwrap();
         assert_eq!(r.text, "pong");
     }
 }

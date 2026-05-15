@@ -16,8 +16,7 @@ use atomr_agents_stt_runtime_whisper::{WhisperConfig, WhisperRunner};
 use std::path::PathBuf;
 
 fn fixture_path() -> PathBuf {
-    PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .join("../stt-core/tests/fixtures/jfk.wav")
+    PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../stt-core/tests/fixtures/jfk.wav")
 }
 
 #[tokio::test]

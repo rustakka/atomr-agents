@@ -1,9 +1,8 @@
 use atomr_agents_stt_core::{AudioFormat, Capabilities, DiarizationSupport, Languages};
 
 const ASSEMBLY_LANGUAGES: &[&str] = &[
-    "en", "en-US", "en-AU", "en-GB",
-    "es", "fr", "de", "it", "pt", "nl", "ja", "zh", "ko", "hi", "uk",
-    "ru", "tr", "fi", "pl", "no", "sv", "da", "id", "ms", "vi", "th",
+    "en", "en-US", "en-AU", "en-GB", "es", "fr", "de", "it", "pt", "nl", "ja", "zh", "ko", "hi", "uk", "ru",
+    "tr", "fi", "pl", "no", "sv", "da", "id", "ms", "vi", "th",
 ];
 
 pub const CAPS: Capabilities = Capabilities {

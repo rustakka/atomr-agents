@@ -9,9 +9,7 @@ use atomr_agents_core::{AgentError, InvokeCtx, Result, ToolId, Value};
 use atomr_agents_stt_core::AudioFormat;
 use atomr_agents_tool::{Tool, ToolDescriptor, ToolSchema};
 use atomr_agents_tts_audio::encode::pcm_to_wav_bytes;
-use atomr_agents_tts_core::{
-    AudioOutput, DynTextToSpeech, SynthesisRequest, VoiceRef,
-};
+use atomr_agents_tts_core::{AudioOutput, DynTextToSpeech, SynthesisRequest, VoiceRef};
 use serde::Deserialize;
 
 pub struct SpeakTool {
@@ -79,7 +77,9 @@ impl Tool for SpeakTool {
             .voice
             .clone()
             .map(|id| VoiceRef::Library { id })
-            .unwrap_or(VoiceRef::Library { id: "default".to_string() });
+            .unwrap_or(VoiceRef::Library {
+                id: "default".to_string(),
+            });
         let req = SynthesisRequest::tts(parsed.text.clone(), voice);
         let out: AudioOutput = self
             .tts
@@ -123,7 +123,11 @@ fn render_wav(out: &AudioOutput) -> Result<Vec<u8>> {
 
 fn format_to_string(f: &AudioFormat) -> String {
     match f {
-        AudioFormat::Pcm { sample_rate, channels, .. } => {
+        AudioFormat::Pcm {
+            sample_rate,
+            channels,
+            ..
+        } => {
             format!("pcm_{sample_rate}_{channels}")
         }
         AudioFormat::Wav => "wav".into(),
@@ -150,9 +154,7 @@ fn uuid_like() -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use atomr_agents_core::{
-        CallCtx, InvokeCtx, IterationBudget, MoneyBudget, TimeBudget, TokenBudget,
-    };
+    use atomr_agents_core::{CallCtx, InvokeCtx, IterationBudget, MoneyBudget, TimeBudget, TokenBudget};
     use atomr_agents_tts_core::MockTextToSpeech;
     use std::sync::Arc;
     use std::time::Duration;

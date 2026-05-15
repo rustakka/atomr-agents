@@ -23,9 +23,15 @@ impl GeminiLiveRunner {
 
 #[async_trait]
 impl TextToSpeech for GeminiLiveRunner {
-    fn capabilities(&self) -> &'static Capabilities { &CAPS }
-    fn backend_kind(&self) -> BackendKind { BackendKind::GeminiLive }
-    fn transport_kind(&self) -> TransportKind { TransportKind::WebSocket }
+    fn capabilities(&self) -> &'static Capabilities {
+        &CAPS
+    }
+    fn backend_kind(&self) -> BackendKind {
+        BackendKind::GeminiLive
+    }
+    fn transport_kind(&self) -> TransportKind {
+        TransportKind::WebSocket
+    }
 
     async fn synthesize(&self, _request: SynthesisRequest) -> Result<AudioOutput> {
         Err(SttError::UnsupportedCapability(
@@ -33,19 +39,13 @@ impl TextToSpeech for GeminiLiveRunner {
         ))
     }
 
-    async fn synthesize_stream(
-        &self,
-        _request: SynthesisRequest,
-    ) -> Result<Box<dyn SynthesisStream>> {
+    async fn synthesize_stream(&self, _request: SynthesisRequest) -> Result<Box<dyn SynthesisStream>> {
         Err(SttError::UnsupportedCapability(
             "gemini live: use open_realtime() — this backend has no streaming-batch surface",
         ))
     }
 
-    async fn open_realtime(
-        &self,
-        opts: RealtimeOptions,
-    ) -> Result<Box<dyn RealtimeSession>> {
+    async fn open_realtime(&self, opts: RealtimeOptions) -> Result<Box<dyn RealtimeSession>> {
         let mut url = self.config.endpoint.clone();
         let secret = self.config.api_key.resolve()?;
         url.query_pairs_mut().append_pair("key", secret.expose_secret());

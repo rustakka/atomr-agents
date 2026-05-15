@@ -335,10 +335,7 @@ pub fn register(py: Python<'_>, parent: &Bound<'_, PyModule>) -> PyResult<()> {
         memory_strategy::build_guest_memory_strategy,
         &m
     )?)?;
-    m.add_function(wrap_pyfunction!(
-        skill_strategy::build_guest_skill_strategy,
-        &m
-    )?)?;
+    m.add_function(wrap_pyfunction!(skill_strategy::build_guest_skill_strategy, &m)?)?;
     m.add_function(wrap_pyfunction!(persona::build_guest_persona, &m)?)?;
     m.add_function(wrap_pyfunction!(memory_store::build_guest_memory_store, &m)?)?;
     m.add_function(wrap_pyfunction!(embedder::build_guest_embedder, &m)?)?;

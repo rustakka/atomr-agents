@@ -66,9 +66,7 @@ impl Embedder for PyEmbedderAdapter {
             .await
             .map_err(|e| AgentError::Inference(format!("guest embedder {label}: {e}")))?;
 
-        parse_f32_array(&value).map_err(|e| {
-            AgentError::Inference(format!("guest embedder {label}: {e}"))
-        })
+        parse_f32_array(&value).map_err(|e| AgentError::Inference(format!("guest embedder {label}: {e}")))
     }
 
     async fn embed_batch(&self, texts: &[String]) -> AgentResult<Vec<Vec<f32>>> {
@@ -93,29 +91,24 @@ impl Embedder for PyEmbedderAdapter {
             .map_err(|e| AgentError::Inference(format!("guest embedder {label}: {e}")))?;
 
         let arr = value.as_array().ok_or_else(|| {
-            AgentError::Inference(format!(
-                "guest embedder {label}: expected array, got {value}"
-            ))
+            AgentError::Inference(format!("guest embedder {label}: expected array, got {value}"))
         })?;
         let mut out = Vec::with_capacity(arr.len());
         for v in arr {
-            out.push(parse_f32_array(v).map_err(|e| {
-                AgentError::Inference(format!("guest embedder {label}: {e}"))
-            })?);
+            out.push(
+                parse_f32_array(v)
+                    .map_err(|e| AgentError::Inference(format!("guest embedder {label}: {e}")))?,
+            );
         }
         Ok(out)
     }
 }
 
 fn parse_f32_array(v: &serde_json::Value) -> Result<Vec<f32>, String> {
-    let arr = v
-        .as_array()
-        .ok_or_else(|| format!("expected array, got {v}"))?;
+    let arr = v.as_array().ok_or_else(|| format!("expected array, got {v}"))?;
     let mut out = Vec::with_capacity(arr.len());
     for x in arr {
-        let f = x
-            .as_f64()
-            .ok_or_else(|| format!("expected number, got {x}"))?;
+        let f = x.as_f64().ok_or_else(|| format!("expected number, got {x}"))?;
         out.push(f as f32);
     }
     Ok(out)
@@ -144,9 +137,7 @@ pub(super) fn build_guest_embedder(key: String) -> PyResult<PyEmbedder> {
     let entry = GUESTS
         .get(&("embedder".to_string(), key.clone()))
         .ok_or_else(|| {
-            pyo3::exceptions::PyKeyError::new_err(format!(
-                "no embedder registered with key {key:?}"
-            ))
+            pyo3::exceptions::PyKeyError::new_err(format!("no embedder registered with key {key:?}"))
         })?;
     let target = entry.value().clone();
     let adapter = PyEmbedderAdapter::new(target, key.clone());

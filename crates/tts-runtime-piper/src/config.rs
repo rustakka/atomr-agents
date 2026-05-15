@@ -31,9 +31,15 @@ pub struct PiperVoiceModel {
     pub language: Option<String>,
 }
 
-fn default_length_scale() -> f32 { 1.0 }
-fn default_noise_scale() -> f32 { 0.667 }
-fn default_noise_w() -> f32 { 0.8 }
+fn default_length_scale() -> f32 {
+    1.0
+}
+fn default_noise_scale() -> f32 {
+    0.667
+}
+fn default_noise_w() -> f32 {
+    0.8
+}
 
 impl Default for PiperConfig {
     fn default() -> Self {

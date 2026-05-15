@@ -4,8 +4,8 @@ use async_trait::async_trait;
 use atomr_agents_stt_core::{AudioFormat, Result, SampleType, SttError, TransportKind};
 use atomr_agents_stt_remote_core::{build_http_client, classify_status, retry, ws};
 use atomr_agents_tts_core::{
-    AudioOutput, BackendKind, Capabilities, RealtimeOptions, RealtimeSession, SynthOptions,
-    SynthesisRequest, SynthesisStream, TextToSpeech, VoiceRef,
+    AudioOutput, BackendKind, Capabilities, RealtimeOptions, RealtimeSession, SynthOptions, SynthesisRequest,
+    SynthesisStream, TextToSpeech, VoiceRef,
 };
 use reqwest::{header, Client};
 use secrecy::ExposeSecret;
@@ -73,9 +73,11 @@ fn voice_settings_from_opts(opts: &SynthOptions) -> Option<VoiceSettings> {
 }
 
 fn output_format_to_audio_format(s: &str) -> AudioFormat {
-    if s.starts_with("mp3") { AudioFormat::Mp3 }
-    else if s.starts_with("ulaw") { AudioFormat::Mulaw { sample_rate: 8_000 } }
-    else if let Some(rest) = s.strip_prefix("pcm_") {
+    if s.starts_with("mp3") {
+        AudioFormat::Mp3
+    } else if s.starts_with("ulaw") {
+        AudioFormat::Mulaw { sample_rate: 8_000 }
+    } else if let Some(rest) = s.strip_prefix("pcm_") {
         let sr: u32 = rest.parse().unwrap_or(24_000);
         AudioFormat::Pcm {
             sample_rate: sr,
@@ -98,9 +100,15 @@ struct SfxBody<'a> {
 
 #[async_trait]
 impl TextToSpeech for ElevenLabsRunner {
-    fn capabilities(&self) -> &'static Capabilities { &CAPS }
-    fn backend_kind(&self) -> BackendKind { BackendKind::ElevenLabs }
-    fn transport_kind(&self) -> TransportKind { TransportKind::Hybrid }
+    fn capabilities(&self) -> &'static Capabilities {
+        &CAPS
+    }
+    fn backend_kind(&self) -> BackendKind {
+        BackendKind::ElevenLabs
+    }
+    fn transport_kind(&self) -> TransportKind {
+        TransportKind::Hybrid
+    }
 
     async fn synthesize(&self, request: SynthesisRequest) -> Result<AudioOutput> {
         match request {
@@ -122,8 +130,8 @@ impl TextToSpeech for ElevenLabsRunner {
                     model_id: &model,
                     voice_settings: voice_settings_from_opts(&options),
                 };
-                let body_bytes = serde_json::to_vec(&body)
-                    .map_err(|e| SttError::internal(format!("serialize: {e}")))?;
+                let body_bytes =
+                    serde_json::to_vec(&body).map_err(|e| SttError::internal(format!("serialize: {e}")))?;
                 let policy = self.config.retry.clone();
                 let client = self.client.clone();
                 let output_format = self.config.default_output_format.clone();
@@ -164,18 +172,16 @@ impl TextToSpeech for ElevenLabsRunner {
                 .await?;
 
                 let format = output_format_to_audio_format(&self.config.default_output_format);
-                let mut out = AudioOutput::from_container(
-                    bytes,
-                    format,
-                    0.0,
-                    BackendKind::ElevenLabs,
-                    chars,
-                );
+                let mut out = AudioOutput::from_container(bytes, format, 0.0, BackendKind::ElevenLabs, chars);
                 out.model_id = Some(model);
                 out.voice_id_used = Some(voice_id);
                 Ok(out)
             }
-            SynthesisRequest::SoundEffect { prompt, duration_secs, options } => {
+            SynthesisRequest::SoundEffect {
+                prompt,
+                duration_secs,
+                options,
+            } => {
                 let chars = prompt.chars().count() as u32;
                 let url = self
                     .config
@@ -194,8 +200,8 @@ impl TextToSpeech for ElevenLabsRunner {
                     duration_seconds: duration_secs,
                     prompt_influence,
                 };
-                let body_bytes = serde_json::to_vec(&body)
-                    .map_err(|e| SttError::internal(format!("serialize: {e}")))?;
+                let body_bytes =
+                    serde_json::to_vec(&body).map_err(|e| SttError::internal(format!("serialize: {e}")))?;
                 let resp = self
                     .client
                     .post(url)
@@ -231,10 +237,7 @@ impl TextToSpeech for ElevenLabsRunner {
         }
     }
 
-    async fn synthesize_stream(
-        &self,
-        request: SynthesisRequest,
-    ) -> Result<Box<dyn SynthesisStream>> {
+    async fn synthesize_stream(&self, request: SynthesisRequest) -> Result<Box<dyn SynthesisStream>> {
         let (text, voice_ref, options) = match request {
             SynthesisRequest::Tts { text, voice, options } => (text, voice, options),
             SynthesisRequest::SoundEffect { .. } => {
@@ -260,8 +263,8 @@ impl TextToSpeech for ElevenLabsRunner {
             model_id: &model,
             voice_settings: voice_settings_from_opts(&options),
         };
-        let body_bytes = serde_json::to_vec(&body)
-            .map_err(|e| SttError::internal(format!("serialize: {e}")))?;
+        let body_bytes =
+            serde_json::to_vec(&body).map_err(|e| SttError::internal(format!("serialize: {e}")))?;
         let resp = self
             .client
             .post(url)
@@ -281,10 +284,7 @@ impl TextToSpeech for ElevenLabsRunner {
         Ok(Box::new(ElevenLabsHttpStream::spawn(resp.bytes_stream(), format)))
     }
 
-    async fn open_realtime(
-        &self,
-        opts: RealtimeOptions,
-    ) -> Result<Box<dyn RealtimeSession>> {
+    async fn open_realtime(&self, opts: RealtimeOptions) -> Result<Box<dyn RealtimeSession>> {
         let agent_id = self.config.convai_agent_id.clone().or_else(|| {
             opts.extra
                 .as_ref()
@@ -331,6 +331,9 @@ mod tests {
             options: Default::default(),
         };
         let err = r.synthesize(req).await.unwrap_err();
-        assert!(matches!(err, SttError::UnsupportedCapability("dialogue_multispeaker")));
+        assert!(matches!(
+            err,
+            SttError::UnsupportedCapability("dialogue_multispeaker")
+        ));
     }
 }

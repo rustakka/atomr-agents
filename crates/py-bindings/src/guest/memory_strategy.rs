@@ -7,13 +7,14 @@
 use std::sync::Arc;
 
 use async_trait::async_trait;
-use atomr_agents_core::{AgentContext, AgentError, MemoryChunk, MemoryItem, Result as AgentResult, TokenBudget};
+use atomr_agents_core::{
+    AgentContext, AgentError, MemoryChunk, MemoryItem, Result as AgentResult, TokenBudget,
+};
 use atomr_agents_strategy::MemoryStrategy;
 use pyo3::prelude::*;
 
 use super::conv_helpers::{
-    await_and_jsonify, build_agent_ctx_dict, build_budget_dict, build_memory_item_dict,
-    resolve_instance,
+    await_and_jsonify, build_agent_ctx_dict, build_budget_dict, build_memory_item_dict, resolve_instance,
 };
 use super::registry::GUESTS;
 
@@ -30,11 +31,7 @@ impl PyMemoryStrategyAdapter {
 
 #[async_trait]
 impl MemoryStrategy for PyMemoryStrategyAdapter {
-    async fn retrieve(
-        &self,
-        ctx: &AgentContext,
-        budget: &mut TokenBudget,
-    ) -> AgentResult<Vec<MemoryChunk>> {
+    async fn retrieve(&self, ctx: &AgentContext, budget: &mut TokenBudget) -> AgentResult<Vec<MemoryChunk>> {
         let target = self.target.clone();
         let label = self.label.clone();
 
@@ -54,17 +51,13 @@ impl MemoryStrategy for PyMemoryStrategyAdapter {
             .map_err(|e| AgentError::Strategy(format!("guest memory {label}: {e}")))?;
 
         let arr = value.as_array().ok_or_else(|| {
-            AgentError::Strategy(format!(
-                "guest memory {label}: expected array, got {value}"
-            ))
+            AgentError::Strategy(format!("guest memory {label}: expected array, got {value}"))
         })?;
 
         let mut out = Vec::with_capacity(arr.len());
         for v in arr {
             let map = v.as_object().ok_or_else(|| {
-                AgentError::Strategy(format!(
-                    "guest memory {label}: expected chunk object, got {v}"
-                ))
+                AgentError::Strategy(format!("guest memory {label}: expected chunk object, got {v}"))
             })?;
             out.push(MemoryChunk {
                 source_id: map
@@ -72,16 +65,9 @@ impl MemoryStrategy for PyMemoryStrategyAdapter {
                     .and_then(|x| x.as_str())
                     .unwrap_or("")
                     .to_string(),
-                text: map
-                    .get("text")
-                    .and_then(|x| x.as_str())
-                    .unwrap_or("")
-                    .to_string(),
+                text: map.get("text").and_then(|x| x.as_str()).unwrap_or("").to_string(),
                 score: map.get("score").and_then(|x| x.as_f64()).unwrap_or(0.0) as f32,
-                estimated_tokens: map
-                    .get("estimated_tokens")
-                    .and_then(|x| x.as_u64())
-                    .unwrap_or(0) as u32,
+                estimated_tokens: map.get("estimated_tokens").and_then(|x| x.as_u64()).unwrap_or(0) as u32,
             });
         }
         Ok(out)
@@ -132,9 +118,7 @@ pub(crate) fn build_guest_memory_strategy(key: String) -> PyResult<PyMemoryStrat
     let entry = GUESTS
         .get(&("strategy:memory".to_string(), key.clone()))
         .ok_or_else(|| {
-            pyo3::exceptions::PyKeyError::new_err(format!(
-                "no memory strategy registered with key {key:?}"
-            ))
+            pyo3::exceptions::PyKeyError::new_err(format!("no memory strategy registered with key {key:?}"))
         })?;
     let target = entry.value().clone();
     let adapter = PyMemoryStrategyAdapter::new(target, key.clone());
