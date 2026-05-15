@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Deep Research Harness</title>
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <header>
+    <h1>Deep Research Harness</h1>
+    <p class="muted">Three pluggable topologies. Same request &rarr; same result shape.</p>
+  </header>
+
+  <main>
+    <section id="composer">
+      <h2>New run</h2>
+      <form id="run-form">
+        <label>Query
+          <textarea name="query" rows="3" required placeholder="compare actor frameworks in rust"></textarea>
+        </label>
+        <div class="row">
+          <label>Strategy
+            <select name="strategy" id="strategy-select"></select>
+          </label>
+          <label>Depth
+            <input type="number" name="depth" value="2" min="0" max="10" />
+          </label>
+          <label>Breadth
+            <input type="number" name="breadth" value="3" min="1" max="10" />
+          </label>
+          <label>Max iterations
+            <input type="number" name="max_iterations" value="64" min="1" max="512" />
+          </label>
+        </div>
+        <button type="submit">Start research</button>
+      </form>
+      <p id="run-status" class="muted"></p>
+    </section>
+
+    <section id="runs">
+      <h2>Runs</h2>
+      <ul id="runs-list">
+        <li class="muted">Loading…</li>
+      </ul>
+    </section>
+
+    <section id="details" hidden>
+      <h2 id="detail-query">—</h2>
+      <p class="muted" id="detail-meta">—</p>
+
+      <h3>Plan</h3>
+      <ol id="plan-list"></ol>
+
+      <h3>Citations</h3>
+      <ol id="citations-list"></ol>
+
+      <h3>Report</h3>
+      <pre id="report-body" class="report"></pre>
+
+      <h3>Live events</h3>
+      <ul id="events-list"></ul>
+    </section>
+  </main>
+
+  <script src="/app.js"></script>
+</body>
+</html>

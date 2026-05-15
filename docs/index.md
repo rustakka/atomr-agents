@@ -155,6 +155,8 @@ python -c "from atomr_agents import Registry; print(Registry())"
 - [Retrieval and ingestion](retrieval-and-ingestion.md) — retriever zoo, `LongStore`, loaders, splitters.
 - [Observability](observability.md) — `EventBus`, `RunTree`, tracers.
 - [STT harness](stt-harness.md) — agentic streaming speech-to-text pipeline, diarization, the editable diarized-transcript review UI.
+- [Meetings harness](meetings-harness.md) — downstream of STT: attendees, notes, actions, tiered summaries from a diarized transcript.
+- [Deep research harness](deep-research-harness.md) — multi-step, multi-source, citation-bearing research over a user query, with three pluggable v1 topologies (AI-Q, Anthropic multi-agent, LangGraph open_deep_research).
 - [Eval](eval.md) — eval suites, judge / pairwise / rubric scorers, regression gate.
 - [Multi-agent patterns](multi-agent-patterns.md) — supervisor / swarm / network / hierarchical.
 - [Feature matrix](feature-matrix.md) — every feature flag, what it pulls in.

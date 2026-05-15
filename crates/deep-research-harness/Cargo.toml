@@ -1,0 +1,46 @@
+[package]
+name          = "atomr-agents-deep-research-harness"
+version       = { workspace = true }
+edition       = { workspace = true }
+rust-version  = { workspace = true }
+license       = { workspace = true }
+repository    = { workspace = true }
+homepage      = { workspace = true }
+authors       = { workspace = true }
+description   = "Pluggable deep-research harness: clarify→plan→search→write→verify, multi-agent parallel, and iterative-deepening strategies behind a uniform contract."
+
+keywords      = ["agents", "research", "harness", "atomr"]
+categories    = ["asynchronous"]
+readme        = "README.md"
+
+[features]
+default = []
+state   = ["dep:atomr-agents-state"]
+
+[dependencies]
+atomr-agents-core              = { workspace = true }
+atomr-agents-callable          = { workspace = true }
+atomr-agents-observability     = { workspace = true }
+atomr-agents-tool              = { workspace = true }
+atomr-agents-retriever         = { workspace = true }
+atomr-agents-web-search-core   = { workspace = true }
+atomr-agents-web-search-tool   = { workspace = true }
+atomr-agents-deep-research-core = { workspace = true }
+atomr-agents-state             = { workspace = true, optional = true }
+
+async-trait  = { workspace = true }
+tokio        = { workspace = true }
+futures      = { workspace = true }
+serde        = { workspace = true }
+serde_json   = { workspace = true }
+thiserror    = { workspace = true }
+tracing      = { workspace = true }
+parking_lot  = { workspace = true }
+semver       = { workspace = true }
+chrono       = { workspace = true }
+uuid         = { workspace = true }
+url          = { workspace = true }
+regex        = "1"
+
+[dev-dependencies]
+tokio = { workspace = true, features = ["full", "test-util"] }

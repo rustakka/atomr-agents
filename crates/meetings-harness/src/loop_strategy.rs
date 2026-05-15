@@ -194,18 +194,14 @@ impl MeetingsLoopStrategy for StreamingExtractionLoop {
 
         let processed = ctx.state.analysis.last_processed_turn_index.unwrap_or(0);
         let total = ctx.state.transcript.turns.len() as u64;
-        let _ = ctx.events.send(MeetingsHarnessEvent::Progress {
-            processed,
-            total,
-        });
+        let _ = ctx
+            .events
+            .send(MeetingsHarnessEvent::Progress { processed, total });
 
         if finalize {
-            Ok(MeetingsStepOutcome::Done {
-                label: last_label,
-            })
+            Ok(MeetingsStepOutcome::Done { label: last_label })
         } else {
             Ok(MeetingsStepOutcome::Continue { label: last_label })
         }
     }
 }
-

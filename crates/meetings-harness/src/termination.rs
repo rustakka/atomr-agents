@@ -114,15 +114,24 @@ mod tests {
     fn iteration_cap_fires_at_cap() {
         let t = IterationCapTermination::new(3);
         assert_eq!(t.should_terminate(&state(2, 0)), Termination::Continue);
-        assert_eq!(t.should_terminate(&state(3, 0)), Termination::Done("iteration_cap"));
+        assert_eq!(
+            t.should_terminate(&state(3, 0)),
+            Termination::Done("iteration_cap")
+        );
     }
 
     #[test]
     fn cancellation_fires_through_any_strategy() {
         let mut s = state(0, 100);
         s.cancel_requested = true;
-        assert_eq!(StreamEndTermination.should_terminate(&s), Termination::Done("cancelled"));
-        assert_eq!(BudgetTermination.should_terminate(&s), Termination::Done("cancelled"));
+        assert_eq!(
+            StreamEndTermination.should_terminate(&s),
+            Termination::Done("cancelled")
+        );
+        assert_eq!(
+            BudgetTermination.should_terminate(&s),
+            Termination::Done("cancelled")
+        );
         assert_eq!(
             IterationCapTermination::new(100).should_terminate(&s),
             Termination::Done("cancelled")

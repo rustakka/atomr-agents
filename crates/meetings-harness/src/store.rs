@@ -198,8 +198,7 @@ impl MeetingsStore for InMemoryMeetingsStore {
         Ok(self.inner.read().get(id).cloned())
     }
     async fn list(&self) -> Result<Vec<MeetingsSummary>> {
-        let mut rows: Vec<MeetingsSummary> =
-            self.inner.read().values().map(MeetingsSummary::of).collect();
+        let mut rows: Vec<MeetingsSummary> = self.inner.read().values().map(MeetingsSummary::of).collect();
         rows.sort_by(|a, b| a.id.cmp(&b.id));
         Ok(rows)
     }

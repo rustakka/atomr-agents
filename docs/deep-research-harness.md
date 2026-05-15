@@ -1,0 +1,221 @@
+# Deep Research Harness
+
+`atomr-agents-deep-research-harness` is a pluggable harness for
+multi-step, citation-bearing research over a user query. It hosts
+three v1 topologies behind one uniform input/output contract
+(`ResearchRequest` → `ResearchResult` from
+`atomr-agents-deep-research-core`), so callers can swap strategies
+without touching the surrounding plumbing.
+
+The harness follows the same conventions as the
+[STT harness](stt-harness.md) and the
+[meetings harness](meetings-harness.md):
+
+- `Spec → Typed Harness<L, T> → BoxedHarness → HarnessRef` (with
+  `HarnessRef` implementing [`Callable`](agent-pipeline.md)).
+- A pluggable domain trait (here: six **role traits** — `Clarifier`,
+  `Planner`, `Researcher`, `Writer`, `Critic`, `CitationVerifier`)
+  threaded through a `StepCtx` to one **loop strategy**.
+- A shared `ResearchHandle` that mutates the in-flight `ResearchResult`
+  on behalf of the roles (mirrors `ToolHandle` from the meetings
+  harness).
+- Dual-channel events: framework `EventBus` + an in-process
+  `tokio::broadcast` of `DeepResearchEvent`.
+- Deterministic LLM-free defaults for every role so tests and the web
+  UI run end-to-end without a model provider.
+
+## Crate layout
+
+| Crate | Purpose |
+|-------|---------|
+| [`atomr-agents-web-search-core`](../crates/web-search-core/) | Provider-agnostic `WebSearch` trait, request/hit types, deterministic `MockWebSearch`. |
+| [`atomr-agents-web-search-tool`](../crates/web-search-tool/) | `WebSearchTool` adapter so the trait surface is callable as an `atomr_agents_tool::Tool`. |
+| [`atomr-agents-deep-research-core`](../crates/deep-research-core/) | `ResearchRequest`, `ResearchResult`, `Citation`, `Plan`, `SubQuestion`, `NodeStep`, `Telemetry`, `CoverageSignals`, `Artifacts` — pure data. |
+| [`atomr-agents-deep-research-harness`](../crates/deep-research-harness/) | Spec, typed/boxed/ref harness, role traits + defaults, three strategies, in-memory store, events, error. |
+| [`atomr-agents-deep-research-harness-web`](../crates/deep-research-harness-web/) | Axum + embedded SPA companion. Routes for list/get/start/stop/SSE; vanilla-JS dashboard. |
+
+## The uniform contract
+
+```rust
+let req = ResearchRequest::new("compare actor frameworks in rust")
+    .with_depth(2)        // max planner / critic refinement rounds
+    .with_breadth(3);     // max parallel sub-questions per round
+```
+
+The same request feeds every strategy. The result schema is also
+uniform — every strategy populates `plan`, `citations`, `transcript`,
+and `telemetry`; only the transcript *shape* differs.
+
+```
+┌──────────────────────────────────────────────────────────────────┐
+│                       ResearchResult                             │
+├────────────┬────────┬───────────┬─────────────────────────────┬──┤
+│ final_     │ plan   │ citations │ transcript                  │  │
+│ report     │ +sub_q │ [N] {url, │ NodeStep { role, label,     │  │
+│ (Markdown) │ +out   │ title,    │ ts, summary, sub_q? }       │  │
+│            │ line   │ snippet,  │ … audit trail of every role │  │
+│            │        │ verified} │ that contributed            │  │
+├────────────┴────────┴───────────┴─────────────────────────────┴──┤
+│ coverage { answered, unresolved, confidence_per_section, gaps }  │
+│ telemetry { tokens, tool_calls, wall_ms, cost_usd, per_node }    │
+│ artifacts { drafts, scratchpad, raw_search_hits }                │
+└──────────────────────────────────────────────────────────────────┘
+```
+
+## Role traits
+
+| Trait | Default impl | Behavior |
+|-------|--------------|----------|
+| `Clarifier` | `TemplateClarifier` | Heuristic clarifying questions, auto-answered under `HitlPolicy::AutoClarify`. |
+| `Planner` | `HeuristicPlanner` | Splits the query on sentence + conjunction boundaries; emits three-section outline. |
+| `Researcher` | `MockResearcher` | Calls `WebSearch` per sub-question; records hits and citations; marks the sub-question `Answered` or `Unresolved`. |
+| `Writer` | `ConcatWriter` | Groups citations by outline heading and emits a markdown draft. |
+| `Critic` | `RegexCritic` | Flags uncited sections, unresolved sub-questions, duplicate citation URLs. |
+| `CitationVerifier` | `DeterministicCitationVerifier` | Dedupe + renumber, mark `Verified`, compute coverage signals. |
+
+`DeepResearchRoles::defaults()` returns the full deterministic set —
+useful for tests, the web UI demo, and as a baseline for LLM-driven
+runs (override one role at a time without rebuilding the rest).
+
+## Strategies
+
+Three v1 topologies, one struct each, all implementing
+`DeepResearchLoopStrategy`.
+
+### `ClarifyPlanSearchVerifyLoop` (default)
+
+```
+clarify → plan → research (per sub-question, sequential)
+        → write → critique
+        → loop back to research if gaps && refinement_rounds < depth
+        → verify → done
+```
+
+NVIDIA AI-Q-style. Best when audit trails and citation quality matter
+more than wall-clock time.
+
+### `MultiAgentParallelLoop`
+
+```
+clarify → plan → fan-out researcher per sub-question (capped by breadth)
+        → write → critique → verify → done
+```
+
+Anthropic-style multi-agent research. Lowest wall-clock when sub-
+questions are independent.
+
+### `IterativeDeepeningLoop`
+
+```
+clarify → plan → loop[supervisor (= critic) → research (next sub-q)]
+        until done || rounds >= depth
+        → write → verify → done
+```
+
+LangGraph `open_deep_research`-style. The supervisor doubles as the
+critic (the `think_tool`); gaps spawn new sub-questions on the fly.
+
+## Web search
+
+`crates/web-search-core` is provider-agnostic on purpose: agents,
+workflows, and future harnesses can use `WebSearch` without depending
+on `deep-research-harness`. The crate ships a deterministic
+`MockWebSearch` so tests run offline. Concrete providers (Tavily,
+SerpAPI, DuckDuckGo, Brave) implement the trait in separate provider
+crates.
+
+`crates/web-search-tool` wraps any `WebSearch` provider as an
+`atomr_agents_tool::Tool` (with a JSON-schema descriptor), so an
+LLM-driven role can call `web_search` through the regular tool-call
+pipeline.
+
+Local-corpus search continues to flow through
+`atomr-agents-retriever`. The `ResearchHandle` carries an optional
+`Arc<dyn Retriever>` alongside the `Arc<dyn WebSearch>`, so a
+researcher impl can query both and merge the hits.
+
+## Persistence + events
+
+- **`ResearchStore`** — trait + `InMemoryResearchStore` default. A
+  feature-gated `state` integration mirroring the meetings-harness
+  `CheckpointerMeetingsStore` is the future extension point.
+- **`DeepResearchEvent`** — `Started`, `ClarificationsRecorded`,
+  `PlanComposed`, `SubQuestionStarted`, `SubQuestionDone`,
+  `SearchHitRecorded`, `DraftSectionAppended`, `CitationAppended`,
+  `CritiqueRecorded`, `VerificationComplete`, `TranscriptStep`,
+  `Finalized`, `Failed`. Broadcast over `tokio::sync::broadcast`.
+
+The harness persists the in-flight `ResearchResult` after every
+iteration, so the web UI sees incremental progress without polling
+when the SSE stream is wired up.
+
+## Usage
+
+### Code
+
+```rust
+use std::sync::Arc;
+use atomr_agents_deep_research_harness::{
+    ClarifyPlanSearchVerifyLoop, DeepResearchHarness, DeepResearchHarnessSpec,
+    DeepResearchRoles, InMemoryResearchStore, IterationCapTermination,
+};
+use atomr_agents_deep_research_core::ResearchRequest;
+use atomr_agents_web_search_core::MockWebSearch;
+
+let harness = DeepResearchHarness::new(
+    DeepResearchHarnessSpec::new("dr-1"),
+    Arc::new(InMemoryResearchStore::new()),
+    Arc::new(MockWebSearch::new() /* + fixtures */),
+    DeepResearchRoles::defaults(),
+    ClarifyPlanSearchVerifyLoop::new(),
+    IterationCapTermination::new(64),
+);
+
+let result = harness.run(
+    ResearchRequest::new("compare actor frameworks in rust")
+        .with_depth(2).with_breadth(3),
+).await?;
+
+assert!(result.final_report.is_some());
+assert!(!result.citations.is_empty());
+```
+
+### Web
+
+```bash
+cargo run -p atomr-agents-deep-research-harness-web --features embed-ui
+# 127.0.0.1:7200
+```
+
+The dashboard exposes:
+
+- Strategy dropdown (the three v1 topologies).
+- Live event log (SSE).
+- Plan / citations / report panes that refresh on a 1-second cadence
+  while the run is in flight.
+
+## Verification
+
+```
+cargo test  -p atomr-agents-web-search-core
+cargo test  -p atomr-agents-web-search-tool
+cargo test  -p atomr-agents-deep-research-core
+cargo test  -p atomr-agents-deep-research-harness
+cargo test  -p atomr-agents-deep-research-harness-web
+cargo check --workspace
+```
+
+All 34 tests pass on a clean workspace.
+
+## Roadmap (v2)
+
+- `PlanAndExecute`, `LinearWriteCritique`, `OutlineFirstSectionFanout`
+  strategies.
+- Two-tier outer shell (intent classifier routing between shallow and
+  deep). Today this is a caller responsibility; the harness itself is
+  always "deep".
+- Provider crates for Tavily / SerpAPI / DuckDuckGo / Brave that
+  implement `WebSearch`.
+- `AgentBased{Role}` impls (behind an `agent` feature flag) wrapping
+  `atomr_agents_agent::Agent` for LLM-driven planning, drafting,
+  critique, and verification.

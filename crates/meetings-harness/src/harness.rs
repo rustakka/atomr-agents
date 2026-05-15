@@ -241,7 +241,13 @@ pub(crate) async fn run_loop(
             state.cancel_requested = true;
         }
         if let Termination::Done(reason) = termination.should_terminate(state) {
-            emit_iteration(bus, spec, run_id, state.iteration, &format!("terminated:{reason}"));
+            emit_iteration(
+                bus,
+                spec,
+                run_id,
+                state.iteration,
+                &format!("terminated:{reason}"),
+            );
             if reason == "cancelled" {
                 let _ = events.send(MeetingsHarnessEvent::Stopped {
                     reason: reason.into(),
@@ -284,13 +290,7 @@ fn push_step(state: &mut MeetingsHarnessState, outcome: String) {
     });
 }
 
-fn emit_iteration(
-    bus: &EventBus,
-    spec: &MeetingsHarnessSpec,
-    run_id: &RunId,
-    iteration: u64,
-    outcome: &str,
-) {
+fn emit_iteration(bus: &EventBus, spec: &MeetingsHarnessSpec, run_id: &RunId, iteration: u64, outcome: &str) {
     bus.emit_run(
         Event::HarnessIteration {
             harness_id: spec.id.clone(),

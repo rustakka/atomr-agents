@@ -57,13 +57,10 @@ pub use boxed::BoxedMeetingsHarness;
 pub use dispatch::{MeetingsHarnessDispatch, MeetingsHarnessRef};
 pub use error::{MeetingsHarnessError, Result};
 pub use events::{MeetingsEventStream, MeetingsHarnessEvent};
-pub use extractor::{
-    ExtractionRequest, ExtractionWindow, MeetingExtractor, RuleBasedExtractor,
-};
+pub use extractor::{ExtractionRequest, ExtractionWindow, MeetingExtractor, RuleBasedExtractor};
 pub use harness::MeetingsHarness;
 pub use loop_strategy::{
-    BatchExtractionLoop, MeetingsLoopStrategy, MeetingsStepCtx, MeetingsStepOutcome,
-    StreamingExtractionLoop,
+    BatchExtractionLoop, MeetingsLoopStrategy, MeetingsStepCtx, MeetingsStepOutcome, StreamingExtractionLoop,
 };
 pub use spec::{AutoTriggerCfg, MeetingsHarnessConfig, MeetingsHarnessSpec};
 pub use state::{MeetingsHarnessState, MeetingsStepEvent};

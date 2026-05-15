@@ -3,9 +3,8 @@
 use std::sync::Arc;
 
 use atomr_agents_meetings_harness::{
-    ActionStatus, BatchExtractionLoop, BoxedMeetingsHarness, IterationCapTermination,
-    MeetingAnalysis, MeetingsHarnessError, MeetingsHarnessSpec, MeetingsSummary,
-    RuleBasedExtractor, RunMode,
+    ActionStatus, BatchExtractionLoop, BoxedMeetingsHarness, IterationCapTermination, MeetingAnalysis,
+    MeetingsHarnessError, MeetingsHarnessSpec, MeetingsSummary, RuleBasedExtractor, RunMode,
 };
 use atomr_agents_stt_harness::ConversationStore as _;
 use atomr_agents_stt_harness::ConversationSummary;
@@ -105,13 +104,7 @@ pub async fn update_action(
 ) -> Result<Json<MeetingAnalysis>, ApiError> {
     state
         .store
-        .update_action(
-            &id,
-            &action_id,
-            body.status,
-            body.owner_attendee_id,
-            body.due_iso,
-        )
+        .update_action(&id, &action_id, body.status, body.owner_attendee_id, body.due_iso)
         .await?
         .map(Json)
         .ok_or(ApiError::NotFound)

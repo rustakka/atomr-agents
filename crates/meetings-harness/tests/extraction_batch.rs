@@ -3,8 +3,8 @@
 use std::sync::Arc;
 
 use atomr_agents_meetings_harness::{
-    AnalysisState, BatchExtractionLoop, InMemoryMeetingsStore, IterationCapTermination,
-    MeetingsHarness, MeetingsHarnessSpec, MeetingsStore, RuleBasedExtractor, RunMode,
+    AnalysisState, BatchExtractionLoop, InMemoryMeetingsStore, IterationCapTermination, MeetingsHarness,
+    MeetingsHarnessSpec, MeetingsStore, RuleBasedExtractor, RunMode,
 };
 use atomr_agents_stt_core::{Segment, SpeakerTag};
 use atomr_agents_stt_harness::{ConversationStore, InMemoryConversationStore, SttConversation};
@@ -33,7 +33,12 @@ fn sample_conversation() -> SttConversation {
         4_000,
         9_000,
     ));
-    c.commit_segment(segment("We need to ship the auth rewrite by Friday.", 1, 9_000, 13_000));
+    c.commit_segment(segment(
+        "We need to ship the auth rewrite by Friday.",
+        1,
+        9_000,
+        13_000,
+    ));
     c.commit_segment(segment("Sounds good.", 0, 13_000, 14_000));
     c
 }

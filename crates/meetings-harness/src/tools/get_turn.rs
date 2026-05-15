@@ -24,7 +24,9 @@ impl GetTurnTool {
         let descriptor = ToolDescriptor {
             id: ToolId::from("meetings.get_turn"),
             name: "get_turn".into(),
-            description: "Return full detail (including word-level breakdown when available) for one turn by index.".into(),
+            description:
+                "Return full detail (including word-level breakdown when available) for one turn by index."
+                    .into(),
             schema: ToolSchema(json!({
                 "type": "object",
                 "required": ["turn_index"],
@@ -47,11 +49,9 @@ impl Tool for GetTurnTool {
         let args: Args = serde_json::from_value(args).map_err(MeetingsHarnessError::from)?;
         let conv = self.handle.transcript_snapshot();
         let Some(turn) = conv.turns.iter().find(|t| t.index == args.turn_index) else {
-            return Err(MeetingsHarnessError::tool(format!(
-                "unknown turn_index `{}`",
-                args.turn_index
-            ))
-            .into());
+            return Err(
+                MeetingsHarnessError::tool(format!("unknown turn_index `{}`", args.turn_index)).into(),
+            );
         };
         let speaker_label = turn
             .speaker_id()

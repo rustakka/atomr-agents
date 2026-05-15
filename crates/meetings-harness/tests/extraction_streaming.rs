@@ -41,19 +41,15 @@ async fn streaming_extraction_appends_and_revises_tail() {
     let mut conv = SttConversation::new("call-stream-1");
     transcripts.put(&conv).await.unwrap();
 
-    let analysis_store =
-        Arc::new(atomr_agents_meetings_harness::InMemoryMeetingsStore::new());
+    let analysis_store = Arc::new(atomr_agents_meetings_harness::InMemoryMeetingsStore::new());
 
     let (tx, rx) = broadcast::channel::<SttHarnessEvent>(64);
 
-    let spec = MeetingsHarnessSpec::new("meetings", "claude-opus-4-7").with_mode(
-        RunMode::Live {
-            segment_turn_count: 3,
-        },
-    );
+    let spec = MeetingsHarnessSpec::new("meetings", "claude-opus-4-7").with_mode(RunMode::Live {
+        segment_turn_count: 3,
+    });
     let extractor = Arc::new(RuleBasedExtractor::new());
-    let loop_strategy =
-        StreamingExtractionLoop::new(rx, transcripts.clone(), "call-stream-1".to_string());
+    let loop_strategy = StreamingExtractionLoop::new(rx, transcripts.clone(), "call-stream-1".to_string());
     let harness = MeetingsHarness::new(
         spec,
         transcripts.clone(),
@@ -74,12 +70,7 @@ async fn streaming_extraction_appends_and_revises_tail() {
     // Helper to push a turn + announce it.
     let mut push_turn = |text: &str, speaker: u8| -> u64 {
         let start = conv.total_audio_secs as u32 * 1000;
-        let turn = conv.commit_segment(segment(
-            text,
-            speaker,
-            start,
-            start + 2_000,
-        ));
+        let turn = conv.commit_segment(segment(text, speaker, start, start + 2_000));
         let conv_for_store = conv.clone();
         let tx = tx.clone();
         let transcripts = transcripts.clone();
@@ -146,11 +137,7 @@ async fn streaming_extraction_appends_and_revises_tail() {
     assert!(analysis.last_processed_turn_index.is_some());
 
     // Persisted in store.
-    let reloaded = analysis_store_clone
-        .get("call-stream-1")
-        .await
-        .unwrap()
-        .unwrap();
+    let reloaded = analysis_store_clone.get("call-stream-1").await.unwrap().unwrap();
     assert_eq!(reloaded.id, "call-stream-1");
     assert_eq!(reloaded.notes.len(), analysis.notes.len());
 

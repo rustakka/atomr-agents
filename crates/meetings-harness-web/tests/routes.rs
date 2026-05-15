@@ -2,12 +2,10 @@
 
 use std::sync::Arc;
 
-use atomr_agents_meetings_harness::{
-    ActionStatus, InMemoryMeetingsStore, MeetingAnalysis, MeetingsStore,
-};
+use atomr_agents_meetings_harness::{ActionStatus, InMemoryMeetingsStore, MeetingAnalysis, MeetingsStore};
+use atomr_agents_meetings_harness_web::{WebConfig, WebServer};
 use atomr_agents_stt_core::{Segment, SpeakerTag};
 use atomr_agents_stt_harness::{ConversationStore, InMemoryConversationStore, SttConversation};
-use atomr_agents_meetings_harness_web::{WebConfig, WebServer};
 use axum::body::Body;
 use axum::http::{Request, StatusCode};
 use tower::ServiceExt;
@@ -71,7 +69,12 @@ async fn list_get_delete_roundtrip() {
 
     let resp = server
         .router()
-        .oneshot(Request::builder().uri("/api/meetings").body(Body::empty()).unwrap())
+        .oneshot(
+            Request::builder()
+                .uri("/api/meetings")
+                .body(Body::empty())
+                .unwrap(),
+        )
         .await
         .unwrap();
     assert_eq!(resp.status(), StatusCode::OK);

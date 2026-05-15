@@ -167,8 +167,7 @@ impl MeetingExtractor for RuleBasedExtractor {
         }
 
         // --- Attendees: one per distinct speaker id in window.
-        let mut owners_by_speaker: std::collections::HashMap<u8, String> =
-            std::collections::HashMap::new();
+        let mut owners_by_speaker: std::collections::HashMap<u8, String> = std::collections::HashMap::new();
         for turn in &in_window {
             let Some(sid) = turn.speaker_id() else { continue };
             let label = conv.effective_label(sid);
@@ -200,18 +199,18 @@ impl MeetingExtractor for RuleBasedExtractor {
         // --- Actions: commitment markers per turn.
         for turn in &in_window {
             for caps in self.commitment_re.captures_iter(&turn.text) {
-                let desc = caps.get(1).map(|m| m.as_str().trim().to_string()).unwrap_or_default();
+                let desc = caps
+                    .get(1)
+                    .map(|m| m.as_str().trim().to_string())
+                    .unwrap_or_default();
                 if desc.is_empty() {
                     continue;
                 }
-                let owner = turn.speaker_id().and_then(|sid| owners_by_speaker.get(&sid)).cloned();
-                let _ = handle.append_action(
-                    desc,
-                    owner,
-                    None,
-                    Some(turn.text.clone()),
-                    Some(turn.index),
-                )?;
+                let owner = turn
+                    .speaker_id()
+                    .and_then(|sid| owners_by_speaker.get(&sid))
+                    .cloned();
+                let _ = handle.append_action(desc, owner, None, Some(turn.text.clone()), Some(turn.index))?;
             }
         }
 
@@ -255,9 +254,7 @@ impl MeetingExtractor for RuleBasedExtractor {
             if let Some(max_idx) = in_window.iter().map(|t| t.index).max() {
                 handle.advance_watermark(max_idx);
             }
-        } else if let (Some(first), Some(last)) =
-            (in_window.first(), in_window.last())
-        {
+        } else if let (Some(first), Some(last)) = (in_window.first(), in_window.last()) {
             // Batch: one segment per `segment_turn_count` chunk.
             let mut cursor = first.index;
             while cursor <= last.index {

@@ -25,6 +25,11 @@ members = [
     "crates/stt-harness-web",
     "crates/meetings-harness",
     "crates/meetings-harness-web",
+    "crates/web-search-core",
+    "crates/web-search-tool",
+    "crates/deep-research-core",
+    "crates/deep-research-harness",
+    "crates/deep-research-harness-web",
     "crates/tts-core",
     "crates/tts-audio",
     "crates/tts-runtime-openai",
@@ -184,6 +189,11 @@ atomr-agents-stt-harness      = { path = "crates/stt-harness", version = "0.11.0
 atomr-agents-stt-harness-web  = { path = "crates/stt-harness-web", version = "0.11.0" }
 atomr-agents-meetings-harness     = { path = "crates/meetings-harness", version = "0.11.0" }
 atomr-agents-meetings-harness-web = { path = "crates/meetings-harness-web", version = "0.11.0" }
+atomr-agents-web-search-core      = { path = "crates/web-search-core", version = "0.11.0" }
+atomr-agents-web-search-tool      = { path = "crates/web-search-tool", version = "0.11.0" }
+atomr-agents-deep-research-core         = { path = "crates/deep-research-core", version = "0.11.0" }
+atomr-agents-deep-research-harness      = { path = "crates/deep-research-harness", version = "0.11.0" }
+atomr-agents-deep-research-harness-web  = { path = "crates/deep-research-harness-web", version = "0.11.0" }
 atomr-agents-tts-core         = { path = "crates/tts-core", version = "0.11.0" }
 atomr-agents-tts-audio        = { path = "crates/tts-audio", version = "0.11.0" }
 atomr-agents-tts-runtime-openai = { path = "crates/tts-runtime-openai", version = "0.11.0" }

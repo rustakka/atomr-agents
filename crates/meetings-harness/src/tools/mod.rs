@@ -18,9 +18,7 @@ use std::sync::Arc;
 use parking_lot::Mutex;
 use tokio::sync::broadcast;
 
-use crate::analysis::{
-    Action, ActionStatus, Attendee, MeetingAnalysis, Note, SegmentSummary,
-};
+use crate::analysis::{Action, ActionStatus, Attendee, MeetingAnalysis, Note, SegmentSummary};
 use crate::error::{MeetingsHarnessError, Result};
 use crate::events::MeetingsHarnessEvent;
 
@@ -350,9 +348,7 @@ impl ToolHandle {
             Some(tail.clone())
         });
         if let Some(seg) = &segment {
-            self.emit(MeetingsHarnessEvent::SegmentFinalized {
-                segment: seg.clone(),
-            });
+            self.emit(MeetingsHarnessEvent::SegmentFinalized { segment: seg.clone() });
         }
         Ok(segment)
     }

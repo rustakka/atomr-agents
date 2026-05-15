@@ -31,7 +31,8 @@ impl FinalizeTool {
         let descriptor = ToolDescriptor {
             id: ToolId::from("meetings.finalize"),
             name: "finalize".into(),
-            description: "Mark the analysis final, optionally setting the TL;DR. Signals the loop to terminate.".into(),
+            description:
+                "Mark the analysis final, optionally setting the TL;DR. Signals the loop to terminate.".into(),
             schema: ToolSchema(json!({
                 "type": "object",
                 "properties": {

@@ -14,10 +14,7 @@ use crate::AppState;
 pub fn build_router(state: AppState) -> Router {
     let api = Router::new()
         .route("/meetings", get(meetings::list))
-        .route(
-            "/meetings/:id",
-            get(meetings::get).delete(meetings::delete_one),
-        )
+        .route("/meetings/:id", get(meetings::get).delete(meetings::delete_one))
         .route(
             "/meetings/:id/attendees/:attendee_id",
             put(meetings::rename_attendee),

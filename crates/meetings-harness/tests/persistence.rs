@@ -13,9 +13,7 @@ use atomr_agents_meetings_harness::{
 };
 use atomr_agents_state::{Checkpointer, InMemoryCheckpointer};
 use atomr_agents_stt_core::{Segment, SpeakerTag};
-use atomr_agents_stt_harness::{
-    CheckpointerConversationStore, ConversationStore, SttConversation,
-};
+use atomr_agents_stt_harness::{CheckpointerConversationStore, ConversationStore, SttConversation};
 
 fn segment(text: &str, speaker: u8) -> Segment {
     Segment {

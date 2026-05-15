@@ -1,0 +1,51 @@
+[package]
+name          = "atomr-agents-deep-research-harness-web"
+version       = { workspace = true }
+edition       = { workspace = true }
+rust-version  = { workspace = true }
+license       = { workspace = true }
+repository    = { workspace = true }
+homepage      = { workspace = true }
+authors       = { workspace = true }
+description   = "Axum + embedded SPA companion for the deep-research harness. Kick off runs, browse results, follow live SSE event streams."
+
+keywords      = ["agents", "research", "web", "atomr"]
+categories    = ["web-programming::http-server"]
+readme        = "README.md"
+
+[features]
+default = ["embed-ui"]
+# Bake the embedded SPA (`ui/`) into the binary via rust-embed.
+embed-ui = ["dep:rust-embed"]
+
+[dependencies]
+atomr-agents-core               = { workspace = true }
+atomr-agents-callable           = { workspace = true }
+atomr-agents-observability      = { workspace = true }
+atomr-agents-tool               = { workspace = true }
+atomr-agents-deep-research-core    = { workspace = true }
+atomr-agents-deep-research-harness = { workspace = true }
+atomr-agents-web-search-core    = { workspace = true }
+
+async-trait  = { workspace = true }
+tokio        = { workspace = true, features = ["full"] }
+futures      = { workspace = true }
+futures-util = { workspace = true }
+tokio-stream = { version = "0.1", features = ["sync"] }
+serde        = { workspace = true }
+serde_json   = { workspace = true }
+thiserror    = { workspace = true }
+tracing      = { workspace = true }
+parking_lot  = { workspace = true }
+uuid         = { workspace = true }
+url          = { workspace = true }
+chrono       = { workspace = true }
+
+axum       = { workspace = true }
+tower      = { workspace = true }
+tower-http = { workspace = true }
+rust-embed = { workspace = true, optional = true }
+
+[dev-dependencies]
+tokio = { workspace = true, features = ["full", "test-util"] }
+tower = { workspace = true, features = ["util"] }
