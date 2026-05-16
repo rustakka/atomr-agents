@@ -1,0 +1,37 @@
+[package]
+name          = "atomr-agents-web-search-provider-serpapi"
+version       = { workspace = true }
+edition       = { workspace = true }
+rust-version  = { workspace = true }
+license       = { workspace = true }
+repository    = { workspace = true }
+homepage      = { workspace = true }
+authors       = { workspace = true }
+description   = "SerpAPI (Google) WebSearch provider for atomr-agents."
+keywords      = ["agents", "web-search", "serpapi", "atomr"]
+categories    = ["asynchronous", "network-programming"]
+readme        = "README.md"
+
+[features]
+default     = ["rustls"]
+rustls      = ["atomr-agents-stt-remote-core/rustls"]
+native-tls  = ["atomr-agents-stt-remote-core/native-tls"]
+integration = []
+
+[dependencies]
+atomr-agents-web-search-core = { workspace = true }
+atomr-agents-stt-remote-core = { workspace = true }
+async-trait = { workspace = true }
+tokio       = { workspace = true }
+reqwest     = { workspace = true }
+serde       = { workspace = true }
+serde_json  = { workspace = true }
+secrecy     = { workspace = true }
+url         = { workspace = true }
+chrono      = { workspace = true }
+thiserror   = { workspace = true }
+tracing     = { workspace = true }
+
+[dev-dependencies]
+tokio    = { workspace = true, features = ["full", "test-util"] }
+wiremock = "0.6"

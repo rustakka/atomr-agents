@@ -171,9 +171,28 @@ useful when the report's outline is naturally section-shaped (e.g.
 `crates/web-search-core` is provider-agnostic on purpose: agents,
 workflows, and future harnesses can use `WebSearch` without depending
 on `deep-research-harness`. The crate ships a deterministic
-`MockWebSearch` so tests run offline. Concrete providers (Tavily,
-SerpAPI, DuckDuckGo, Brave) implement the trait in separate provider
-crates.
+`MockWebSearch` so tests run offline. Concrete providers live in their
+own crates and follow the `web-search-provider-<name>` naming
+convention:
+
+- **`atomr-agents-web-search-provider-tavily`** —
+  `POST https://api.tavily.com/search` with `TAVILY_API_KEY` in the
+  JSON body. Surfaces Tavily's cleaned-text extracts via
+  `WebSearchHit.content`.
+- **`atomr-agents-web-search-provider-serpapi`** —
+  `GET https://serpapi.com/search` (Google engine by default) with
+  `SERPAPI_KEY` in the query string. Recency requests are translated
+  to Google's `tbs=qdr:d|w|m|y` knob.
+- **`atomr-agents-web-search-provider-brave`** —
+  `GET https://api.search.brave.com/res/v1/web/search` with
+  `BRAVE_API_KEY` in the `X-Subscription-Token` header. Recency maps
+  to Brave's `freshness=pd|pw|pm|py`.
+
+All three crates share the `atomr-agents-stt-remote-core` HTTP plumbing
+(timeouts, retries, secret refs). Each ships an `integration` Cargo
+feature that gates a live-API test on the corresponding env var; the
+test skips silently when the var is unset, so CI can run with the
+feature on without flaking.
 
 `crates/web-search-tool` wraps any `WebSearch` provider as an
 `atomr_agents_tool::Tool` (with a JSON-schema descriptor), so an
@@ -263,8 +282,9 @@ All 34 tests pass on a clean workspace.
 - Two-tier outer shell (intent classifier routing between shallow and
   deep). Today this is a caller responsibility; the harness itself is
   always "deep".
-- Provider crates for Tavily / SerpAPI / DuckDuckGo / Brave that
-  implement `WebSearch`.
 - `AgentBased{Role}` impls (behind an `agent` feature flag) wrapping
   `atomr_agents_agent::Agent` for LLM-driven planning, drafting,
   critique, and verification.
+
+The Tavily / SerpAPI / Brave provider crates listed earlier in this
+document landed alongside this work.
