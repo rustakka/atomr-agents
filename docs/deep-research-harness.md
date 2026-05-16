@@ -134,6 +134,39 @@ Local-corpus search continues to flow through
 `Arc<dyn Retriever>` alongside the `Arc<dyn WebSearch>`, so a
 researcher impl can query both and merge the hits.
 
+## Two-tier shell
+
+`atomr-agents-deep-research-shell` wraps the deep harness with an
+intent-classifier in front. Short queries take a fast **shallow path**
+(one `WebSearch` call rendered as a numbered markdown report); long /
+comparative / multi-question queries route to the full deep harness.
+The shell itself implements
+[`Callable`](agent-pipeline.md), so it slots into agents, workflows,
+and tool registries exactly like the underlying harness.
+
+| Piece | Default impl | Behavior |
+|-------|--------------|----------|
+| `IntentClassifier` | `HeuristicIntentClassifier` | Deterministic. Routes shallow when the query is `< 80` chars, has `<= 1` `?`, `depth <= 1`, and contains no comparative markers (`compare`, `versus`, ` vs `, `trade-off`, `analyze`, `deep dive`, `research`, `contrast`, `differences between`, `how do `). Every threshold has a `with_*` builder. |
+| `ShallowResearcher` | `DirectSearchShallow` | Issues one `WebSearch::search(...)` with `max_results = req.breadth.max(3)`, honours `req.scope.allowed_domains` / `blocked_domains`, builds a numbered markdown report, and emits citations marked `CitationStatus::Verified`. Returns `ResearchResult { strategy: "shallow-direct", ... }`. |
+
+```rust
+use std::sync::Arc;
+use atomr_agents_deep_research_harness::{DeepResearchHarnessRef /* …same as before */};
+use atomr_agents_deep_research_shell::{
+    DeepResearchShell, DirectSearchShallow, HeuristicIntentClassifier,
+};
+
+let shell = DeepResearchShell::new(
+    Arc::new(HeuristicIntentClassifier::new()),
+    Arc::new(DirectSearchShallow::new(web_search.clone())),
+    deep_ref,
+);
+
+// Same Callable contract as the underlying harness: ResearchRequest in,
+// ResearchResult out, classifier sits transparently in front.
+let v = shell.call(serde_json::json!({"query": "rust", "depth": 1}), ctx).await?;
+```
+
 ## Persistence + events
 
 - **`ResearchStore`** — trait + `InMemoryResearchStore` default. A
@@ -211,10 +244,7 @@ All 34 tests pass on a clean workspace.
 
 - `PlanAndExecute`, `LinearWriteCritique`, `OutlineFirstSectionFanout`
   strategies.
-- Two-tier outer shell (intent classifier routing between shallow and
-  deep). Today this is a caller responsibility; the harness itself is
-  always "deep".
-- Provider crates for Tavily / SerpAPI / DuckDuckGo / Brave that
+- Provider crates for Tavily / SerpAPI / Brave that
   implement `WebSearch`.
 - `AgentBased{Role}` impls (behind an `agent` feature flag) wrapping
   `atomr_agents_agent::Agent` for LLM-driven planning, drafting,
