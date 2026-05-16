@@ -41,7 +41,10 @@ pub use roles::{
 pub use spec::{DeepResearchConfig, DeepResearchHarnessSpec};
 pub use state::{DeepResearchState, DeepResearchStepEvent};
 pub use store::{InMemoryResearchStore, ResearchStore, ResearchSummary};
-pub use strategies::{ClarifyPlanSearchVerifyLoop, IterativeDeepeningLoop, MultiAgentParallelLoop};
+pub use strategies::{
+    ClarifyPlanSearchVerifyLoop, IterativeDeepeningLoop, LinearWriteCritiqueLoop, MultiAgentParallelLoop,
+    OutlineFirstSectionFanoutLoop, PlanAndExecuteLoop,
+};
 pub use termination::{
     BudgetTermination, CompositeTermination, DeepResearchTermination, IterationCapTermination,
     StrategyControlledTermination, Termination,

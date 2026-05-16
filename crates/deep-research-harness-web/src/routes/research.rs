@@ -6,7 +6,8 @@ use atomr_agents_deep_research_core::ResearchRequest;
 use atomr_agents_deep_research_harness::{
     BoxedDeepResearchHarness, ClarifyPlanSearchVerifyLoop, DeepResearchError, DeepResearchHarnessSpec,
     DeepResearchLoopStrategy, DeepResearchRoles, IterationCapTermination, IterativeDeepeningLoop,
-    MultiAgentParallelLoop, ResearchResult, ResearchStore, ResearchSummary,
+    LinearWriteCritiqueLoop, MultiAgentParallelLoop, OutlineFirstSectionFanoutLoop, PlanAndExecuteLoop,
+    ResearchResult, ResearchStore, ResearchSummary,
 };
 use axum::extract::{Path, State};
 use axum::http::StatusCode;
@@ -98,6 +99,9 @@ pub async fn start(
         "clarify-plan-search-verify" => Box::new(ClarifyPlanSearchVerifyLoop::new()),
         "multi-agent-parallel" => Box::new(MultiAgentParallelLoop::new()),
         "iterative-deepening" => Box::new(IterativeDeepeningLoop::new()),
+        "plan-and-execute" => Box::new(PlanAndExecuteLoop::new()),
+        "linear-write-critique" => Box::new(LinearWriteCritiqueLoop::new()),
+        "outline-first-section-fanout" => Box::new(OutlineFirstSectionFanoutLoop::new()),
         other => return Err(ApiError::BadRequest(format!("unknown strategy `{other}`"))),
     };
 
@@ -175,5 +179,8 @@ pub async fn list_strategies() -> Json<Vec<&'static str>> {
         "clarify-plan-search-verify",
         "multi-agent-parallel",
         "iterative-deepening",
+        "plan-and-execute",
+        "linear-write-critique",
+        "outline-first-section-fanout",
     ])
 }
