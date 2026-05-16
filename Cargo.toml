@@ -33,6 +33,7 @@ members = [
     "crates/deep-research-core",
     "crates/deep-research-harness",
     "crates/deep-research-harness-web",
+    "crates/deep-research-shell",
     "crates/coding-cli-core",
     "crates/coding-cli-isolator",
     "crates/coding-cli-vendor-claude",
@@ -218,6 +219,7 @@ atomr-agents-web-search-provider-brave   = { path = "crates/web-search-provider-
 atomr-agents-deep-research-core         = { path = "crates/deep-research-core", version = "0.14.0" }
 atomr-agents-deep-research-harness      = { path = "crates/deep-research-harness", version = "0.14.0" }
 atomr-agents-deep-research-harness-web  = { path = "crates/deep-research-harness-web", version = "0.14.0" }
+atomr-agents-deep-research-shell        = { path = "crates/deep-research-shell", version = "0.14.0" }
 atomr-agents-coding-cli-core            = { path = "crates/coding-cli-core", version = "0.14.0" }
 atomr-agents-coding-cli-isolator        = { path = "crates/coding-cli-isolator", version = "0.14.0" }
 atomr-agents-coding-cli-vendor-claude   = { path = "crates/coding-cli-vendor-claude", version = "0.14.0" }
