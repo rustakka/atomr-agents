@@ -77,6 +77,38 @@ and `telemetry`; only the transcript *shape* differs.
 useful for tests, the web UI demo, and as a baseline for LLM-driven
 runs (override one role at a time without rebuilding the rest).
 
+### Domain tools
+
+The crate exports a `ResearchToolSet` (always compiled — not gated)
+that mirrors the meetings-harness `MeetingsToolSet`. Each tool wraps a
+mutation on `ResearchHandle` so an LLM-driven role (or any
+`atomr_agents_tool::Tool`-aware caller) can drive a run via tool calls
+rather than free-form prose.
+
+| Tool name | Wraps | Returns |
+|-----------|-------|---------|
+| `record_clarification` | `record_clarification(question, answer)` | `{}` |
+| `set_plan` | `set_plan(plan)` | `{}` |
+| `append_sub_question` | `append_sub_question(sq)` | `{ id }` |
+| `set_sub_question_status` | `set_sub_question_status(id, status)` | `{}` |
+| `record_search_hit` | `record_search_hit(provider, hit, sub_question_id?)` | `{}` |
+| `append_citation` | `append_citation(citation)` | `{ number }` |
+| `append_draft_section` | `append_draft_section(section)` | `{}` |
+| `record_critique` | `record_critique(summary, gaps)` | `{}` |
+| `set_final_report` | `set_final_report(markdown)` | `{}` |
+
+All tool ids are namespaced under `deep_research.<name>`. Build the
+bundle once around a cloned `ResearchHandle` and pass `all()` into a
+`StaticToolStrategy`:
+
+```rust
+use atomr_agents_deep_research_harness::ResearchToolSet;
+use atomr_agents_tool::StaticToolStrategy;
+
+let tools = ResearchToolSet::new(handle.clone()).all();
+let strat = StaticToolStrategy::new(tools);
+```
+
 ## Strategies
 
 Three v1 topologies, one struct each, all implementing
@@ -114,6 +146,63 @@ clarify → plan → loop[supervisor (= critic) → research (next sub-q)]
 
 LangGraph `open_deep_research`-style. The supervisor doubles as the
 critic (the `think_tool`); gaps spawn new sub-questions on the fly.
+
+## Agent-based roles
+
+Behind the `agent` feature flag, the crate also ships
+`AgentBased{Clarifier,Planner,Researcher,Writer,Critic,
+CitationVerifier}` — LLM-driven implementations of the six role traits
+that wrap an `atomr_agents_agent::Agent`. They drop in alongside the
+deterministic defaults so a topology can mix and match (e.g. the
+deterministic `RegexCritic` plus an `AgentBasedWriter`).
+
+```toml
+atomr-agents-deep-research-harness = { version = "0.14", features = ["agent"] }
+```
+
+Roles fall into two patterns:
+
+- **Pattern B (one-shot JSON)** — `AgentBasedClarifier`,
+  `AgentBasedPlanner`, `AgentBasedCritic`,
+  `AgentBasedCitationVerifier`. The agent is configured with no tools
+  and a role-specific system prompt; the model returns a JSON object
+  that the role parses into its outcome type. Robust to fenced or
+  prose-wrapped output.
+- **Pattern A (tool-loop)** — `AgentBasedResearcher`,
+  `AgentBasedWriter`. The agent is configured with a subset of
+  `ResearchToolSet` (plus `WebSearchTool` for the researcher); the
+  model's tool calls mutate the running `ResearchHandle` directly. The
+  role then reads the updated handle to produce its outcome.
+
+Callers wire roles to a concrete provider through an
+`InferenceClientFactory`: given a model id (resolved per role from
+`req.llm_overrides`), return an `Arc<dyn InferenceClient>`. The
+harness crate stays provider-agnostic; the factory typically wraps an
+`atomr_infer_runtime_anthropic::AnthropicRunner` or sibling.
+
+```rust
+use std::sync::Arc;
+use atomr_agents_deep_research_harness::{
+    AgentBasedClarifier, AgentBasedPlanner, AgentBasedResearcher,
+    AgentBasedWriter, AgentBasedCritic, AgentBasedCitationVerifier,
+    DeepResearchRoles, InferenceClientFactory,
+};
+
+let factory: Arc<dyn InferenceClientFactory> = /* wraps your provider runner */;
+
+let roles = DeepResearchRoles {
+    clarifier: Box::new(AgentBasedClarifier::new(factory.clone())),
+    planner:   Box::new(AgentBasedPlanner::new(factory.clone())),
+    researcher: Box::new(AgentBasedResearcher::new(factory.clone())),
+    writer:    Box::new(AgentBasedWriter::new(factory.clone())),
+    critic:    Box::new(AgentBasedCritic::new(factory.clone())),
+    verifier:  Box::new(AgentBasedCitationVerifier::new(factory)),
+};
+```
+
+Per-role overrides: `with_system_prompt(...)`, `with_model_id(...)`
+(fallback when `req.llm_overrides` is silent on the role), and
+`with_max_tool_iterations(...)` (Pattern A only).
 
 ## Web search
 
@@ -216,6 +305,3 @@ All 34 tests pass on a clean workspace.
   always "deep".
 - Provider crates for Tavily / SerpAPI / DuckDuckGo / Brave that
   implement `WebSearch`.
-- `AgentBased{Role}` impls (behind an `agent` feature flag) wrapping
-  `atomr_agents_agent::Agent` for LLM-driven planning, drafting,
-  critique, and verification.
