@@ -25,6 +25,10 @@ mod state;
 mod store;
 mod strategies;
 mod termination;
+pub mod tools;
+
+#[cfg(feature = "agent")]
+pub mod agent;
 
 pub use boxed::BoxedDeepResearchHarness;
 pub use dispatch::{parse_request, DeepResearchHarnessDispatch, DeepResearchHarnessRef};
@@ -48,6 +52,17 @@ pub use strategies::{
 pub use termination::{
     BudgetTermination, CompositeTermination, DeepResearchTermination, IterationCapTermination,
     StrategyControlledTermination, Termination,
+};
+pub use tools::{
+    AppendCitationTool, AppendDraftSectionTool, AppendSubQuestionTool, RecordClarificationTool,
+    RecordCritiqueTool, RecordSearchHitTool, ResearchToolSet, SetFinalReportTool, SetPlanTool,
+    SetSubQuestionStatusTool,
+};
+
+#[cfg(feature = "agent")]
+pub use agent::{
+    AgentBasedCitationVerifier, AgentBasedClarifier, AgentBasedCritic, AgentBasedPlanner,
+    AgentBasedResearcher, AgentBasedWriter, InferenceClientFactory,
 };
 
 /// Re-exported core types for convenience.

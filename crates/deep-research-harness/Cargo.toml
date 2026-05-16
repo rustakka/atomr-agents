@@ -16,6 +16,14 @@ readme        = "README.md"
 [features]
 default = []
 state   = ["dep:atomr-agents-state"]
+agent   = [
+    "dep:atomr-agents-agent",
+    "dep:atomr-agents-instruction",
+    "dep:atomr-agents-strategy",
+    "dep:atomr-agents-memory",
+    "dep:atomr-agents-skill",
+    "dep:atomr-agents-persona",
+]
 
 [dependencies]
 atomr-agents-core              = { workspace = true }
@@ -27,6 +35,12 @@ atomr-agents-web-search-core   = { workspace = true }
 atomr-agents-web-search-tool   = { workspace = true }
 atomr-agents-deep-research-core = { workspace = true }
 atomr-agents-state             = { workspace = true, optional = true }
+atomr-agents-agent             = { workspace = true, optional = true }
+atomr-agents-instruction       = { workspace = true, optional = true }
+atomr-agents-strategy          = { workspace = true, optional = true }
+atomr-agents-memory            = { workspace = true, optional = true }
+atomr-agents-skill             = { workspace = true, optional = true }
+atomr-agents-persona           = { workspace = true, optional = true }
 
 async-trait  = { workspace = true }
 tokio        = { workspace = true }
@@ -44,3 +58,4 @@ regex        = "1"
 
 [dev-dependencies]
 tokio = { workspace = true, features = ["full", "test-util"] }
+atomr-infer-core = { workspace = true }

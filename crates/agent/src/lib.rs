@@ -19,7 +19,7 @@ pub use middleware::{
     AgentMiddleware, LoggingMiddleware, MiddlewareStack, RateLimitMiddleware, RedactionMiddleware,
     ToolErrorRecoveryMiddleware,
 };
-pub use pipeline::Agent;
+pub use pipeline::{Agent, AgentBudgets};
 pub use r#trait::AgentRef;
 pub use spec::AgentSpec;
 
