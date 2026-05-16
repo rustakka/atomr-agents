@@ -156,6 +156,7 @@ python -c "from atomr_agents import Registry; print(Registry())"
 - [Observability](observability.md) — `EventBus`, `RunTree`, tracers.
 - [STT harness](stt-harness.md) — agentic streaming speech-to-text pipeline, diarization, the editable diarized-transcript review UI.
 - [Meetings harness](meetings-harness.md) — downstream of STT: attendees, notes, actions, tiered summaries from a diarized transcript.
+- [Avatar harness](avatar-harness.md) — real-time embodied agent: perception → cognition → TTS → 60 Hz sync manager → CBOR-over-UDP `LiveLinkSink` to a UE5 MetaHuman. Includes Ubuntu setup, x86/ARM architecture rules, the current (post-web-Creator) MetaHuman authoring workflow, and a full `ILiveLinkSource` receiver-plugin skeleton.
 - [Deep research harness](deep-research-harness.md) — multi-step, multi-source, citation-bearing research over a user query, with three pluggable v1 topologies (AI-Q, Anthropic multi-agent, LangGraph open_deep_research).
 - [Coding CLI harness](coding-cli-harness.md) — wraps local AI coding CLIs (Claude Code, Codex CLI, Gemini CLI) as atomr-agents callables: headless mode parses structured events; interactive mode bridges a tmux session to xterm.js. Local or Docker isolation.
 - [Agent host](agent-host/index.md) — long-lived on-disk runtime (SOUL / RULES / MEMORY / USER / SKILL.md per agent) that gives an atomr-agents agent persistent identity, skills, hooks, schedules, and inbound channels. The `atomr-host` CLI does for atomr-agents what Claude Code does for the Claude model.
