@@ -27,6 +27,9 @@ members = [
     "crates/meetings-harness-web",
     "crates/web-search-core",
     "crates/web-search-tool",
+    "crates/web-search-provider-tavily",
+    "crates/web-search-provider-serpapi",
+    "crates/web-search-provider-brave",
     "crates/deep-research-core",
     "crates/deep-research-harness",
     "crates/deep-research-harness-web",
@@ -209,6 +212,9 @@ atomr-agents-meetings-harness     = { path = "crates/meetings-harness", version 
 atomr-agents-meetings-harness-web = { path = "crates/meetings-harness-web", version = "0.14.0" }
 atomr-agents-web-search-core      = { path = "crates/web-search-core", version = "0.14.0" }
 atomr-agents-web-search-tool      = { path = "crates/web-search-tool", version = "0.14.0" }
+atomr-agents-web-search-provider-tavily  = { path = "crates/web-search-provider-tavily", version = "0.14.0" }
+atomr-agents-web-search-provider-serpapi = { path = "crates/web-search-provider-serpapi", version = "0.14.0" }
+atomr-agents-web-search-provider-brave   = { path = "crates/web-search-provider-brave", version = "0.14.0" }
 atomr-agents-deep-research-core         = { path = "crates/deep-research-core", version = "0.14.0" }
 atomr-agents-deep-research-harness      = { path = "crates/deep-research-harness", version = "0.14.0" }
 atomr-agents-deep-research-harness-web  = { path = "crates/deep-research-harness-web", version = "0.14.0" }
