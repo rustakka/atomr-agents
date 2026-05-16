@@ -51,6 +51,7 @@ mod eval;
 mod guest;
 mod harness;
 mod harness_adapters;
+mod host;
 mod inference;
 mod ingest;
 mod instruction;
@@ -103,6 +104,7 @@ fn _native(py: Python<'_>, m: &Bound<'_, PyModule>) -> PyResult<()> {
     workflow::register(py, m)?;
     harness::register(py, m)?;
     eval::register(py, m)?;
+    host::register(py, m)?;
     guest::register(py, m)?;
     // PyHarness + loop_strategy / termination guest registration helpers
     // depend on `harness::register` and `guest::register` having created

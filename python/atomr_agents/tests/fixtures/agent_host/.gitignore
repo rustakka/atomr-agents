@@ -1,0 +1,4 @@
+# Tests using FIXTURE_ROOT directly cause state/ to be populated with
+# runtime artifacts (threads, checkpoints). Keep the fixture markdown
+# tracked; ignore generated state.
+agents/*/state/

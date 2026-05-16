@@ -1,0 +1,82 @@
+[package]
+name          = "atomr-agents-host"
+version       = { workspace = true }
+edition       = { workspace = true }
+rust-version  = { workspace = true }
+license       = { workspace = true }
+repository    = { workspace = true }
+homepage      = { workspace = true }
+authors       = { workspace = true }
+description   = "atomr-agents host runtime — long-lived agent identity, memory, skills, hooks, schedules, channels, atop atomr actors."
+
+keywords      = ["agents", "actor", "host", "atomr"]
+categories    = ["asynchronous"]
+readme        = "../../README.md"
+
+[features]
+default = []
+# Pulls atomr-persistence for the CheckpointActor (M10). Off by default
+# because the persistence ecosystem brings a journal-driver constellation
+# (mongodb/redis/sql) that consumers can opt into independently.
+persistence       = ["atomr/persistence"]
+cluster-sharding  = ["atomr/cluster-sharding", "atomr/cluster"]
+
+[dependencies]
+# atomr actor framework (umbrella).
+atomr        = { workspace = true, features = ["macros"] }
+atomr-core   = { workspace = true }
+atomr-config = { workspace = true }
+
+# atomr-agents primitives the host composes.
+atomr-agents-core          = { workspace = true }
+atomr-agents-callable      = { workspace = true }
+atomr-agents-agent         = { workspace = true }
+atomr-agents-skill         = { workspace = true }
+atomr-agents-persona       = { workspace = true }
+atomr-agents-instruction   = { workspace = true }
+atomr-agents-memory        = { workspace = true }
+atomr-agents-tool          = { workspace = true }
+atomr-agents-channel-core    = { workspace = true }
+atomr-agents-channel-harness = { workspace = true }
+atomr-agents-observability = { workspace = true }
+atomr-agents-registry      = { workspace = true }
+atomr-agents-eval          = { workspace = true }
+
+# Async / utility.
+tokio       = { workspace = true }
+async-trait = { workspace = true }
+futures     = { workspace = true }
+parking_lot = { workspace = true }
+dashmap     = { workspace = true }
+once_cell   = { workspace = true }
+
+# Serialization.
+serde       = { workspace = true }
+serde_json  = { workspace = true }
+serde_yaml  = "0.9"
+
+# Time + ids.
+chrono = { workspace = true }
+uuid   = { workspace = true }
+semver = { workspace = true }
+
+# Errors / logging.
+thiserror = { workspace = true }
+anyhow    = { workspace = true }
+tracing   = { workspace = true }
+
+# Filesystem watching (M3 memory sync). Optional behind a default-on feature
+# so test environments that can't spin up an inotify FD can still build.
+notify = { version = "6", default-features = false, features = ["macos_kqueue"] }
+
+# Regex (M5 hook redaction).
+regex = "1"
+
+[dev-dependencies]
+atomr-agents-testkit = { workspace = true }
+tempfile             = "3"
+tokio                = { workspace = true, features = ["test-util", "macros", "rt-multi-thread"] }
+
+[lib]
+name = "atomr_agents_host"
+path = "src/lib.rs"

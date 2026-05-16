@@ -158,6 +158,7 @@ python -c "from atomr_agents import Registry; print(Registry())"
 - [Meetings harness](meetings-harness.md) — downstream of STT: attendees, notes, actions, tiered summaries from a diarized transcript.
 - [Deep research harness](deep-research-harness.md) — multi-step, multi-source, citation-bearing research over a user query, with three pluggable v1 topologies (AI-Q, Anthropic multi-agent, LangGraph open_deep_research).
 - [Coding CLI harness](coding-cli-harness.md) — wraps local AI coding CLIs (Claude Code, Codex CLI, Gemini CLI) as atomr-agents callables: headless mode parses structured events; interactive mode bridges a tmux session to xterm.js. Local or Docker isolation.
+- [Agent host](agent-host/index.md) — long-lived on-disk runtime (SOUL / RULES / MEMORY / USER / SKILL.md per agent) that gives an atomr-agents agent persistent identity, skills, hooks, schedules, and inbound channels. The `atomr-host` CLI does for atomr-agents what Claude Code does for the Claude model.
 - [Eval](eval.md) — eval suites, judge / pairwise / rubric scorers, regression gate.
 - [Multi-agent patterns](multi-agent-patterns.md) — supervisor / swarm / network / hierarchical.
 - [Feature matrix](feature-matrix.md) — every feature flag, what it pulls in.

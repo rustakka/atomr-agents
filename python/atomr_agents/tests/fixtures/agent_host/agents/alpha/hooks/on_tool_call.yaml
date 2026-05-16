@@ -1,0 +1,10 @@
+event: on_tool_call
+match:
+  tool: shell.exec
+call:
+  kind: skill
+  id: redact_secrets
+when: pre
+budget:
+  tokens: 2000
+  ms: 5000

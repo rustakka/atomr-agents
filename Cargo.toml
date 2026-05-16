@@ -71,6 +71,7 @@ members = [
     "crates/org",
     "crates/registry",
     "crates/eval",
+    "crates/host",
     "crates/py-bindings",
     "crates/cli",
     "crates/testkit",
@@ -248,6 +249,7 @@ atomr-agents-harness       = { path = "crates/harness", version = "0.14.0" }
 atomr-agents-org           = { path = "crates/org", version = "0.14.0" }
 atomr-agents-registry      = { path = "crates/registry", version = "0.14.0" }
 atomr-agents-eval          = { path = "crates/eval", version = "0.14.0" }
+atomr-agents-host          = { path = "crates/host", version = "0.14.0" }
 atomr-agents-testkit       = { path = "crates/testkit", version = "0.14.0" }
 atomr-agents               = { path = "crates/umbrella", version = "0.14.0" }
 

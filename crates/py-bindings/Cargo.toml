@@ -71,6 +71,7 @@ atomr-agents-harness       = { workspace = true }
 atomr-agents-org           = { workspace = true }
 atomr-agents-registry      = { workspace = true }
 atomr-agents-eval          = { workspace = true }
+atomr-agents-host          = { workspace = true }
 atomr-agents-observability = { workspace = true }
 atomr-agents-testkit       = { workspace = true }
 # atomr-infer types are re-exported through atomr_agents_core::inference,

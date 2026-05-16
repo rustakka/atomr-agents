@@ -1,0 +1,13 @@
+id: alpha
+model: gpt-4o
+max_iterations: 6
+token_budget: 4096
+time_budget_ms: 45000
+money_budget_usd: 0.50
+skillset_id: alpha-skills
+skillset_version: 0.2.0
+curation:
+  strategy: auto_promote
+  params:
+    min_success_rate: 0.75
+    history_limit: 10
