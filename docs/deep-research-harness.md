@@ -79,8 +79,10 @@ runs (override one role at a time without rebuilding the rest).
 
 ## Strategies
 
-Three v1 topologies, one struct each, all implementing
-`DeepResearchLoopStrategy`.
+Six built-in topologies, one struct each, all implementing
+`DeepResearchLoopStrategy` — three v1 (clarify-plan-search-verify,
+multi-agent-parallel, iterative-deepening) plus three v2 (plan-and-
+execute, linear-write-critique, outline-first-section-fanout).
 
 ### `ClarifyPlanSearchVerifyLoop` (default)
 
@@ -114,6 +116,55 @@ clarify → plan → loop[supervisor (= critic) → research (next sub-q)]
 
 LangGraph `open_deep_research`-style. The supervisor doubles as the
 critic (the `think_tool`); gaps spawn new sub-questions on the fly.
+
+### `PlanAndExecuteLoop`
+
+```
+clarify → plan → for each step:
+                   execute (researcher)
+                   → critique
+                   → if !done && gaps && rounds<depth: re-plan
+                     (replaces remaining sub-questions)
+                     else: advance to next step
+        → write → verify → done
+```
+
+Plan-and-execute topology. The planner emits an ordered list of
+sub-questions as steps; the researcher runs each one; the critic runs
+**after every step** (not only at end). When the critic finds gaps and
+depth allows, the planner is re-invoked mid-flow and the new plan
+replaces remaining sub-questions. Best when each step's outcome should
+gate the next step's plan.
+
+### `LinearWriteCritiqueLoop`
+
+```
+clarify → plan → research all sub-questions sequentially
+        → write → critique
+        → loop back to write until done || rounds >= depth
+        → verify → done
+```
+
+Simplest "draft then refine" topology — never loops back to research,
+only to write. The `Writer` trait receives `&ResearchHandle`, so a
+refining writer reads `handle.snapshot()` and the latest critique
+transcript entry to revise the draft. Useful when evidence is fixed up
+front and only the prose needs iteration.
+
+### `OutlineFirstSectionFanoutLoop`
+
+```
+clarify → plan → group sub-questions by Plan::outline section
+        → fan out one task per section (parallel, capped by breadth)
+        → each task sequentially researches its section's sub-questions
+        → single writer pass → verify → done
+```
+
+Section-centric instead of sub-question-centric. Sub-questions with
+`section: None` go into a synthetic `"Uncategorized"` bucket. Trades
+some intra-section parallelism for clean per-section attribution —
+useful when the report's outline is naturally section-shaped (e.g.
+"Background / Findings / Conclusion") and each section is independent.
 
 ## Web search
 
@@ -189,7 +240,7 @@ cargo run -p atomr-agents-deep-research-harness-web --features embed-ui
 
 The dashboard exposes:
 
-- Strategy dropdown (the three v1 topologies).
+- Strategy dropdown (all built-in topologies).
 - Live event log (SSE).
 - Plan / citations / report panes that refresh on a 1-second cadence
   while the run is in flight.
@@ -209,8 +260,6 @@ All 34 tests pass on a clean workspace.
 
 ## Roadmap (v2)
 
-- `PlanAndExecute`, `LinearWriteCritique`, `OutlineFirstSectionFanout`
-  strategies.
 - Two-tier outer shell (intent classifier routing between shallow and
   deep). Today this is a caller responsibility; the harness itself is
   always "deep".

@@ -42,7 +42,7 @@ async fn healthz_returns_ok() {
 }
 
 #[tokio::test]
-async fn strategies_returns_three() {
+async fn strategies_returns_all_ids() {
     let app = make_server().router();
     let resp = app
         .oneshot(
@@ -57,11 +57,14 @@ async fn strategies_returns_three() {
     let bytes = to_bytes(resp.into_body(), 4 * 1024).await.unwrap();
     let v: Value = serde_json::from_slice(&bytes).unwrap();
     let arr = v.as_array().unwrap();
-    assert_eq!(arr.len(), 3);
+    assert_eq!(arr.len(), 6);
     let names: Vec<&str> = arr.iter().map(|s| s.as_str().unwrap()).collect();
     assert!(names.contains(&"clarify-plan-search-verify"));
     assert!(names.contains(&"multi-agent-parallel"));
     assert!(names.contains(&"iterative-deepening"));
+    assert!(names.contains(&"plan-and-execute"));
+    assert!(names.contains(&"linear-write-critique"));
+    assert!(names.contains(&"outline-first-section-fanout"));
 }
 
 #[tokio::test]
