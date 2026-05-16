@@ -1,0 +1,47 @@
+[package]
+name          = "atomr-agents-channel-provider-discord"
+version       = { workspace = true }
+edition       = { workspace = true }
+rust-version  = { workspace = true }
+license       = { workspace = true }
+repository    = { workspace = true }
+homepage      = { workspace = true }
+authors       = { workspace = true }
+description   = "Discord provider for atomr-agents channels. Gateway WebSocket (default) or Interactions webhook mode with Ed25519 signature verification."
+
+keywords      = ["agents", "channel", "discord", "atomr"]
+categories    = ["asynchronous"]
+readme        = "README.md"
+
+[features]
+default = ["gateway"]
+gateway = ["dep:tokio-tungstenite"]
+
+[dependencies]
+atomr-agents-channel-core = { workspace = true }
+
+async-trait  = { workspace = true }
+tokio        = { workspace = true, features = ["sync", "rt", "rt-multi-thread", "net", "macros", "time"] }
+tokio-tungstenite = { workspace = true, features = ["connect", "rustls-tls-webpki-roots"], optional = true }
+futures      = { workspace = true }
+futures-util = { workspace = true }
+serde        = { workspace = true }
+serde_json   = { workspace = true }
+thiserror    = { workspace = true }
+tracing      = { workspace = true }
+chrono       = { workspace = true }
+uuid         = { workspace = true }
+bytes        = { workspace = true }
+http         = "1"
+reqwest      = { workspace = true }
+ed25519-dalek = { version = "2", default-features = false, features = ["std"] }
+hex          = "0.4"
+parking_lot  = { workspace = true }
+
+[dev-dependencies]
+tokio = { workspace = true, features = ["full", "test-util"] }
+ed25519-dalek = { version = "2", default-features = false, features = ["std", "rand_core"] }
+rand = "0.8"
+http = "1"
+hex = "0.4"
+serde_json = { workspace = true }

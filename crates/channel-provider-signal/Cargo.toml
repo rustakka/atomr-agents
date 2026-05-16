@@ -1,0 +1,33 @@
+[package]
+name          = "atomr-agents-channel-provider-signal"
+version       = { workspace = true }
+edition       = { workspace = true }
+rust-version  = { workspace = true }
+license       = { workspace = true }
+repository    = { workspace = true }
+homepage      = { workspace = true }
+authors       = { workspace = true }
+description   = "Signal provider for atomr-agents channels via signal-cli JSON-RPC bridge (Unix socket or TCP)."
+
+keywords      = ["agents", "channel", "signal", "atomr"]
+categories    = ["asynchronous"]
+readme        = "README.md"
+
+[dependencies]
+atomr-agents-channel-core = { workspace = true }
+
+async-trait  = { workspace = true }
+tokio        = { workspace = true, features = ["sync", "rt", "rt-multi-thread", "net", "io-util", "macros", "time"] }
+tokio-util   = { version = "0.7", features = ["codec"] }
+futures      = { workspace = true }
+serde        = { workspace = true }
+serde_json   = { workspace = true }
+thiserror    = { workspace = true }
+tracing      = { workspace = true }
+chrono       = { workspace = true }
+uuid         = { workspace = true }
+bytes        = { workspace = true }
+http         = "1"
+
+[dev-dependencies]
+tokio = { workspace = true, features = ["full", "test-util"] }

@@ -1,0 +1,50 @@
+[package]
+name          = "atomr-agents-channel-harness-web"
+version       = { workspace = true }
+edition       = { workspace = true }
+rust-version  = { workspace = true }
+license       = { workspace = true }
+repository    = { workspace = true }
+homepage      = { workspace = true }
+authors       = { workspace = true }
+description   = "Axum web companion for the channel harness: per-provider webhook receivers (signature-verified), REST CRUD for channels/threads/messages, and a ChannelEvent /ws bridge."
+
+keywords      = ["agents", "channel", "web", "atomr"]
+categories    = ["web-programming::http-server"]
+readme        = "README.md"
+
+[[bin]]
+name = "atomr-agents-channel-harness-web"
+path = "src/bin/server.rs"
+
+[dependencies]
+atomr-agents-core            = { workspace = true }
+atomr-agents-callable        = { workspace = true }
+atomr-agents-observability   = { workspace = true }
+atomr-agents-channel-core    = { workspace = true }
+atomr-agents-channel-harness = { workspace = true }
+
+async-trait  = { workspace = true }
+tokio        = { workspace = true, features = ["full"] }
+tokio-stream = { version = "0.1", features = ["sync"] }
+futures      = { workspace = true }
+futures-util = { workspace = true }
+serde        = { workspace = true }
+serde_json   = { workspace = true }
+thiserror    = { workspace = true }
+tracing      = { workspace = true }
+tracing-subscriber = { workspace = true }
+parking_lot  = { workspace = true }
+uuid         = { workspace = true }
+chrono       = { workspace = true }
+
+axum         = { workspace = true }
+tower        = { workspace = true }
+tower-http   = { workspace = true }
+http         = "1"
+bytes        = { workspace = true }
+
+[dev-dependencies]
+tokio = { workspace = true, features = ["full", "test-util"] }
+tower = { workspace = true, features = ["util"] }
+http-body-util = "0.1"

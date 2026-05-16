@@ -1,0 +1,50 @@
+[package]
+name          = "atomr-agents-channel-harness"
+version       = { workspace = true }
+edition       = { workspace = true }
+rust-version  = { workspace = true }
+license       = { workspace = true }
+repository    = { workspace = true }
+homepage      = { workspace = true }
+authors       = { workspace = true }
+description   = "Channel orchestrator: attaches provider transports, supervises their lifecycle, routes inbound messages to bound Callable targets, queues outbound, persists state, and broadcasts ChannelEvent."
+
+keywords      = ["agents", "channel", "harness", "atomr"]
+categories    = ["asynchronous"]
+readme        = "README.md"
+
+[features]
+default            = ["providers-all"]
+providers-all      = ["provider-whatsapp", "provider-signal", "provider-discord"]
+provider-whatsapp  = ["dep:atomr-agents-channel-provider-whatsapp"]
+provider-signal    = ["dep:atomr-agents-channel-provider-signal"]
+provider-discord   = ["dep:atomr-agents-channel-provider-discord"]
+state              = ["atomr-agents-channel-core/state"]
+
+[dependencies]
+atomr-agents-core           = { workspace = true }
+atomr-agents-callable       = { workspace = true }
+atomr-agents-observability  = { workspace = true }
+atomr-agents-registry       = { workspace = true }
+atomr-agents-channel-core   = { workspace = true }
+
+atomr-agents-channel-provider-whatsapp = { workspace = true, optional = true }
+atomr-agents-channel-provider-signal   = { workspace = true, optional = true }
+atomr-agents-channel-provider-discord  = { workspace = true, optional = true }
+
+async-trait  = { workspace = true }
+tokio        = { workspace = true, features = ["full"] }
+futures      = { workspace = true }
+serde        = { workspace = true }
+serde_json   = { workspace = true }
+thiserror    = { workspace = true }
+tracing      = { workspace = true }
+parking_lot  = { workspace = true }
+dashmap      = { workspace = true }
+chrono       = { workspace = true }
+uuid         = { workspace = true }
+http         = "1"
+semver       = { workspace = true }
+
+[dev-dependencies]
+tokio = { workspace = true, features = ["full", "test-util"] }

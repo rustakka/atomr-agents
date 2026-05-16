@@ -38,6 +38,8 @@ impl PyArtifactKind {
             "workflow" => ArtifactKind::Workflow,
             "harness" => ArtifactKind::Harness,
             "harness_set" => ArtifactKind::HarnessSet,
+            "channel" => ArtifactKind::Channel,
+            "avatar" => ArtifactKind::Avatar,
             other => {
                 return Err(PyValueError::new_err(format!("unknown artifact kind: {other:?}")));
             }
@@ -63,6 +65,8 @@ impl PyArtifactKind {
             ArtifactKind::Workflow => "workflow",
             ArtifactKind::Harness => "harness",
             ArtifactKind::HarnessSet => "harness_set",
+            ArtifactKind::Channel => "channel",
+            ArtifactKind::Avatar => "avatar",
         }
     }
 
@@ -106,6 +110,18 @@ impl PyArtifactKind {
     fn harness_set() -> Self {
         Self {
             inner: ArtifactKind::HarnessSet,
+        }
+    }
+    #[staticmethod]
+    fn channel() -> Self {
+        Self {
+            inner: ArtifactKind::Channel,
+        }
+    }
+    #[staticmethod]
+    fn avatar() -> Self {
+        Self {
+            inner: ArtifactKind::Avatar,
         }
     }
 

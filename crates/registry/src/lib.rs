@@ -28,6 +28,8 @@ pub enum ArtifactKind {
     Workflow,
     Harness,
     HarnessSet,
+    Channel,
+    Avatar,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

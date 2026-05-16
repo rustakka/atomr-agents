@@ -1,0 +1,30 @@
+[package]
+name          = "atomr-agents-avatar-core"
+version       = { workspace = true }
+edition       = { workspace = true }
+rust-version  = { workspace = true }
+license       = { workspace = true }
+repository    = { workspace = true }
+homepage      = { workspace = true }
+authors       = { workspace = true }
+description   = "Avatar domain types for real-time, embodied agents: ARKit blendshape weights, viseme→blendshape mapping, AvatarFrame timecoding, AvatarSink trait, and the Live Link CBOR wire format consumed by an Unreal Engine 5 MetaHuman receiver."
+
+keywords      = ["agents", "avatar", "metahuman", "atomr"]
+categories    = ["asynchronous", "multimedia"]
+readme        = "../../README.md"
+
+[dependencies]
+atomr-agents-core          = { workspace = true }
+
+async-trait  = { workspace = true }
+tokio        = { workspace = true, features = ["sync", "rt", "rt-multi-thread", "macros", "time"] }
+bytes        = { workspace = true }
+serde        = { workspace = true }
+serde_json   = { workspace = true }
+thiserror    = { workspace = true }
+tracing      = { workspace = true }
+chrono       = { workspace = true }
+ciborium     = "0.2"
+
+[dev-dependencies]
+tokio = { workspace = true, features = ["full", "test-util"] }

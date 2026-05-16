@@ -37,6 +37,16 @@ members = [
     "crates/coding-cli-vendor-gemini",
     "crates/coding-cli-harness",
     "crates/coding-cli-harness-web",
+    "crates/channel-core",
+    "crates/channel-provider-whatsapp",
+    "crates/channel-provider-signal",
+    "crates/channel-provider-discord",
+    "crates/channel-harness",
+    "crates/channel-harness-web",
+    "crates/avatar-core",
+    "crates/avatar-harness",
+    "crates/avatar-provider-livelink",
+    "crates/avatar-provider-audio2face",
     "crates/tts-core",
     "crates/tts-audio",
     "crates/tts-runtime-openai",
@@ -208,6 +218,16 @@ atomr-agents-coding-cli-vendor-codex    = { path = "crates/coding-cli-vendor-cod
 atomr-agents-coding-cli-vendor-gemini   = { path = "crates/coding-cli-vendor-gemini", version = "0.13.0" }
 atomr-agents-coding-cli-harness         = { path = "crates/coding-cli-harness", version = "0.13.0" }
 atomr-agents-coding-cli-harness-web     = { path = "crates/coding-cli-harness-web", version = "0.13.0" }
+atomr-agents-channel-core               = { path = "crates/channel-core", version = "0.13.0" }
+atomr-agents-channel-provider-whatsapp  = { path = "crates/channel-provider-whatsapp", version = "0.13.0" }
+atomr-agents-channel-provider-signal    = { path = "crates/channel-provider-signal", version = "0.13.0" }
+atomr-agents-channel-provider-discord   = { path = "crates/channel-provider-discord", version = "0.13.0" }
+atomr-agents-channel-harness            = { path = "crates/channel-harness", version = "0.13.0" }
+atomr-agents-channel-harness-web        = { path = "crates/channel-harness-web", version = "0.13.0" }
+atomr-agents-avatar-core                = { path = "crates/avatar-core", version = "0.13.0" }
+atomr-agents-avatar-harness             = { path = "crates/avatar-harness", version = "0.13.0" }
+atomr-agents-avatar-provider-livelink   = { path = "crates/avatar-provider-livelink", version = "0.13.0" }
+atomr-agents-avatar-provider-audio2face = { path = "crates/avatar-provider-audio2face", version = "0.13.0" }
 atomr-agents-tts-core         = { path = "crates/tts-core", version = "0.13.0" }
 atomr-agents-tts-audio        = { path = "crates/tts-audio", version = "0.13.0" }
 atomr-agents-tts-runtime-openai = { path = "crates/tts-runtime-openai", version = "0.13.0" }

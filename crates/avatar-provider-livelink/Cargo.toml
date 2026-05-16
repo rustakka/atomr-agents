@@ -1,0 +1,28 @@
+[package]
+name          = "atomr-agents-avatar-provider-livelink"
+version       = { workspace = true }
+edition       = { workspace = true }
+rust-version  = { workspace = true }
+license       = { workspace = true }
+repository    = { workspace = true }
+homepage      = { workspace = true }
+authors       = { workspace = true }
+description   = "Avatar UDP Live Link sink: streams timecode-aligned audio + ARKit blendshape frames over UDP using the avatar-core CBOR wire format, ready for consumption by an Unreal Engine 5 ILiveLinkSource receiver plugin. x86_64-only (matches the UE5 tooling pipeline)."
+
+keywords      = ["agents", "avatar", "livelink", "atomr"]
+categories    = ["asynchronous", "multimedia"]
+readme        = "../../README.md"
+
+[dependencies]
+atomr-agents-avatar-core = { workspace = true }
+
+async-trait  = { workspace = true }
+tokio        = { workspace = true, features = ["sync", "rt", "rt-multi-thread", "net", "macros", "time"] }
+serde        = { workspace = true }
+serde_json   = { workspace = true }
+thiserror    = { workspace = true }
+tracing      = { workspace = true }
+bytes        = { workspace = true }
+
+[dev-dependencies]
+tokio = { workspace = true, features = ["full", "test-util"] }

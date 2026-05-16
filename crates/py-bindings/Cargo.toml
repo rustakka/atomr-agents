@@ -45,6 +45,10 @@ atomr-agents-stt-tool              = { workspace = true }
 atomr-agents-stt-harness           = { workspace = true, features = ["decode"] }
 atomr-agents-coding-cli-core       = { workspace = true }
 atomr-agents-coding-cli-harness    = { workspace = true }
+atomr-agents-channel-core          = { workspace = true }
+atomr-agents-channel-harness       = { workspace = true }
+atomr-agents-avatar-core           = { workspace = true, optional = true }
+atomr-agents-avatar-harness        = { workspace = true, optional = true }
 atomr-agents-tts-core              = { workspace = true }
 atomr-agents-tts-audio             = { workspace = true }
 atomr-agents-tts-runtime-openai    = { workspace = true }
@@ -93,6 +97,14 @@ serde_json                 = { workspace = true }
 semver                     = { workspace = true }
 chrono                     = { workspace = true }
 
+# Avatar providers are x86_64-only (UE5 + NVIDIA Audio2Face deployment
+# matrix). The optional + per-target dep keeps the manifest legal on
+# aarch64 by simply not pulling the providers when the host arch isn't
+# x86_64; the corresponding cargo features below stay declarable.
+[target.'cfg(target_arch = "x86_64")'.dependencies]
+atomr-agents-avatar-provider-livelink   = { workspace = true, optional = true }
+atomr-agents-avatar-provider-audio2face = { workspace = true, optional = true }
+
 [features]
 default = []
 # Forwarders that enable optional native deps in the linked stt
@@ -110,3 +122,9 @@ cache-redis     = ["atomr-agents-cache/redis"]
 # Checkpointer backends — forward to atomr-agents-state feature flags.
 state-sqlite    = ["atomr-agents-state/sqlite"]
 state-postgres  = ["atomr-agents-state/postgres"]
+# Avatar capability. `avatar` is the pure-Rust subset (types + harness
+# on any arch); the provider-specific feature flags layer optional
+# x86_64-only deps on top via target-cfg.
+avatar          = ["dep:atomr-agents-avatar-core", "dep:atomr-agents-avatar-harness"]
+avatar-livelink = ["avatar", "dep:atomr-agents-avatar-provider-livelink"]
+avatar-a2f      = ["avatar", "dep:atomr-agents-avatar-provider-audio2face"]

@@ -1,0 +1,28 @@
+[package]
+name          = "atomr-agents-avatar-provider-audio2face"
+version       = { workspace = true }
+edition       = { workspace = true }
+rust-version  = { workspace = true }
+license       = { workspace = true }
+repository    = { workspace = true }
+homepage      = { workspace = true }
+authors       = { workspace = true }
+description   = "Avatar audio→ARKit-blendshape provider backed by NVIDIA Audio2Face-3D. Currently a documented stub: the real runtime lives upstream in atomr-infer once FR-A2F-001 (audio2face modality) lands. x86_64 + NVIDIA-GPU-only."
+
+keywords      = ["agents", "avatar", "audio2face", "metahuman", "atomr"]
+categories    = ["asynchronous", "multimedia"]
+readme        = "../../README.md"
+
+[dependencies]
+atomr-agents-avatar-core = { workspace = true }
+
+async-trait  = { workspace = true }
+tokio        = { workspace = true, features = ["sync", "rt", "rt-multi-thread", "macros"] }
+serde        = { workspace = true }
+serde_json   = { workspace = true }
+thiserror    = { workspace = true }
+tracing      = { workspace = true }
+bytes        = { workspace = true }
+
+[dev-dependencies]
+tokio = { workspace = true, features = ["full", "test-util"] }

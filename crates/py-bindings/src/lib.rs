@@ -36,8 +36,11 @@
 use pyo3::prelude::*;
 
 mod agent;
+#[cfg(feature = "avatar")]
+mod avatar;
 mod cache;
 mod callable;
+mod channel;
 mod coding_cli;
 mod context;
 mod conv;
@@ -108,8 +111,11 @@ fn _native(py: Python<'_>, m: &Bound<'_, PyModule>) -> PyResult<()> {
     stt::register(py, m)?;
     stt_harness::register(py, m)?;
     coding_cli::register(py, m)?;
+    channel::register(py, m)?;
     tts::register(py, m)?;
     voice::register(py, m)?;
     voice_extras::register(py, m)?;
+    #[cfg(feature = "avatar")]
+    avatar::register(py, m)?;
     Ok(())
 }

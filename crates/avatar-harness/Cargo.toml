@@ -1,0 +1,53 @@
+[package]
+name          = "atomr-agents-avatar-harness"
+version       = { workspace = true }
+edition       = { workspace = true }
+rust-version  = { workspace = true }
+license       = { workspace = true }
+repository    = { workspace = true }
+homepage      = { workspace = true }
+authors       = { workspace = true }
+description   = "Avatar orchestrator: composes STT (perception), atomr-infer (cognition), TTS (synthesis), viseme→blendshape mapping, and the Sync-Manager into a supervised actor pipeline. Drives an AvatarSink (Live Link UDP to UE5 MetaHuman) with timecode-aligned audio + ARKit blendshape frames."
+
+keywords      = ["agents", "avatar", "metahuman", "atomr"]
+categories    = ["asynchronous"]
+readme        = "../../README.md"
+
+[features]
+default            = []
+providers-livelink = ["dep:atomr-agents-avatar-provider-livelink"]
+providers-a2f      = ["dep:atomr-agents-avatar-provider-audio2face"]
+providers-all      = ["providers-livelink", "providers-a2f"]
+
+[dependencies]
+atomr-agents-core           = { workspace = true }
+atomr-agents-callable       = { workspace = true }
+atomr-agents-observability  = { workspace = true }
+atomr-agents-tool           = { workspace = true }
+atomr-agents-avatar-core    = { workspace = true }
+atomr-agents-tts-core       = { workspace = true }
+atomr-agents-stt-core       = { workspace = true }
+atomr-infer-core            = { workspace = true }
+
+async-trait  = { workspace = true }
+tokio        = { workspace = true, features = ["full"] }
+futures      = { workspace = true }
+serde        = { workspace = true }
+serde_json   = { workspace = true }
+thiserror    = { workspace = true }
+tracing      = { workspace = true }
+parking_lot  = { workspace = true }
+dashmap      = { workspace = true }
+chrono       = { workspace = true }
+
+# Avatar-specific providers are gated to x86_64 because their underlying
+# transports (UE5 Live Link, NVIDIA Audio2Face) are x86_64-only. The
+# crate body builds on every arch; only the optional deps are arch-gated.
+[target.'cfg(target_arch = "x86_64")'.dependencies]
+atomr-agents-avatar-provider-livelink   = { workspace = true, optional = true }
+atomr-agents-avatar-provider-audio2face = { workspace = true, optional = true }
+
+[dev-dependencies]
+tokio = { workspace = true, features = ["full", "test-util"] }
+atomr-infer-core = { workspace = true }
+async-trait     = { workspace = true }

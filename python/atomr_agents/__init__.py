@@ -79,9 +79,14 @@ if _native is not None:
     stt = _native.stt
     stt_harness = _native.stt_harness
     coding_cli = _native.coding_cli
+    channel = _native.channel
     tts = _native.tts
     voice = _native.voice
     voice_extras = _native.voice_extras
+    # The avatar submodule is x86_64-only and feature-gated; on arm64
+    # wheels (or wheels built without `--features avatar`) the attribute
+    # won't exist, so resolve it defensively.
+    avatar = getattr(_native, "avatar", None)
 
     # ----- top-level convenience re-exports -----------------------------
     # Each name is resolved defensively: the native submodule surface
@@ -217,6 +222,7 @@ __all__ = [
     "tts",
     "voice",
     "voice_extras",
+    "avatar",
     # core
     "AgentId",
     "TeamId",
