@@ -44,7 +44,7 @@ Conventional-Commit on main
 A footer `Release-As: x.y.z` overrides auto-decision and pins the
 exact version.
 
-## Crate publish order (48 crates)
+## Crate publish order (79 crates)
 
 The `publish-crates` job walks every publishable workspace member in
 strict dependency order, with a 70s pace between successful publishes
@@ -101,10 +101,49 @@ Layer  Crate(s)
  43    atomr-agents-tts-runtime-xtts
  44    atomr-agents-tts-voice
  45    atomr-agents-tts-tool
+       ── stt harness (consumes stt-* primitives) ───────────────────
+ 46    atomr-agents-stt-harness
+ 47    atomr-agents-stt-harness-web
+       ── meetings (consumes stt-harness) ───────────────────────────
+ 48    atomr-agents-meetings-harness
+ 49    atomr-agents-meetings-harness-web
+       ── web search ───────────────────────────────────────────────
+ 50    atomr-agents-web-search-core
+ 51    atomr-agents-web-search-provider-brave
+ 52    atomr-agents-web-search-provider-serpapi
+ 53    atomr-agents-web-search-provider-tavily
+ 54    atomr-agents-web-search-tool
+       ── avatar capability ────────────────────────────────────────
+ 55    atomr-agents-avatar-core
+ 56    atomr-agents-avatar-provider-audio2face
+ 57    atomr-agents-avatar-provider-livelink
+ 58    atomr-agents-avatar-harness
+       ── channels capability ──────────────────────────────────────
+ 59    atomr-agents-channel-core
+ 60    atomr-agents-channel-provider-discord
+ 61    atomr-agents-channel-provider-signal
+ 62    atomr-agents-channel-provider-whatsapp
+ 63    atomr-agents-channel-harness
+ 64    atomr-agents-channel-harness-web
+       ── coding-cli capability ────────────────────────────────────
+ 65    atomr-agents-coding-cli-core
+ 66    atomr-agents-coding-cli-isolator
+ 67    atomr-agents-coding-cli-vendor-claude
+ 68    atomr-agents-coding-cli-vendor-codex
+ 69    atomr-agents-coding-cli-vendor-gemini
+ 70    atomr-agents-coding-cli-harness
+ 71    atomr-agents-coding-cli-harness-web
+       ── deep-research capability ─────────────────────────────────
+ 72    atomr-agents-deep-research-core
+ 73    atomr-agents-deep-research-harness
+ 74    atomr-agents-deep-research-harness-web
+ 75    atomr-agents-deep-research-shell
+       ── agent host (consumes channel-harness) ────────────────────
+ 76    atomr-agents-host
        ──────────────────────────────────────────────────────────────
- 46    atomr-agents-py-bindings
- 47    atomr-agents-cli
- 48    atomr-agents (umbrella)
+ 77    atomr-agents-py-bindings
+ 78    atomr-agents-cli
+ 79    atomr-agents (umbrella)
 ```
 
 `xtask` is `publish = false` and never goes to crates.io.

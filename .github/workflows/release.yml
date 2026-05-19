@@ -340,6 +340,45 @@ jobs:
             atomr-agents-tts-runtime-xtts
             atomr-agents-tts-voice
             atomr-agents-tts-tool
+            # --- speech-to-text harness (consumes stt-* primitives) --
+            atomr-agents-stt-harness
+            atomr-agents-stt-harness-web
+            # --- meetings (consumes stt-harness) ---------------------
+            atomr-agents-meetings-harness
+            atomr-agents-meetings-harness-web
+            # --- web search ------------------------------------------
+            atomr-agents-web-search-core
+            atomr-agents-web-search-provider-brave
+            atomr-agents-web-search-provider-serpapi
+            atomr-agents-web-search-provider-tavily
+            atomr-agents-web-search-tool
+            # --- avatar capability -----------------------------------
+            atomr-agents-avatar-core
+            atomr-agents-avatar-provider-audio2face
+            atomr-agents-avatar-provider-livelink
+            atomr-agents-avatar-harness
+            # --- channels capability ---------------------------------
+            atomr-agents-channel-core
+            atomr-agents-channel-provider-discord
+            atomr-agents-channel-provider-signal
+            atomr-agents-channel-provider-whatsapp
+            atomr-agents-channel-harness
+            atomr-agents-channel-harness-web
+            # --- coding-cli capability -------------------------------
+            atomr-agents-coding-cli-core
+            atomr-agents-coding-cli-isolator
+            atomr-agents-coding-cli-vendor-claude
+            atomr-agents-coding-cli-vendor-codex
+            atomr-agents-coding-cli-vendor-gemini
+            atomr-agents-coding-cli-harness
+            atomr-agents-coding-cli-harness-web
+            # --- deep-research capability ----------------------------
+            atomr-agents-deep-research-core
+            atomr-agents-deep-research-harness
+            atomr-agents-deep-research-harness-web
+            atomr-agents-deep-research-shell
+            # --- agent host (consumes channel-harness) ---------------
+            atomr-agents-host
             # ---------------------------------------------------------
             atomr-agents-py-bindings
             atomr-agents-cli
