@@ -55,7 +55,9 @@ use bytes::Bytes;
 use chrono::Utc;
 use serde_json::Value;
 use tokio::io::{AsyncRead, AsyncWrite};
-use tokio::net::{TcpStream, UnixStream};
+use tokio::net::TcpStream;
+#[cfg(unix)]
+use tokio::net::UnixStream;
 use tokio::sync::mpsc;
 use tokio::sync::Mutex as AsyncMutex;
 use uuid::Uuid;
@@ -103,6 +105,7 @@ impl SignalProvider {
                 let (r, w) = stream.into_split();
                 Ok((Box::new(r), Box::new(w)))
             }
+            #[cfg(unix)]
             SignalEndpoint::Unix(path) => {
                 let stream = UnixStream::connect(path).await.map_err(|e| {
                     ChannelError::transport(format!("signal unix connect {path}: {e}"))
@@ -110,6 +113,10 @@ impl SignalProvider {
                 let (r, w) = stream.into_split();
                 Ok((Box::new(r), Box::new(w)))
             }
+            #[cfg(not(unix))]
+            SignalEndpoint::Unix(path) => Err(ChannelError::Config(format!(
+                "signal unix endpoint {path:?} is not supported on this platform; use tcp"
+            ))),
         }
     }
 }
@@ -286,6 +293,7 @@ mod tests {
     /// verify it parses the fake `timestamp` response into a
     /// `ProviderAck`. Also pushes an inbound notification and asserts
     /// it reaches the harness inbound channel.
+    #[cfg(unix)]
     #[tokio::test]
     async fn integration_send_and_receive_over_unix() {
         use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
