@@ -14,7 +14,7 @@ use serde::{Deserialize, Serialize};
 /// Identity + behavior of the agent the CLI should impersonate.
 ///
 /// Materialized into the vendor's "system instruction" surface:
-/// the top of `CLAUDE.md`, the system-instruction file for Gemini,
+/// the top of `CLAUDE.md`, the system-instruction file for Antigravity,
 /// the top of `AGENTS.md` for Codex.
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct PersonaSnapshot {
@@ -29,7 +29,7 @@ pub struct PersonaSnapshot {
 ///
 /// For Claude Code this becomes `~/.claude/skills/<id>/SKILL.md` (or
 /// `<workdir>/.claude/skills/<id>/SKILL.md` for project scope).
-/// For Cursor this maps to `.cursor/rules/<id>.mdc`. For Gemini and
+/// For Cursor this maps to `.cursor/rules/<id>.mdc`. For Antigravity and
 /// Codex (which lack a native concept) skills are concatenated into
 /// the system-instruction file.
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -88,7 +88,7 @@ pub struct McpServerSnapshot {
 
 /// A bundled set of MCP servers + standalone tool names. Materializes
 /// to `.mcp.json` (Claude), `.cursor/mcp.json` (Cursor), Codex /
-/// Gemini settings files.
+/// Antigravity settings files.
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct ToolSetSnapshot {
     pub id: String,

@@ -1,6 +1,6 @@
 //! The `CliVendor` integration seam.
 //!
-//! Each supported CLI (Claude Code, Codex, Gemini, ...) lives in its
+//! Each supported CLI (Claude Code, Codex, Antigravity, ...) lives in its
 //! own crate (`atomr-agents-coding-cli-vendor-<name>`) that implements
 //! this trait. The harness composes vendor adapters into a registry
 //! and dispatches based on `CliRequest::vendor`.
@@ -24,7 +24,7 @@ use crate::request::CliRequest;
 pub enum CliVendorKind {
     Claude,
     Codex,
-    Gemini,
+    Antigravity,
     Cursor,
     Aider,
     Other(String),
@@ -35,7 +35,7 @@ impl CliVendorKind {
         match self {
             Self::Claude => "claude",
             Self::Codex => "codex",
-            Self::Gemini => "gemini",
+            Self::Antigravity => "antigravity",
             Self::Cursor => "cursor",
             Self::Aider => "aider",
             Self::Other(s) => s.as_str(),

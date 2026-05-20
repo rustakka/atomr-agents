@@ -1,5 +1,5 @@
-//! Gemini lacks a native skill registry. Persona, skills, and project
-//! memory are concatenated into a single system-instructions file.
+//! Antigravity CLI lacks a native skill registry. Persona, skills, and
+//! project memory are concatenated into a single system-instructions file.
 
 use std::collections::BTreeMap;
 use std::path::Path;
@@ -11,22 +11,29 @@ use atomr_agents_coding_cli_core::{
     ConceptProjection, MapperError, PersonaSnapshot, SkillSnapshot, ToolSetSnapshot,
 };
 
-pub async fn materialize(projection: &ConceptProjection, workdir: &Path) -> Result<(), MapperError> {
-    write_system_instructions(projection, workdir).await?;
-    write_settings(&projection.toolsets, workdir).await?;
+use crate::command::AntigravityConfig;
+
+pub async fn materialize(
+    projection: &ConceptProjection,
+    workdir: &Path,
+    cfg: &AntigravityConfig,
+) -> Result<(), MapperError> {
+    write_system_instructions(projection, workdir, cfg).await?;
+    write_settings(&projection.toolsets, workdir, cfg).await?;
     Ok(())
 }
 
 async fn write_system_instructions(
     p: &ConceptProjection,
     workdir: &Path,
+    cfg: &AntigravityConfig,
 ) -> Result<(), MapperError> {
     let body = compose(p.persona.as_ref(), p.project_memory.as_deref(), &p.skills);
-    let dir = workdir.join(".gemini");
+    let dir = workdir.join(&cfg.config_dir);
     fs::create_dir_all(&dir)
         .await
         .map_err(|e| MapperError::io(dir.display().to_string(), e))?;
-    let path = dir.join("system_instructions.md");
+    let path = dir.join(&cfg.system_instructions_file);
     fs::write(&path, body.as_bytes())
         .await
         .map_err(|e| MapperError::io(path.display().to_string(), e))
@@ -85,11 +92,15 @@ fn compose(
     out
 }
 
-async fn write_settings(toolsets: &[ToolSetSnapshot], workdir: &Path) -> Result<(), MapperError> {
+async fn write_settings(
+    toolsets: &[ToolSetSnapshot],
+    workdir: &Path,
+    cfg: &AntigravityConfig,
+) -> Result<(), MapperError> {
     if toolsets.iter().all(|t| t.mcp_servers.is_empty()) {
         return Ok(());
     }
-    let dir = workdir.join(".gemini");
+    let dir = workdir.join(&cfg.config_dir);
     fs::create_dir_all(&dir)
         .await
         .map_err(|e| MapperError::io(dir.display().to_string(), e))?;
@@ -104,7 +115,7 @@ async fn write_settings(toolsets: &[ToolSetSnapshot], workdir: &Path) -> Result<
     }
     let body = json!({ "mcpServers": servers });
     let pretty = serde_json::to_vec_pretty(&body)?;
-    let path = dir.join("settings.json");
+    let path = dir.join(&cfg.settings_file);
     fs::write(&path, &pretty)
         .await
         .map_err(|e| MapperError::io(path.display().to_string(), e))
@@ -148,12 +159,17 @@ mod tests {
             policy: Default::default(),
             project_memory: None,
         };
-        materialize(&p, dir.path()).await.unwrap();
-        let body = std::fs::read_to_string(dir.path().join(".gemini/system_instructions.md")).unwrap();
+        let cfg = AntigravityConfig::default();
+        materialize(&p, dir.path(), &cfg).await.unwrap();
+        let body = std::fs::read_to_string(
+            dir.path().join(".antigravity/system_instructions.md"),
+        )
+        .unwrap();
         assert!(body.contains("# System instructions"));
         assert!(body.contains("Web hardener"));
         assert!(body.contains("### Review (priority 5)"));
-        let settings = std::fs::read_to_string(dir.path().join(".gemini/settings.json")).unwrap();
+        let settings =
+            std::fs::read_to_string(dir.path().join(".antigravity/settings.json")).unwrap();
         assert!(settings.contains("\"linear\""));
     }
 }

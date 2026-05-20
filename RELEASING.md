@@ -130,7 +130,7 @@ Layer  Crate(s)
  66    atomr-agents-coding-cli-isolator
  67    atomr-agents-coding-cli-vendor-claude
  68    atomr-agents-coding-cli-vendor-codex
- 69    atomr-agents-coding-cli-vendor-gemini
+ 69    atomr-agents-coding-cli-vendor-antigravity
  70    atomr-agents-coding-cli-harness
  71    atomr-agents-coding-cli-harness-web
        ── deep-research capability ─────────────────────────────────

@@ -38,7 +38,7 @@ members = [
     "crates/coding-cli-isolator",
     "crates/coding-cli-vendor-claude",
     "crates/coding-cli-vendor-codex",
-    "crates/coding-cli-vendor-gemini",
+    "crates/coding-cli-vendor-antigravity",
     "crates/coding-cli-harness",
     "crates/coding-cli-harness-web",
     "crates/channel-core",
@@ -224,7 +224,7 @@ atomr-agents-coding-cli-core            = { path = "crates/coding-cli-core", ver
 atomr-agents-coding-cli-isolator        = { path = "crates/coding-cli-isolator", version = "0.16.3" }
 atomr-agents-coding-cli-vendor-claude   = { path = "crates/coding-cli-vendor-claude", version = "0.16.3" }
 atomr-agents-coding-cli-vendor-codex    = { path = "crates/coding-cli-vendor-codex", version = "0.16.3" }
-atomr-agents-coding-cli-vendor-gemini   = { path = "crates/coding-cli-vendor-gemini", version = "0.16.3" }
+atomr-agents-coding-cli-vendor-antigravity = { path = "crates/coding-cli-vendor-antigravity", version = "0.16.3" }
 atomr-agents-coding-cli-harness         = { path = "crates/coding-cli-harness", version = "0.16.3" }
 atomr-agents-coding-cli-harness-web     = { path = "crates/coding-cli-harness-web", version = "0.16.3" }
 atomr-agents-channel-core               = { path = "crates/channel-core", version = "0.16.3" }

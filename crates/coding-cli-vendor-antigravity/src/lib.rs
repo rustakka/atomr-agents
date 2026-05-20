@@ -1,4 +1,5 @@
-//! Google Gemini CLI adapter.
+//! Google Antigravity CLI (`agy`) adapter. Successor to the Gemini CLI
+//! adapter; serves non-Gemini models (Claude, etc.) via the model flag.
 
 #![forbid(unsafe_code)]
 
@@ -15,39 +16,51 @@ use atomr_agents_coding_cli_core::{
     MapperError,
 };
 
-pub use command::{build_headless, build_interactive};
-pub use mapper::materialize as materialize_gemini_config;
-pub use parser::GeminiParser;
+pub use command::{build_headless, build_interactive, AntigravityConfig};
+pub use mapper::materialize as materialize_antigravity_config;
+pub use parser::AntigravityParser;
 
 #[derive(Debug, Clone, Default)]
-pub struct GeminiVendor;
+pub struct AntigravityVendor {
+    config: AntigravityConfig,
+}
 
-impl GeminiVendor {
+impl AntigravityVendor {
     pub fn new() -> Self {
-        Self
+        Self::default()
+    }
+
+    pub fn with_config(config: AntigravityConfig) -> Self {
+        Self { config }
+    }
+}
+
+impl From<AntigravityConfig> for AntigravityVendor {
+    fn from(config: AntigravityConfig) -> Self {
+        Self { config }
     }
 }
 
 #[async_trait]
-impl CliVendor for GeminiVendor {
+impl CliVendor for AntigravityVendor {
     fn kind(&self) -> CliVendorKind {
-        CliVendorKind::Gemini
+        CliVendorKind::Antigravity
     }
 
     fn label(&self) -> &str {
-        "Gemini CLI"
+        "Antigravity CLI"
     }
 
     fn build_headless_command(&self, req: &CliRequest, workdir: &Path) -> CliCommand {
-        build_headless(req, workdir)
+        build_headless(req, workdir, &self.config)
     }
 
     fn build_interactive_command(&self, req: &CliRequest, workdir: &Path) -> CliCommand {
-        build_interactive(req, workdir)
+        build_interactive(req, workdir, &self.config)
     }
 
     fn new_parser(&self) -> Box<dyn CliEventParser> {
-        Box::new(GeminiParser::new())
+        Box::new(AntigravityParser::new())
     }
 
     async fn materialize_config(
@@ -55,12 +68,12 @@ impl CliVendor for GeminiVendor {
         projection: &ConceptProjection,
         workdir: &Path,
     ) -> Result<(), MapperError> {
-        materialize_gemini_config(projection, workdir).await
+        materialize_antigravity_config(projection, workdir, &self.config).await
     }
 
     async fn is_available(&self) -> bool {
         tokio::process::Command::new("which")
-            .arg("gemini")
+            .arg(&self.config.binary)
             .output()
             .await
             .map(|o| o.status.success())

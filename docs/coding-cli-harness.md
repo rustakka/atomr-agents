@@ -1,8 +1,8 @@
 # Coding CLI harness
 
 Wraps local AI coding CLIs (Claude Code, OpenAI Codex CLI, Google
-Gemini CLI) as atomr-agents `Callable`s. Two modes against the same
-vendor adapter:
+Antigravity CLI (`agy`)) as atomr-agents `Callable`s. Two modes against
+the same vendor adapter:
 
 - **Headless** — non-interactive, structured event stream. Use this
   when the harness is *driving* the CLI as a sub-agent.
@@ -20,7 +20,7 @@ crates/coding-cli-core/             # shared types: CliRequest, CliResult, Codin
 crates/coding-cli-isolator/         # Isolator trait + LocalIsolator + DockerIsolator (bollard)
 crates/coding-cli-vendor-claude/    # claude -p --output-format stream-json + CLAUDE.md / .mcp.json projection
 crates/coding-cli-vendor-codex/     # codex exec + AGENTS.md projection
-crates/coding-cli-vendor-gemini/    # gemini -p --output-format stream-json + system-instructions projection
+crates/coding-cli-vendor-antigravity/ # agy -p --output-format stream-json + system-instructions projection (configurable)
 crates/coding-cli-harness/          # CodingCliHarness (Callable), broadcast<CodingCliEvent>, session registry
 crates/coding-cli-harness-web/      # Axum REST + SSE + WebSocket + embedded SPA on port 7300
 ```
@@ -59,17 +59,25 @@ Python parity via `crates/py-bindings/src/coding_cli.rs` → the
 
 ## Concept projection
 
-| atomr concept                     | Claude Code               | Codex CLI                 | Gemini CLI                                |
-| --------------------------------- | ------------------------- | ------------------------- | ----------------------------------------- |
-| `PersonaSnapshot`                 | top of `CLAUDE.md`        | top of `AGENTS.md`        | top of `.gemini/system_instructions.md`   |
+| atomr concept                     | Claude Code               | Codex CLI                 | Antigravity CLI                                |
+| --------------------------------- | ------------------------- | ------------------------- | ---------------------------------------------- |
+| `PersonaSnapshot`                 | top of `CLAUDE.md`        | top of `AGENTS.md`        | top of `.antigravity/system_instructions.md`   |
 | `SkillSnapshot[]`                 | `.claude/skills/<id>/SKILL.md` | inlined in `AGENTS.md` | inlined in `system_instructions.md` |
 | `PolicySnapshot.allowed_tools`    | `--allowed-tools` + `settings.local.json` | (instruction text only) | (instruction text only)           |
-| `PolicySnapshot.auto_approve_*`   | `--permission-mode acceptEdits` | `--full-access`     | `--yolo`                                   |
-| `ToolSetSnapshot.mcp_servers`     | `.mcp.json`               | `.codex/config.toml`      | `.gemini/settings.json`                   |
-| `project_memory` (string)         | section of `CLAUDE.md`    | section of `AGENTS.md`    | section of `system_instructions.md`       |
+| `PolicySnapshot.auto_approve_*`   | `--permission-mode acceptEdits` | `--full-access`     | `--yolo`                                        |
+| `ToolSetSnapshot.mcp_servers`     | `.mcp.json`               | `.codex/config.toml`      | `.antigravity/settings.json`                   |
+| `project_memory` (string)         | section of `CLAUDE.md`    | section of `AGENTS.md`    | section of `system_instructions.md`            |
 
 The projection is **one-way**: atomr is the source of truth; the
 adapter overwrites the vendor's files before every run.
+
+The Antigravity CLI (`agy`) is the successor to Google's Gemini CLI
+(the legacy `gemini` CLI is deprecated and stops serving requests on
+2026-06-18). Unlike the old Gemini CLI it serves **non-Gemini models**
+(Claude, etc.) via its model selector, reached through the `--model`
+flag. The binary name, flags, and `.antigravity/` config directory are
+all overridable via `AntigravityConfig` so operators can reconcile them
+with `agy`'s real interface without a code change.
 
 ## Normalized event schema
 
@@ -101,7 +109,7 @@ Default per-vendor images live under
 
 - `claude.Dockerfile` (node + `@anthropic-ai/claude-code`)
 - `codex.Dockerfile` (node + `@openai/codex`)
-- `gemini.Dockerfile` (node + `@google/gemini-cli`)
+- `antigravity.Dockerfile` (`agy` via `install.sh`)
 
 All three install `tmux` so interactive mode works in-container too.
 

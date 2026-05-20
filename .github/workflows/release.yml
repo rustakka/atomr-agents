@@ -369,7 +369,7 @@ jobs:
             atomr-agents-coding-cli-isolator
             atomr-agents-coding-cli-vendor-claude
             atomr-agents-coding-cli-vendor-codex
-            atomr-agents-coding-cli-vendor-gemini
+            atomr-agents-coding-cli-vendor-antigravity
             atomr-agents-coding-cli-harness
             atomr-agents-coding-cli-harness-web
             # --- deep-research capability ----------------------------

@@ -6,6 +6,30 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+### Changed — Coding-CLI vendor: Gemini CLI → Antigravity CLI (`agy`)
+
+Google is transitioning the Gemini CLI into the **Antigravity CLI**; the
+legacy `gemini` CLI stops serving requests on 2026-06-18. The
+`coding-cli-vendor-gemini` crate is renamed to
+**`atomr-agents-coding-cli-vendor-antigravity`** and now targets the
+`agy` binary. Unlike the old Gemini CLI, Antigravity serves non-Gemini
+models (Claude, etc.) selectable via the model flag.
+
+- `GeminiVendor` → `AntigravityVendor`; `GeminiParser` →
+  `AntigravityParser`; `materialize_gemini_config` →
+  `materialize_antigravity_config`.
+- New `AntigravityConfig` makes the binary name, headless flags, and the
+  on-disk config directory (default `.antigravity/`) configurable — so
+  operators can reconcile them with `agy`'s real interface without a code
+  change.
+- Harness Cargo feature `vendor-gemini` → `vendor-antigravity`.
+- Default Docker image `gemini.Dockerfile` → `antigravity.Dockerfile`
+  (installs `agy` via the official `install.sh`).
+- **Breaking:** `CliVendorKind::Gemini` → `CliVendorKind::Antigravity`;
+  the serde wire value changes from `"gemini"` to `"antigravity"`, so
+  persisted `CliRequest` JSON with `vendor: "gemini"` no longer
+  deserializes.
+
 ### Added — Meetings harness: structured extraction from diarized transcripts
 
 A downstream harness that turns a diarized `SttConversation` into a

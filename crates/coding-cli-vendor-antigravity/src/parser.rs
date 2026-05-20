@@ -1,5 +1,6 @@
-//! Gemini's stream-json shape — close to Claude's but with different
-//! envelope tags. Normalizes init / message / tool / result events.
+//! Antigravity CLI stream-json shape — close to Claude's but with
+//! different envelope tags. Normalizes init / message / tool / result
+//! events.
 
 use atomr_agents_coding_cli_core::{
     CliEventParser, CliVendorKind, CodingCliEvent, FinishReason, ParseError,
@@ -7,15 +8,15 @@ use atomr_agents_coding_cli_core::{
 use serde_json::Value;
 
 #[derive(Default)]
-pub struct GeminiParser;
+pub struct AntigravityParser;
 
-impl GeminiParser {
+impl AntigravityParser {
     pub fn new() -> Self {
         Self
     }
 }
 
-impl CliEventParser for GeminiParser {
+impl CliEventParser for AntigravityParser {
     fn parse_line(&mut self, line: &str) -> Result<Vec<CodingCliEvent>, ParseError> {
         let s = line.trim();
         if s.is_empty() {
@@ -49,7 +50,7 @@ fn normalize(v: &Value) -> Vec<CodingCliEvent> {
                 }];
             }
             vec![CodingCliEvent::RawVendorEvent {
-                vendor: CliVendorKind::Gemini,
+                vendor: CliVendorKind::Antigravity,
                 payload: v.clone(),
             }]
         }
@@ -107,7 +108,7 @@ fn normalize(v: &Value) -> Vec<CodingCliEvent> {
             }]
         }
         _ => vec![CodingCliEvent::RawVendorEvent {
-            vendor: CliVendorKind::Gemini,
+            vendor: CliVendorKind::Antigravity,
             payload: v.clone(),
         }],
     }
@@ -119,14 +120,14 @@ mod tests {
 
     #[test]
     fn parses_message_delta() {
-        let mut p = GeminiParser::new();
+        let mut p = AntigravityParser::new();
         let ev = p.parse_line(r#"{"type":"message","delta":{"text":"hi"}}"#).unwrap();
         assert!(matches!(&ev[0], CodingCliEvent::AssistantTextDelta { text } if text == "hi"));
     }
 
     #[test]
     fn parses_result_response() {
-        let mut p = GeminiParser::new();
+        let mut p = AntigravityParser::new();
         let ev = p.parse_line(r#"{"type":"result","response":"done"}"#).unwrap();
         assert!(matches!(
             &ev[0],
@@ -139,7 +140,7 @@ mod tests {
 
     #[test]
     fn parses_usage_stats() {
-        let mut p = GeminiParser::new();
+        let mut p = AntigravityParser::new();
         let ev = p
             .parse_line(r#"{"type":"usage","stats":{"input_tokens":10,"output_tokens":5}}"#)
             .unwrap();
@@ -151,7 +152,7 @@ mod tests {
 
     #[test]
     fn unknown_falls_through() {
-        let mut p = GeminiParser::new();
+        let mut p = AntigravityParser::new();
         let ev = p.parse_line(r#"{"type":"weird","x":1}"#).unwrap();
         assert!(matches!(&ev[0], CodingCliEvent::RawVendorEvent { .. }));
     }

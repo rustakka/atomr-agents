@@ -1,6 +1,6 @@
 //! Uniform contract for the coding-cli harness.
 //!
-//! Adapters for individual CLIs (Claude Code, Codex, Gemini, ...) plug
+//! Adapters for individual CLIs (Claude Code, Codex, Antigravity, ...) plug
 //! into the harness via [`CliVendor`]. The harness consumes a
 //! [`CliRequest`], spawns the CLI via an `Isolator` (sibling crate),
 //! and produces a [`CliResult`] while broadcasting a stream of

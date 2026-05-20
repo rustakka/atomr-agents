@@ -53,10 +53,10 @@ impl VendorRegistry {
                 atomr_agents_coding_cli_vendor_codex::CodexVendor::new(),
             ));
         }
-        #[cfg(feature = "vendor-gemini")]
+        #[cfg(feature = "vendor-antigravity")]
         {
             r.insert(Arc::new(
-                atomr_agents_coding_cli_vendor_gemini::GeminiVendor::new(),
+                atomr_agents_coding_cli_vendor_antigravity::AntigravityVendor::new(),
             ));
         }
         r

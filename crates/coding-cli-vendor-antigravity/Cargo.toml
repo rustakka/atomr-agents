@@ -1,5 +1,5 @@
 [package]
-name          = "atomr-agents-coding-cli-vendor-gemini"
+name          = "atomr-agents-coding-cli-vendor-antigravity"
 version       = { workspace = true }
 edition       = { workspace = true }
 rust-version  = { workspace = true }
@@ -7,9 +7,9 @@ license       = { workspace = true }
 repository    = { workspace = true }
 homepage      = { workspace = true }
 authors       = { workspace = true }
-description   = "Google Gemini CLI adapter for the coding-cli harness: stream-json parser + system-instruction projection."
+description   = "Google Antigravity CLI (agy) adapter for the coding-cli harness: stream-json parser + system-instruction projection. Successor to the Gemini CLI adapter."
 
-keywords      = ["agents", "gemini", "cli", "atomr"]
+keywords      = ["agents", "antigravity", "cli", "atomr"]
 categories    = ["asynchronous"]
 readme        = "README.md"
 

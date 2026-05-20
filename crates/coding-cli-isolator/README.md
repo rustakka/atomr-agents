@@ -18,7 +18,7 @@ constructs the right isolator at startup and treats it uniformly.
 
 The `images/` directory holds the Dockerfiles for the default per-vendor
 base images (`atomr-agents/coding-cli-claude`, `...-codex`,
-`...-gemini`). Build with:
+`...-antigravity`). Build with:
 
 ```bash
 docker build -t atomr-agents/coding-cli-claude:latest \
