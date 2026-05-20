@@ -379,6 +379,7 @@ jobs:
             atomr-agents-deep-research-shell
             # --- agent host (consumes channel-harness) ---------------
             atomr-agents-host
+            atomr-agents-host-web
             # ---------------------------------------------------------
             atomr-agents-py-bindings
             atomr-agents-cli

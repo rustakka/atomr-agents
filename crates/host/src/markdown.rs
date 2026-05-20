@@ -47,6 +47,32 @@ impl MarkdownDoc {
         Ok(doc)
     }
 
+    /// Render back to the `---\n<frontmatter>\n---\n<body>` on-disk form.
+    /// When there is no frontmatter the body is returned verbatim so plain
+    /// files stay plain.
+    pub fn to_markdown_string(&self) -> String {
+        if self.frontmatter.is_empty() {
+            return self.body.clone();
+        }
+        let mut m = serde_yaml::Mapping::new();
+        for (k, v) in &self.frontmatter {
+            m.insert(
+                serde_yaml::Value::String(k.clone()),
+                crate::config::json_to_yaml(v.clone()),
+            );
+        }
+        let yaml = serde_yaml::to_string(&serde_yaml::Value::Mapping(m)).unwrap_or_default();
+        format!("---\n{yaml}---\n{}", self.body)
+    }
+
+    /// Write the doc back to `path`, creating parent dirs as needed.
+    pub fn write(&self, path: &Path) -> HostResult<()> {
+        if let Some(parent) = path.parent() {
+            std::fs::create_dir_all(parent).map_err(|e| HostError::io(parent, e))?;
+        }
+        std::fs::write(path, self.to_markdown_string()).map_err(|e| HostError::io(path, e))
+    }
+
     pub fn parse_str(text: &str, path: Option<&Path>) -> HostResult<Self> {
         if let Some(rest) = text.strip_prefix("---\n") {
             if let Some(end_idx) = rest.find("\n---\n") {
@@ -123,6 +149,27 @@ mod tests {
         let doc = MarkdownDoc::parse_str(text, None).unwrap();
         assert_eq!(doc.frontmatter.get("identity").and_then(|v| v.as_str()), Some("Alpha"));
         assert!(doc.body.contains("body line"));
+    }
+
+    #[test]
+    fn write_then_read_roundtrips() {
+        let tmp = tempfile::tempdir().unwrap();
+        let path = tmp.path().join("SOUL.md");
+        let text = "---\nidentity: Alpha\nstyle:\n  tone: terse\n---\nbody line\n";
+        let doc = MarkdownDoc::parse_str(text, None).unwrap();
+        doc.write(&path).unwrap();
+        let back = MarkdownDoc::read(&path).unwrap();
+        assert_eq!(
+            back.frontmatter.get("identity").and_then(|v| v.as_str()),
+            Some("Alpha")
+        );
+        assert!(back.body.contains("body line"));
+    }
+
+    #[test]
+    fn plain_body_roundtrips_without_frontmatter() {
+        let doc = MarkdownDoc::parse_str("just body\n", None).unwrap();
+        assert_eq!(doc.to_markdown_string(), "just body\n");
     }
 
     #[test]

@@ -1,0 +1,47 @@
+[package]
+name          = "atomr-agents-host-web"
+version       = { workspace = true }
+edition       = { workspace = true }
+rust-version  = { workspace = true }
+license       = { workspace = true }
+repository    = { workspace = true }
+homepage      = { workspace = true }
+authors       = { workspace = true }
+description   = "Axum + embedded React SPA companion for the atomr-agents host runtime. Manage agents, SOUL/MEMORY/RULES/USER docs, skills, curator proposals, crons, hooks, channels/routing, branches, registry, evals, MCP servers, config, and a live event stream."
+
+keywords      = ["agents", "host", "web", "atomr"]
+categories    = ["web-programming::http-server"]
+readme        = "README.md"
+
+[features]
+default = []
+embed-ui = ["dep:rust-embed"]
+
+[[bin]]
+name = "atomr-agents-host-web"
+path = "src/bin/server.rs"
+
+[dependencies]
+atomr-agents-host = { workspace = true }
+
+tokio        = { workspace = true, features = ["full"] }
+futures      = { workspace = true }
+tokio-stream = { version = "0.1", features = ["sync"] }
+serde        = { workspace = true }
+serde_json   = { workspace = true }
+serde_yaml   = "0.9"
+thiserror    = { workspace = true }
+tracing      = { workspace = true }
+tracing-subscriber = { workspace = true }
+parking_lot  = { workspace = true }
+
+axum       = { workspace = true }
+tower      = { workspace = true }
+tower-http = { workspace = true }
+rust-embed = { workspace = true, optional = true }
+
+[dev-dependencies]
+tokio = { workspace = true, features = ["full", "test-util"] }
+tower = { workspace = true, features = ["util"] }
+http-body-util = "0.1"
+tempfile = "3"

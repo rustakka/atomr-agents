@@ -55,6 +55,17 @@ atomr-host agent show default
 See [`quick-start.md`](quick-start.md) for the full first-five-minutes
 flow and [`layout.md`](layout.md) for the on-disk format.
 
+## Web companion
+
+[`concepts.md`](concepts.md) defines the unified concept system that maps every
+borrowed idea (OpenClaw / Hermes / AionUi) onto an existing host primitive, and
+documents `crates/host-web` — an Axum + React dashboard serving the full surface
+over REST + a live SSE event stream:
+
+```bash
+cargo run -p atomr-agents-host-web --features embed-ui   # http://127.0.0.1:7400
+```
+
 ## Naming note
 
 The host's Python surface lives at **`atomr_agents.agent_host`**, not

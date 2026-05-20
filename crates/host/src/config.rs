@@ -217,6 +217,17 @@ impl HostConfig {
         serde_yaml::to_string(&self.to_yaml())
             .map_err(|e| HostError::yaml(self.paths.config_yaml(), e))
     }
+
+    /// Persist the config back to `<root>/config.yaml`, creating the root
+    /// dir if needed.
+    pub fn save(&self) -> HostResult<()> {
+        let path = self.paths.config_yaml();
+        if let Some(parent) = path.parent() {
+            std::fs::create_dir_all(parent).map_err(|e| HostError::io(parent, e))?;
+        }
+        let body = self.to_yaml_string()?;
+        std::fs::write(&path, body).map_err(|e| HostError::io(&path, e))
+    }
 }
 
 pub(crate) fn yaml_to_json(v: serde_yaml::Value) -> serde_json::Value {
@@ -328,5 +339,29 @@ extra:
         assert_eq!(a.kind, "anthropic");
         assert_eq!(a.base_url.as_deref(), Some("https://example.com/v1"));
         assert!(cfg.extra.contains_key("extra"));
+    }
+
+    #[test]
+    fn save_then_load_roundtrips() {
+        let tmp = tempdir().unwrap();
+        let mut cfg = HostConfig::empty(HostPaths::new(tmp.path()));
+        cfg.default_agent = Some("alpha".into());
+        cfg.default_model = Some("gpt-4o".into());
+        cfg.providers.insert(
+            "openai".into(),
+            ProviderConfig {
+                name: "openai".into(),
+                kind: "openai".into(),
+                api_key_env: Some("OPENAI_API_KEY".into()),
+                base_url: None,
+                extra: BTreeMap::new(),
+            },
+        );
+        cfg.save().unwrap();
+        let back = HostConfig::load(tmp.path()).unwrap();
+        assert_eq!(back.default_agent.as_deref(), Some("alpha"));
+        assert_eq!(back.default_model.as_deref(), Some("gpt-4o"));
+        assert_eq!(back.providers.len(), 1);
+        assert_eq!(back.providers["openai"].kind, "openai");
     }
 }
