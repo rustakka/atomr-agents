@@ -4,7 +4,7 @@ build-backend = "maturin"
 
 [project]
 name = "atomr-agents"
-version = "0.16.3"
+version = "0.17.0"
 description = "Composable agentic framework on top of atomr actors and atomr-infer."
 readme = "README.md"
 requires-python = ">=3.10"
