@@ -23,6 +23,7 @@ atomr-agents-memory        = { workspace = true }
 atomr-agents-persona       = { workspace = true }
 atomr-agents-instruction   = { workspace = true }
 atomr-agents-callable      = { workspace = true }
+atomr-agents-state         = { workspace = true }
 atomr-agents-observability = { workspace = true }
 atomr-core                 = { workspace = true }
 atomr-macros               = { workspace = true }

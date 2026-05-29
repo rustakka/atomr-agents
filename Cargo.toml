@@ -8,6 +8,7 @@ members = [
     "crates/observability",
     "crates/state",
     "crates/tool",
+    "crates/security",
     "crates/skill",
     "crates/memory",
     "crates/embed",
@@ -195,6 +196,7 @@ atomr-agents-ingest        = { path = "crates/ingest", version = "0.17.0" }
 atomr-agents-parser        = { path = "crates/parser", version = "0.17.0" }
 atomr-agents-cache         = { path = "crates/cache", version = "0.17.0" }
 atomr-agents-tool          = { path = "crates/tool", version = "0.17.0" }
+atomr-agents-security      = { path = "crates/security", version = "0.17.0" }
 atomr-agents-skill         = { path = "crates/skill", version = "0.17.0" }
 atomr-agents-memory        = { path = "crates/memory", version = "0.17.0" }
 atomr-agents-embed         = { path = "crates/embed", version = "0.17.0" }

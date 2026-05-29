@@ -5,10 +5,16 @@
 //! LangSmith-style run trees and exported to JSONL or LangSmith-shaped
 //! sinks.
 
+mod run_event;
 mod run_tree;
+mod telemetry;
 mod tracer;
 
+pub use run_event::{CheckpointRef, ModelPinRef, RunEvent, RunEventKind, TokenIo};
 pub use run_tree::{RunKind, RunNode, RunTreeBuilder};
+pub use telemetry::{
+    project_event, ChannelTelemetrySink, InMemoryTelemetrySink, JsonlTelemetrySink, Telemetry, TelemetrySink,
+};
 pub use tracer::{JsonlTracer, LangSmithTracer, StdoutTracer, Tracer, TracerSink};
 
 use std::sync::Arc;

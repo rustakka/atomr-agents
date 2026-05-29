@@ -7,6 +7,11 @@
 
 use atomr_agents_core::{Result, TokenBudget};
 
+mod trust;
+pub use trust::{
+    AssembledPrompt, InjectionScreen, KeywordInjectionScreen, Trust, TrustPolicy, TrustedContent,
+};
+
 /// One fragment contributed by a strategy.
 #[derive(Debug, Clone)]
 pub struct ContextFragment {

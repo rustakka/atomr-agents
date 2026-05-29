@@ -27,3 +27,21 @@ serde_json            = { workspace = true }
 thiserror             = { workspace = true }
 tokio                 = { workspace = true }
 parking_lot           = { workspace = true }
+futures               = { workspace = true }
+uuid                  = { workspace = true }
+chrono                = { workspace = true }
+
+# Durable SQL backends for the interrupt registry (FR-4) and the
+# transactional outbox (FR-5). Mirrors crates/state: sqlx over the `any`
+# driver targets SQLite + Postgres from one code path, with `SqlConfig`
+# reused from atomr-persistence-sql for URL/dialect resolution.
+sqlx                  = { version = "0.8", default-features = false, features = ["runtime-tokio-rustls", "any", "macros", "chrono"], optional = true }
+atomr-persistence-sql = { version = "0.9.2", optional = true }
+
+[features]
+default  = []
+# `sql` is the shared implementation marker; the dialect features turn on
+# the matching sqlx driver. Mirrors crates/state's feature layout.
+sql      = ["dep:sqlx", "dep:atomr-persistence-sql"]
+sqlite   = ["sql", "sqlx/sqlite", "atomr-persistence-sql/sqlite"]
+postgres = ["sql", "sqlx/postgres", "atomr-persistence-sql/postgres"]

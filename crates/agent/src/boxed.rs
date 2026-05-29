@@ -174,6 +174,7 @@ mod tests {
             money: MoneyBudget::from_usd(1.0),
             iterations: IterationBudget::new(5),
             trace: vec![],
+            extensions: Default::default(),
         };
         let r = AgentDispatch::dispatch(&agent, "ping".into(), ctx).await.unwrap();
         assert_eq!(r.text, "pong");

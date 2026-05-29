@@ -73,6 +73,7 @@ pub fn callctx_from_pydict(py: Python<'_>, ctx_dict: Option<&Bound<'_, PyAny>>) 
                 money,
                 iterations,
                 trace,
+                extensions: Default::default(),
             });
         }
         if let Ok(dict) = d.downcast::<PyDict>() {
@@ -131,6 +132,7 @@ pub fn callctx_from_pydict(py: Python<'_>, ctx_dict: Option<&Bound<'_, PyAny>>) 
         money,
         iterations,
         trace,
+        extensions: Default::default(),
     })
 }
 

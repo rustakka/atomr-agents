@@ -24,10 +24,13 @@ async-trait            = { workspace = true }
 serde                  = { workspace = true }
 serde_json             = { workspace = true }
 parking_lot            = { workspace = true }
+sqlx = { version = "0.8", default-features = false, features = ["runtime-tokio-rustls", "any", "macros"], optional = true }
+redis = { version = "1.2", default-features = false, features = ["tokio-comp"], optional = true }
 
 [features]
 default  = []
-pgvector = []
+pgvector = ["dep:sqlx"]
+redis    = ["dep:redis"]
 qdrant   = []
 chroma   = []
 

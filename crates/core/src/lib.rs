@@ -9,7 +9,7 @@ mod memory;
 mod value;
 
 pub use budget::{IterationBudget, MoneyBudget, TimeBudget, TokenBudget};
-pub use context::{AgentContext, CallCtx, InvokeCtx, Message, MessageRole, TurnInput};
+pub use context::{AgentContext, CallCtx, Extensions, InvokeCtx, Message, MessageRole, TurnInput};
 pub use error::{AgentError, Result};
 pub use event::{Event, EventEnvelope};
 pub use ids::{

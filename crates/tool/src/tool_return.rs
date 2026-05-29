@@ -100,6 +100,7 @@ mod tests {
                 money: MoneyBudget::from_usd(0.10),
                 iterations: IterationBudget::new(5),
                 trace: vec![],
+                extensions: Default::default(),
             },
             tool_call_id: "t1".into(),
             raw_args: Value::Null,

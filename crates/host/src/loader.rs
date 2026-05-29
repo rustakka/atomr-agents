@@ -517,6 +517,7 @@ fn build_persona(def: &AgentDefinition) -> Option<Persona> {
                 .get("framework")
                 .and_then(|v| v.as_str())
                 .map(|s| s.to_string()),
+            ..Default::default()
         },
         _ => PersonaMetadata::default(),
     };

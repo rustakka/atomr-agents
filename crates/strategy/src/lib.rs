@@ -5,6 +5,7 @@
 
 mod combinators;
 mod memory;
+mod model_attributes;
 mod policy;
 mod routing;
 mod skill;
@@ -12,6 +13,7 @@ mod tool;
 
 pub use combinators::ChainedMemoryStrategy;
 pub use memory::MemoryStrategy;
+pub use model_attributes::{Coverage, ModelAttributes, ModelPredicate, ModelRegistry, Region};
 pub use policy::{Policy, PolicyDecision, PolicyStrategy};
 pub use routing::{RoutingStrategy, RoutingTarget};
 pub use skill::{SkillRef, SkillStrategy};

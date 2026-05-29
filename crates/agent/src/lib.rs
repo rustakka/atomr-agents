@@ -7,20 +7,32 @@
 //! instantiation; see [`AgentSpec::into_agent`].
 
 mod boxed;
+mod cost;
 mod inference;
 mod middleware;
+mod model_pin;
 mod pipeline;
+mod replay;
 mod spec;
 mod r#trait;
 
 pub use boxed::BoxedAgent;
+pub use cost::{
+    Budget, BudgetExceeded, BudgetScope, Cap, CostEstimate, CostMeter, DecisionKey, ModelPricing, Pricing,
+    Spend, SpendLedger,
+};
 pub use inference::{InferenceClient, LocalRunnerClient, TurnResult};
 pub use middleware::{
     AgentMiddleware, LoggingMiddleware, MiddlewareStack, RateLimitMiddleware, RedactionMiddleware,
     ToolErrorRecoveryMiddleware,
 };
+pub use model_pin::{
+    detect_drift, DriftKind, ModelPin, ModelPinViolation, ModelResolver, PinnedClient, ResolvedModel,
+    StaticResolver,
+};
 pub use pipeline::{Agent, AgentBudgets};
 pub use r#trait::AgentRef;
+pub use replay::{record_turn, turn_from_record, ReplayError, ReplayProvider};
 pub use spec::AgentSpec;
 
 pub use atomr_agents_tool::Provider;

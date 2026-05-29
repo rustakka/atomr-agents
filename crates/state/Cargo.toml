@@ -20,11 +20,25 @@ serde             = { workspace = true }
 serde_json        = { workspace = true }
 parking_lot       = { workspace = true }
 dashmap           = { workspace = true }
+chrono            = { workspace = true }
+
+# Real durable backends (FR-1 persistence workstream). `sqlx` drives the
+# SQL backend over the `any` driver so one code path targets SQLite +
+# Postgres; `SqlConfig` is reused from atomr-persistence-sql for
+# URL/dialect resolution. `redis` drives the Redis backend.
+sqlx                  = { version = "0.8", default-features = false, features = ["runtime-tokio-rustls", "any", "macros", "chrono"], optional = true }
+atomr-persistence-sql = { version = "0.9.2", optional = true }
+redis                 = { version = "0.27", default-features = false, features = ["tokio-comp", "connection-manager"], optional = true }
 
 [features]
 default  = []
-sqlite   = []
-postgres = []
+# `sql` is the shared implementation marker; the dialect features turn on
+# the matching sqlx driver. Both expose `SqlCheckpointer`; `SqliteCheckpointer`
+# / `PostgresCheckpointer` are dialect-named aliases of it.
+sql      = ["dep:sqlx", "dep:atomr-persistence-sql"]
+sqlite   = ["sql", "sqlx/sqlite", "atomr-persistence-sql/sqlite"]
+postgres = ["sql", "sqlx/postgres", "atomr-persistence-sql/postgres"]
+redis    = ["dep:redis"]
 
 [dev-dependencies]
 tokio = { workspace = true }

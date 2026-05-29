@@ -26,3 +26,19 @@ serde_json                 = { workspace = true }
 thiserror                  = { workspace = true }
 tokio                      = { workspace = true }
 parking_lot                = { workspace = true }
+
+# Optional SQL-backed metric-history store (FR-7). `sqlx` drives the SQL
+# backend over the `any` driver so one code path targets SQLite + Postgres;
+# `SqlConfig` is reused from atomr-persistence-sql for URL/dialect
+# resolution. Mirrors the pattern in crates/state/src/backends.rs.
+sqlx                       = { version = "0.8", default-features = false, features = ["runtime-tokio-rustls", "any", "macros", "chrono"], optional = true }
+atomr-persistence-sql      = { version = "0.9.2", optional = true }
+chrono                     = { workspace = true, optional = true }
+
+[features]
+default  = []
+# `sql` is the shared implementation marker; the dialect features turn on
+# the matching sqlx driver. All expose `SqlMetricHistoryStore`.
+sql      = ["dep:sqlx", "dep:atomr-persistence-sql", "dep:chrono"]
+sqlite   = ["sql", "sqlx/sqlite", "atomr-persistence-sql/sqlite"]
+postgres = ["sql", "sqlx/postgres", "atomr-persistence-sql/postgres"]

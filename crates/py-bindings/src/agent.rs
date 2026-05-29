@@ -370,6 +370,7 @@ impl PyAgent {
                 money: MoneyBudget::from_usd(1.0),
                 iterations: IterationBudget::new(8),
                 trace: vec![],
+                extensions: Default::default(),
             };
             let result = inner
                 .turn(user, ctx)

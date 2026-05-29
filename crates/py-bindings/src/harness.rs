@@ -213,6 +213,7 @@ fn loop_strategy_from_callable(callable: PyCallable) -> PyLoopStrategy {
                 money: atomr_agents_core::MoneyBudget::from_usd(1_000.0),
                 iterations: atomr_agents_core::IterationBudget::new(state.iteration as u32 + 1),
                 trace: Vec::new(),
+                extensions: Default::default(),
             };
             let input = state.working_memory.clone();
             let out = self.0.call(input, ctx).await?;

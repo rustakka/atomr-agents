@@ -13,7 +13,9 @@ mod compression;
 mod ensemble;
 mod filter;
 mod multi_query;
+mod novelty;
 mod parent_doc;
+mod retrieval_filter;
 mod retriever;
 mod self_query;
 mod time_weighted;
@@ -24,7 +26,13 @@ pub use compression::{CompressionStep, ContextualCompressionRetriever};
 pub use ensemble::EnsembleRetriever;
 pub use filter::EmbeddingsFilter;
 pub use multi_query::{MultiQueryRetriever, QueryExpander};
+pub use novelty::{
+    IncrementalIngest, IngestOutcome, Merge, Novelty, NoveltyPolicy, NoveltyRetriever,
+};
 pub use parent_doc::ParentDocumentRetriever;
+pub use retrieval_filter::{
+    FilteredRetriever, RetrievalCtx, RetrieverFilter, WithFilter,
+};
 pub use retriever::{Document, Retriever};
 pub use self_query::{ParsedSelfQuery, SelfQueryParser, SelfQueryRetriever};
 pub use time_weighted::TimeWeightedRetriever;

@@ -60,6 +60,9 @@ chrono = { workspace = true }
 uuid   = { workspace = true }
 semver = { workspace = true }
 
+# Cron parsing (FR-12 host trigger runtime — calendar-aware cron triggers).
+cron = "0.12"
+
 # Errors / logging.
 thiserror = { workspace = true }
 anyhow    = { workspace = true }

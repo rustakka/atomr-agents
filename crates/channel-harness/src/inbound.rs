@@ -236,5 +236,6 @@ fn default_ctx() -> CallCtx {
         money: MoneyBudget::from_usd(1.0),
         iterations: IterationBudget::new(16),
         trace: vec![],
+        extensions: Default::default(),
     }
 }

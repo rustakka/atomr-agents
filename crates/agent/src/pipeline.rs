@@ -216,6 +216,7 @@ pub(crate) async fn run_turn_impl(
                 money,
                 iterations,
                 trace: vec![format!("tool:{}", call.name)],
+                extensions: Default::default(),
             };
             let handle = tool_ref.handle.clone();
             let name = call.name.clone();

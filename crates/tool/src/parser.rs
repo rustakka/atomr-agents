@@ -17,7 +17,7 @@ pub enum Provider {
     Anthropic,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ParsedToolCall {
     pub id: String,
     pub name: String,

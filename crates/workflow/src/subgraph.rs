@@ -138,6 +138,7 @@ mod tests {
             money: MoneyBudget::from_usd(0.10),
             iterations: IterationBudget::new(10),
             trace: vec![],
+            extensions: Default::default(),
         }
     }
 

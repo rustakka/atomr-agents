@@ -1,5 +1,6 @@
 use async_trait::async_trait;
 use atomr_agents_core::{AgentContext, PersonaId, Result, TokenBudget};
+use atomr_agents_security::{ClearanceLevel, Compartment};
 use semver::Version;
 use serde::{Deserialize, Serialize};
 
@@ -29,6 +30,24 @@ pub struct StyleSpec {
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct PersonaMetadata {
     pub framework: Option<String>,
+
+    /// Minimum clearance level the persona is declared to operate at.
+    ///
+    /// `None` means "no explicit declaration" (treated as
+    /// [`ClearanceLevel::Public`] when validated against a Role's
+    /// `ClearanceContext`). Declared at compile/host time and validated
+    /// fail-closed by [`crate::bind_persona_to_role`] — an MNPI
+    /// information-wall hazard if persona and Role disagree. Optional +
+    /// `#[serde(default)]` so existing personas keep deserializing.
+    #[serde(default)]
+    pub clearance: Option<ClearanceLevel>,
+
+    /// Compartments (need-to-know walls) the persona declares it must
+    /// access. Validated against the Role's granted compartments at
+    /// host composition time; a compartment the Role does not grant is
+    /// a fail-closed [`crate::ClearanceMismatch`].
+    #[serde(default)]
+    pub compartments: Vec<Compartment>,
 }
 
 /// What the strategy returns each turn (after emphasis).

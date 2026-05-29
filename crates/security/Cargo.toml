@@ -1,0 +1,25 @@
+[package]
+name          = "atomr-agents-security"
+version       = { workspace = true }
+edition       = { workspace = true }
+rust-version  = { workspace = true }
+license       = { workspace = true }
+repository    = { workspace = true }
+homepage      = { workspace = true }
+authors       = { workspace = true }
+description   = "Typed security context: clearance/compartment walls, mandate checks, a capability/secrets broker, and reusable WalledTool middleware."
+
+keywords      = ["agents", "security", "rbac", "clearance", "atomr"]
+categories    = ["asynchronous", "authentication"]
+readme        = "../../README.md"
+
+[dependencies]
+atomr-agents-core = { workspace = true }
+atomr-agents-tool = { workspace = true }
+async-trait       = { workspace = true }
+serde             = { workspace = true }
+serde_json        = { workspace = true }
+thiserror         = { workspace = true }
+
+[dev-dependencies]
+tokio = { workspace = true }

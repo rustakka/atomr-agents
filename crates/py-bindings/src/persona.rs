@@ -87,7 +87,10 @@ impl PyPersonaMetadata {
     #[pyo3(signature = (framework=None))]
     fn new(framework: Option<String>) -> Self {
         Self {
-            inner: PersonaMetadata { framework },
+            inner: PersonaMetadata {
+                framework,
+                ..Default::default()
+            },
         }
     }
 

@@ -1,6 +1,7 @@
 //! Tools, tool sets, registry, and the tool-call parser.
 
 mod descriptor;
+mod evidence;
 mod handoff;
 mod parser;
 mod permission;
@@ -11,6 +12,9 @@ mod toolset;
 mod r#trait;
 
 pub use descriptor::{ToolDescriptor, ToolSchema};
+pub use evidence::{
+    EvidenceRef, EvidenceTrace, ExplainabilityPolicy, ExplainedTool, MissingEvidence, EVIDENCE_KEY,
+};
 pub use handoff::HandoffTool;
 pub use parser::{ParsedToolCall, Provider, ToolCallParser};
 pub use permission::PermissionSpec;

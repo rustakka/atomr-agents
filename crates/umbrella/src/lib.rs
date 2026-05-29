@@ -27,6 +27,8 @@ pub use atomr_agents_org as org;
 pub use atomr_agents_persona as persona;
 #[cfg(feature = "registry")]
 pub use atomr_agents_registry as registry;
+#[cfg(feature = "security")]
+pub use atomr_agents_security as security;
 #[cfg(feature = "skill")]
 pub use atomr_agents_skill as skill;
 #[cfg(feature = "testkit")]

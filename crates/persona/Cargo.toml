@@ -17,9 +17,11 @@ readme        = "../../README.md"
 atomr-agents-core     = { workspace = true }
 atomr-agents-strategy = { workspace = true }
 atomr-agents-context  = { workspace = true }
+atomr-agents-security = { workspace = true }
 async-trait           = { workspace = true }
 serde                 = { workspace = true }
 semver                = { workspace = true }
+thiserror             = { workspace = true }
 
 [dev-dependencies]
 tokio = { workspace = true }

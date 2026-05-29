@@ -25,6 +25,7 @@ atomr-accel-agents     = { workspace = true }
 atomr-core             = { workspace = true }
 async-trait            = { workspace = true }
 serde                  = { workspace = true }
+serde_json             = { workspace = true }
 parking_lot            = { workspace = true }
 
 [dev-dependencies]

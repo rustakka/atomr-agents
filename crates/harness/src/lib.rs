@@ -12,7 +12,7 @@ pub use dispatch::{HarnessDispatch, HarnessRef};
 pub use harness::{Harness, HarnessSpec};
 pub use loop_strategy::{LoopStrategy, StepOutcome};
 pub use state::{HarnessState, StepEvent};
-pub use termination::{IterationCapTermination, Termination, TerminationStrategy};
+pub use termination::{BudgetTermination, IterationCapTermination, Termination, TerminationStrategy};
 
 /// Re-export for convenience: every harness is a `Callable`.
 pub use atomr_agents_callable::{Callable, CallableHandle};

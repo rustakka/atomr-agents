@@ -19,6 +19,8 @@ atomr-agents-strategy  = { workspace = true }
 atomr-agents-callable  = { workspace = true }
 atomr-agents-memory    = { workspace = true }
 atomr-agents-tool      = { workspace = true }
+atomr-agents-security  = { workspace = true }
+atomr-agents-state     = { workspace = true }
 atomr-core             = { workspace = true }
 atomr-cluster-sharding = { workspace = true }
 atomr-distributed-data = { workspace = true }

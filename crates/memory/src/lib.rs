@@ -6,8 +6,10 @@ mod memory_tools;
 mod recency;
 mod store;
 mod summarizing;
+mod vector_store;
 
 pub use long_term::{InMemoryLongStore, LongStore, Namespace, StoreItem};
+pub use vector_store::{cosine, Hit, MetadataFilter, VectorStore};
 pub use memory_tools::{RecallMemoryTool, UpdateMemoryTool, WriteMemoryTool};
 pub use recency::RecencyMemoryStrategy;
 pub use store::{InMemoryStore, MemoryStore};
@@ -26,6 +28,8 @@ pub mod query {
 #[cfg(feature = "chroma")]
 pub use backends::chroma::ChromaStore;
 #[cfg(feature = "pgvector")]
-pub use backends::pgvector::PgvectorStore;
+pub use backends::pgvector::{PgvectorStore, PgvectorVectorStore};
 #[cfg(feature = "qdrant")]
 pub use backends::qdrant::QdrantStore;
+#[cfg(feature = "redis")]
+pub use backends::redis::RedisVectorStore;

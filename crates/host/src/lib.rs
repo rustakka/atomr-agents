@@ -40,6 +40,7 @@ pub mod routes;
 pub mod runtime;
 pub mod scheduler;
 pub mod skills_registry;
+pub mod triggers;
 
 pub use config::{HostConfig, ProviderConfig};
 pub use error::HostError;

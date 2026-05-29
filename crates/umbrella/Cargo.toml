@@ -21,6 +21,7 @@ atomr-agents-context       = { workspace = true }
 atomr-agents-observability = { workspace = true }
 
 atomr-agents-tool          = { workspace = true, optional = true }
+atomr-agents-security      = { workspace = true, optional = true }
 atomr-agents-skill         = { workspace = true, optional = true }
 atomr-agents-memory        = { workspace = true, optional = true }
 atomr-agents-embed         = { workspace = true, optional = true }
@@ -67,6 +68,7 @@ atomr-agents-tts-tool              = { workspace = true, optional = true }
 [features]
 default = ["agent", "tool", "skill", "memory", "persona", "instruction"]
 tool        = ["dep:atomr-agents-tool"]
+security    = ["dep:atomr-agents-security", "tool"]
 skill       = ["dep:atomr-agents-skill", "tool"]
 memory      = ["dep:atomr-agents-memory"]
 embed       = ["dep:atomr-agents-embed", "memory", "tool"]
@@ -84,7 +86,7 @@ testkit     = ["dep:atomr-agents-testkit", "agent", "harness"]
 provider-anthropic = ["agent", "atomr-agents-agent/provider-anthropic"]
 provider-openai    = ["agent", "atomr-agents-agent/provider-openai"]
 provider-gemini    = ["agent", "atomr-agents-agent/provider-gemini"]
-full        = ["agent", "workflow", "harness", "org", "registry", "eval", "embed", "testkit", "stt-full"]
+full        = ["agent", "workflow", "harness", "org", "registry", "eval", "embed", "security", "testkit", "stt-full"]
 
 # ----- Speech-to-text feature surface ---------------------------------------
 stt              = ["dep:atomr-agents-stt-core", "dep:atomr-agents-stt-audio", "dep:atomr-agents-stt-tool", "tool"]

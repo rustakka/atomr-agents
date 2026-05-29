@@ -7,7 +7,7 @@ mod loaders;
 mod splitters;
 
 pub use cache::{CachedEmbedder, InMemoryKvCache, KvCache};
-pub use ingest::{ingest, IngestPipeline};
+pub use ingest::{ingest, IngestPipeline, MetadataInjector};
 pub use loaders::{CsvLoader, JsonLoader, Loader, MarkdownLoader, TextLoader};
 pub use splitters::{
     CodeLang, CodeSplitter, MarkdownHeaderSplitter, RecursiveCharacterSplitter, SemanticSplitter, Splitter,

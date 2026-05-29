@@ -19,6 +19,7 @@ pub fn ctx() -> InvokeCtx {
             money: MoneyBudget::from_usd(1.0),
             iterations: IterationBudget::new(5),
             trace: vec![],
+            extensions: Default::default(),
         },
         tool_call_id: "test-1".into(),
         raw_args: Value::Null,

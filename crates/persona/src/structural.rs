@@ -24,6 +24,7 @@ impl StaticPersonaStrategy {
             variables: HashMap::new(),
             metadata: PersonaMetadata {
                 framework: Some("static".into()),
+                ..Default::default()
             },
         }
     }
@@ -130,6 +131,7 @@ impl PersonaStrategy for BigFivePersonaStrategy {
             style: StyleSpec::default(),
             metadata: PersonaMetadata {
                 framework: Some("big-five".into()),
+                ..Default::default()
             },
             estimated_tokens: tokens,
         })
@@ -222,6 +224,7 @@ impl PersonaStrategy for MbtiPersonaStrategy {
             style: StyleSpec::default(),
             metadata: PersonaMetadata {
                 framework: Some("mbti".into()),
+                ..Default::default()
             },
             estimated_tokens: tokens,
         })
@@ -293,6 +296,7 @@ impl PersonaStrategy for JungianArchetypeStrategy {
             style: StyleSpec::default(),
             metadata: PersonaMetadata {
                 framework: Some("jungian".into()),
+                ..Default::default()
             },
             estimated_tokens: tokens,
         })
@@ -318,6 +322,7 @@ impl PersonaReconciler for WeightedAverageReconciler {
         let mut traits = Vec::new();
         let mut metadata = PersonaMetadata {
             framework: Some("composite".into()),
+            ..Default::default()
         };
         for (p, w) in &layers {
             identity_parts.push(format!("[{:.0}%] {}", (w / total) * 100.0, p.identity));

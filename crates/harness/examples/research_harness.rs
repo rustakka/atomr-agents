@@ -113,6 +113,7 @@ impl LoopStrategy for ResearchLoop {
                     money: MoneyBudget::from_usd(0.10),
                     iterations: IterationBudget::new(5),
                     trace: vec!["deep-dive".into()],
+                    extensions: Default::default(),
                 };
                 let dive = self
                     .deep_dive
