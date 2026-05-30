@@ -303,6 +303,10 @@ jobs:
             atomr-agents-skill
             atomr-agents-memory
             atomr-agents-embed
+            # security depends only on core + tool; retriever, persona,
+            # org, and the umbrella depend on it, so it must publish
+            # before retriever (the first dependent in this list).
+            atomr-agents-security
             atomr-agents-retriever
             atomr-agents-ingest
             atomr-agents-persona

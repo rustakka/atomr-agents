@@ -44,7 +44,7 @@ Conventional-Commit on main
 A footer `Release-As: x.y.z` overrides auto-decision and pins the
 exact version.
 
-## Crate publish order (79 crates)
+## Crate publish order (81 crates)
 
 The `publish-crates` job walks every publishable workspace member in
 strict dependency order, with a 70s pace between successful publishes
@@ -64,86 +64,88 @@ Layer  Crate(s)
   8    atomr-agents-skill
   9    atomr-agents-memory
  10    atomr-agents-embed
- 11    atomr-agents-retriever
- 12    atomr-agents-ingest
- 13    atomr-agents-persona
- 14    atomr-agents-instruction
- 15    atomr-agents-cache
- 16    atomr-agents-parser
- 17    atomr-agents-agent
- 18    atomr-agents-workflow
- 19    atomr-agents-harness
- 20    atomr-agents-org
- 21    atomr-agents-registry
- 22    atomr-agents-eval
- 23    atomr-agents-testkit
+ 11    atomr-agents-security
+ 12    atomr-agents-retriever
+ 13    atomr-agents-ingest
+ 14    atomr-agents-persona
+ 15    atomr-agents-instruction
+ 16    atomr-agents-cache
+ 17    atomr-agents-parser
+ 18    atomr-agents-agent
+ 19    atomr-agents-workflow
+ 20    atomr-agents-harness
+ 21    atomr-agents-org
+ 22    atomr-agents-registry
+ 23    atomr-agents-eval
+ 24    atomr-agents-testkit
        ── speech-to-text capability ─────────────────────────────────
- 24    atomr-agents-stt-core
- 25    atomr-agents-stt-remote-core
- 26    atomr-agents-stt-audio
- 27    atomr-agents-stt-runtime-openai
- 28    atomr-agents-stt-runtime-deepgram
- 29    atomr-agents-stt-runtime-assemblyai
- 30    atomr-agents-stt-runtime-whisper
- 31    atomr-agents-stt-diarize-sherpa
- 32    atomr-agents-stt-voice
- 33    atomr-agents-stt-tool
+ 25    atomr-agents-stt-core
+ 26    atomr-agents-stt-remote-core
+ 27    atomr-agents-stt-audio
+ 28    atomr-agents-stt-runtime-openai
+ 29    atomr-agents-stt-runtime-deepgram
+ 30    atomr-agents-stt-runtime-assemblyai
+ 31    atomr-agents-stt-runtime-whisper
+ 32    atomr-agents-stt-diarize-sherpa
+ 33    atomr-agents-stt-voice
+ 34    atomr-agents-stt-tool
        ── text-to-speech capability ─────────────────────────────────
- 34    atomr-agents-tts-core
- 35    atomr-agents-tts-audio
- 36    atomr-agents-tts-runtime-openai
- 37    atomr-agents-tts-runtime-elevenlabs
- 38    atomr-agents-tts-runtime-openai-realtime
- 39    atomr-agents-tts-runtime-gemini-live
- 40    atomr-agents-tts-runtime-piper
- 41    atomr-agents-tts-runtime-kokoro
- 42    atomr-agents-tts-runtime-moss
- 43    atomr-agents-tts-runtime-xtts
- 44    atomr-agents-tts-voice
- 45    atomr-agents-tts-tool
+ 35    atomr-agents-tts-core
+ 36    atomr-agents-tts-audio
+ 37    atomr-agents-tts-runtime-openai
+ 38    atomr-agents-tts-runtime-elevenlabs
+ 39    atomr-agents-tts-runtime-openai-realtime
+ 40    atomr-agents-tts-runtime-gemini-live
+ 41    atomr-agents-tts-runtime-piper
+ 42    atomr-agents-tts-runtime-kokoro
+ 43    atomr-agents-tts-runtime-moss
+ 44    atomr-agents-tts-runtime-xtts
+ 45    atomr-agents-tts-voice
+ 46    atomr-agents-tts-tool
        ── stt harness (consumes stt-* primitives) ───────────────────
- 46    atomr-agents-stt-harness
- 47    atomr-agents-stt-harness-web
+ 47    atomr-agents-stt-harness
+ 48    atomr-agents-stt-harness-web
        ── meetings (consumes stt-harness) ───────────────────────────
- 48    atomr-agents-meetings-harness
- 49    atomr-agents-meetings-harness-web
+ 49    atomr-agents-meetings-harness
+ 50    atomr-agents-meetings-harness-web
        ── web search ───────────────────────────────────────────────
- 50    atomr-agents-web-search-core
- 51    atomr-agents-web-search-provider-brave
- 52    atomr-agents-web-search-provider-serpapi
- 53    atomr-agents-web-search-provider-tavily
- 54    atomr-agents-web-search-tool
+ 51    atomr-agents-web-search-core
+ 52    atomr-agents-web-search-provider-brave
+ 53    atomr-agents-web-search-provider-serpapi
+ 54    atomr-agents-web-search-provider-tavily
+ 55    atomr-agents-web-search-tool
        ── avatar capability ────────────────────────────────────────
- 55    atomr-agents-avatar-core
- 56    atomr-agents-avatar-provider-audio2face
- 57    atomr-agents-avatar-provider-livelink
- 58    atomr-agents-avatar-harness
+ 56    atomr-agents-avatar-core
+ 57    atomr-agents-avatar-provider-audio2face
+ 58    atomr-agents-avatar-provider-livelink
+ 59    atomr-agents-avatar-harness
        ── channels capability ──────────────────────────────────────
- 59    atomr-agents-channel-core
- 60    atomr-agents-channel-provider-discord
- 61    atomr-agents-channel-provider-signal
- 62    atomr-agents-channel-provider-whatsapp
- 63    atomr-agents-channel-harness
- 64    atomr-agents-channel-harness-web
+ 60    atomr-agents-channel-core
+ 61    atomr-agents-channel-provider-discord
+ 62    atomr-agents-channel-provider-signal
+ 63    atomr-agents-channel-provider-whatsapp
+ 64    atomr-agents-channel-harness
+ 65    atomr-agents-channel-harness-web
        ── coding-cli capability ────────────────────────────────────
- 65    atomr-agents-coding-cli-core
- 66    atomr-agents-coding-cli-isolator
- 67    atomr-agents-coding-cli-vendor-claude
- 68    atomr-agents-coding-cli-vendor-codex
- 69    atomr-agents-coding-cli-vendor-antigravity
- 70    atomr-agents-coding-cli-harness
- 71    atomr-agents-coding-cli-harness-web
+ 66    atomr-agents-coding-cli-core
+ 67    atomr-agents-coding-cli-isolator
+ 68    atomr-agents-coding-cli-vendor-claude
+ 69    atomr-agents-coding-cli-vendor-codex
+ 70    atomr-agents-coding-cli-vendor-antigravity
+ 71    atomr-agents-coding-cli-harness
+ 72    atomr-agents-coding-cli-harness-web
        ── deep-research capability ─────────────────────────────────
- 72    atomr-agents-deep-research-core
- 73    atomr-agents-deep-research-harness
- 74    atomr-agents-deep-research-harness-web
- 75    atomr-agents-deep-research-shell
+ 73    atomr-agents-deep-research-core
+ 74    atomr-agents-deep-research-harness
+ 75    atomr-agents-deep-research-harness-web
+ 76    atomr-agents-deep-research-shell
        ── agent host (consumes channel-harness) ────────────────────
- 76    atomr-agents-host
+ 77    atomr-agents-host
+ 78    atomr-agents-host-web
        ──────────────────────────────────────────────────────────────
- 77    atomr-agents-py-bindings
- 78    atomr-agents-cli
- 79    atomr-agents (umbrella)
+ 79    atomr-agents-py-bindings
+ 80    atomr-agents-cli
+ 81    atomr-agents (umbrella)
 ```
 
 `xtask` is `publish = false` and never goes to crates.io.
