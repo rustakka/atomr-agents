@@ -244,6 +244,27 @@ step` until `TerminationStrategy::should_terminate` reports
 `Event::HarnessIteration`; `HarnessState` accumulates a
 `StepEvent` history.
 
+### MicroVM sandbox
+
+The `sandbox` feature adds secure, instant-boot compute for executing
+**untrusted** agent-authored code (Python / Bash / JS / Rust). The split
+mirrors the agent layer: a backend-agnostic contract
+(`SandboxBackend` provisions, `SandboxHandle` is one live sandbox —
+`exec` / `read_file` / `write_file` / `snapshot` / `fork` / `destroy`)
+sits under an orchestration harness with a live-sandbox registry, a
+concurrency quota, a best-fit `Scheduler`, and a warm `SnapshotPool`.
+`SandboxHarness` is itself a `Callable`, and `execute_in_sandbox` is a
+`Tool`, so a sandbox plugs into the per-turn pipeline and into workflows
+like any other unit. Five `SandboxProfile` toolchains map to backend
+images, and Rust profiles are held to a 2 GB / 2 vCPU floor. Backends
+escalate by isolation strength — `MockBackend` (CI), Docker ("insecure
+dev mode"), Firecracker (per-sandbox microVM, the real boundary), and a
+Tier-3 gRPC cluster — selected by `SandboxBackendSel` / `Auto`. Inside a
+Firecracker guest, a PID-1 [guest agent](sandbox-architecture.md) serves
+a length-prefixed `postcard` wire protocol over `AF_VSOCK`. The full
+subsystem is documented in
+[**MicroVM sandbox**](sandbox-architecture.md).
+
 ### Python
 
 `atomr_agents._native` (PyO3) exposes the full framework surface
