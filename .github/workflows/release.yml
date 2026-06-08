@@ -384,6 +384,19 @@ jobs:
             # --- agent host (consumes channel-harness) ---------------
             atomr-agents-host
             atomr-agents-host-web
+            # --- microVM sandbox capability --------------------------
+            # core + proto have no intra-sandbox deps; harness needs
+            # core; tool needs core+harness; the backends/web/guest
+            # slot in after their deps. All publish before py-bindings
+            # (which depends on sandbox-core + sandbox-harness) and the
+            # umbrella (optional sandbox deps).
+            atomr-agents-sandbox-core
+            atomr-agents-sandbox-proto
+            atomr-agents-sandbox-harness
+            atomr-agents-sandbox-tool
+            atomr-agents-sandbox-backend-docker
+            atomr-agents-sandbox-harness-web
+            atomr-agents-sandbox-guest-agent
             # ---------------------------------------------------------
             atomr-agents-py-bindings
             atomr-agents-cli

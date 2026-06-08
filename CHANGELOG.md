@@ -6,6 +6,37 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+### Added — MicroVM sandbox capability (local + dev tiers)
+
+Secure, instant-boot compute environments for executing untrusted agent
+code (Python / Bash / JavaScript / Rust), per the *Agentic MicroVM
+Sandboxes* PRD. This wave lands the backend-agnostic foundation plus the
+locally-runnable tiers; the Firecracker/KVM backend and the Tier-3 gRPC
+cluster are the documented next milestones.
+
+- **`atomr-agents-sandbox-core`** — `SandboxBackend` / `SandboxHandle`
+  traits, profile / budget / request types (with the security-relevant
+  Rust 2 GB / 2 vCPU floor), `SandboxEvent` stream, and a deterministic
+  in-memory `MockBackend` so the whole surface is testable without Docker
+  or KVM.
+- **`atomr-agents-sandbox-harness`** — orchestrator with a pluggable
+  backend, a sandbox registry under an atomically-reserved concurrency
+  quota, a best-fit bin-packing scheduler, a warm snapshot pool, lifecycle
+  event broadcast, and a `Callable` impl. The Rust budget floor is enforced
+  structurally at the harness boundary.
+- **`atomr-agents-sandbox-tool`** — the `execute_in_sandbox` Tool.
+- **`atomr-agents-sandbox-backend-docker`** — bollard-backed "insecure dev
+  mode" backend (real exec, tar file I/O, commit-based snapshot/fork).
+  Containers share the host kernel, so this is explicitly not an isolation
+  boundary for untrusted code.
+- **`atomr-agents-sandbox-harness-web`** — axum REST + SSE companion.
+- **`atomr-agents-sandbox-proto`** — host↔guest wire protocol
+  (length-prefixed postcard frames over AF_VSOCK).
+- **`atomr-agents-sandbox-guest-agent`** — the in-VM PID-1 guest daemon.
+- **PyO3 bindings** — `from atomr_agents.sandbox import SandboxClient,
+  SandboxConfig, SandboxProfile`.
+- **Umbrella** — new `sandbox` feature.
+
 ### Changed — Coding-CLI vendor: Gemini CLI → Antigravity CLI (`agy`)
 
 Google is transitioning the Gemini CLI into the **Antigravity CLI**; the
