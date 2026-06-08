@@ -350,6 +350,52 @@ def tools_to_sdk_server(tools: Iterable[Any], *, server_name: str = "atomr", ver
     return create_sdk_mcp_server(name=server_name, version=version, tools=sdk_tools)
 
 
+# ----- per-session sandbox workspace tool (Pattern C) -----------------------
+
+
+def _make_run_in_sandbox(client: Any, sandbox_id: str):
+    """Build an in-process SDK tool bound to ONE session's sandbox workspace.
+
+    The Rust harness provisions a per-session sandbox over *client* and passes
+    its id down via ``config["sandbox_workspace_id"]``; this tool execs into
+    that exact sandbox (via :meth:`SandboxClient.attach`). With host
+    ``Bash``/``Write``/``Edit`` disabled, it is the agent's only file/shell
+    surface, so all model-authored work stays contained in the workspace.
+    """
+    _require_sdk()
+
+    @_sdk_tool(
+        "run_in_sandbox",
+        "Execute code or a shell command inside this session's isolated "
+        "sandbox workspace. Use this for ALL file and shell actions — the host "
+        "filesystem is not available.",
+        {
+            "type": "object",
+            "required": ["language", "code"],
+            "properties": {
+                "language": {"type": "string", "enum": ["python", "bash", "js", "rust"]},
+                "code": {"type": "string", "minLength": 1},
+                "dependencies": {"type": "array", "items": {"type": "string"}},
+                "stdin": {"type": "string"},
+                "timeout_secs": {"type": "integer", "minimum": 1, "maximum": 600},
+            },
+        },
+    )
+    async def _adapter(args, _client=client, _id=sandbox_id):  # noqa: ANN001
+        sandbox = _client.attach(_id)
+        req: dict[str, Any] = {"language": args["language"], "code": args["code"]}
+        if args.get("dependencies"):
+            req["dependencies"] = args["dependencies"]
+        if args.get("stdin") is not None:
+            req["stdin"] = args["stdin"]
+        if args.get("timeout_secs") is not None:
+            req["timeout_secs"] = args["timeout_secs"]
+        result = await sandbox.exec(req)
+        return {"content": [{"type": "text", "text": json.dumps(result)}]}
+
+    return _adapter
+
+
 # ----- the wrapper backend --------------------------------------------------
 
 
@@ -366,12 +412,17 @@ class ClaudeAgentSDKBackend:
         hooks: Optional[Any] = None,
         agents: Optional[Any] = None,
         server_name: str = "atomr",
+        sandbox: Optional[Any] = None,
     ) -> None:
         self._tools = list(tools) if tools else []
         self._can_use_tool = can_use_tool
         self._hooks = hooks
         self._agents = agents
         self._server_name = server_name
+        # A `SandboxClient` shared with the Rust harness (Pattern C). When set
+        # and a config carries `sandbox_workspace_id`, a per-session
+        # `run_in_sandbox` tool bound to that workspace is injected.
+        self._sandbox = sandbox
         self._sessions: dict[str, Any] = {}
 
     # -- options --------------------------------------------------------------
@@ -393,13 +444,22 @@ class ClaudeAgentSDKBackend:
         elif config.get("agents"):
             kw["agents"] = _agents_from_config(config["agents"])
 
+        # Per-session containment tool (Pattern C): bound to the workspace id the
+        # Rust harness pinned in the config. `sandbox_workspace_id` is read
+        # directly — it is deliberately NOT in `_SDK_OPTION_KEYS`, so it never
+        # reaches `ClaudeAgentOptions`.
+        session_tools = list(self._tools)
+        ws_id = config.get("sandbox_workspace_id")
+        if ws_id and self._sandbox is not None:
+            session_tools.append(_make_run_in_sandbox(self._sandbox, ws_id))
+
         mcp: dict[str, Any] = {}
         for name, spec in (config.get("mcp_servers") or {}).items():
             ext = _external_mcp(spec)
             if ext is not None:
                 mcp[name] = ext
-        if self._tools:
-            mcp[self._server_name] = tools_to_sdk_server(self._tools, server_name=self._server_name)
+        if session_tools:
+            mcp[self._server_name] = tools_to_sdk_server(session_tools, server_name=self._server_name)
         if mcp:
             kw["mcp_servers"] = mcp
 
@@ -461,13 +521,18 @@ def agent_sdk_backend(
     can_use_tool: Optional[Callable] = None,
     hooks: Optional[Any] = None,
     agents: Optional[Any] = None,
+    sandbox: Optional[Any] = None,
 ) -> ClaudeAgentSDKBackend:
     """Create and register a :class:`ClaudeAgentSDKBackend` under *name* in the
     process-wide guest registry. Reference it via
     ``AgentSdkHarness.from_python_backend(name)``.
+
+    Pass *sandbox* (a ``SandboxClient``) to enable per-session sandbox
+    workspaces (Pattern C) — the same client must be given to
+    :func:`harness` / ``from_python_backend`` so both share one registry.
     """
     backend = ClaudeAgentSDKBackend(
-        tools=tools, can_use_tool=can_use_tool, hooks=hooks, agents=agents
+        tools=tools, can_use_tool=can_use_tool, hooks=hooks, agents=agents, sandbox=sandbox
     )
     if _guest is not None:
         _guest.register_agent_sdk_factory(name, backend)
@@ -482,15 +547,24 @@ def harness(
     can_use_tool: Optional[Callable] = None,
     hooks: Optional[Any] = None,
     agents: Optional[Any] = None,
+    sandbox: Optional[Any] = None,
 ):
     """One-liner: register a backend and build the native harness over it.
 
     Returns an :class:`atomr_agents._native.agent_sdk.AgentSdkHarness`.
+
+    For Pattern C containment, pass *sandbox* (a
+    ``atomr_agents.sandbox.SandboxClient``) and enable ``spec["workspace"]``;
+    the same client is wired to both the backend's ``run_in_sandbox`` tool and
+    the Rust harness, so each session/run gets its own isolated, disposable
+    workspace.
     """
     if AgentSdkHarness is None:
         raise RuntimeError(
             "native extension not built — run `maturin develop` or "
             "`pip install -e .[agent-sdk]`"
         )
-    agent_sdk_backend(name, tools=tools, can_use_tool=can_use_tool, hooks=hooks, agents=agents)
-    return AgentSdkHarness.from_python_backend(name, spec)
+    agent_sdk_backend(
+        name, tools=tools, can_use_tool=can_use_tool, hooks=hooks, agents=agents, sandbox=sandbox
+    )
+    return AgentSdkHarness.from_python_backend(name, spec, sandbox)

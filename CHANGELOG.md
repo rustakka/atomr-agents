@@ -38,6 +38,17 @@ tools) and bills against your Anthropic API credits by driving the bundled
   session is exposed as `AgentSdkSession` (the actor surface). atomr `@tool`
   guests and Rust tools are bridged into the agent as in-process SDK MCP tools
   via `create_sdk_mcp_server`.
+- **Per-session sandbox workspaces (Pattern C)** — behind the harness `sandbox`
+  feature, each interactive session (and each headless run) gets its own
+  isolated [microVM sandbox](docs/sandbox-architecture.md) as a disposable
+  workspace: the `.claude/` projection is staged into it (`write_file`), the
+  agent's exec/file is routed there via an in-process `run_in_sandbox` tool
+  while the host `Bash`/`Write`/`Edit` are disabled (true containment), and the
+  workspace is discarded — or snapshotted to the warm pool — on close
+  (`spec.workspace.{enabled,profile,backend,on_close,reuse_warm}`). One
+  `SandboxClient` is shared between the Rust harness and the Python tool so both
+  resolve the workspace from a single registry; `SandboxClient.attach(id)`
+  binds the tool. See *Pattern C* in `docs/agent-sdk-harness.md`.
 - **Host loader** — `<root>/agent-sdk/<id>/` (`harness.yaml` + `commands/` +
   `skills/` + `mcp/`) → `AgentSdkHarnessSpec` + `.claude` projection, reusing
   the host's on-disk conventions.

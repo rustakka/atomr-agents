@@ -147,7 +147,88 @@ is the configured default for autonomy and is overridable per request/spec
 (`default` / `acceptEdits` / `plan`). The harness validates `cwd` / `add_dirs`
 as real directories and defaults `setting_sources` to `["project"]` so the
 agent only sees atomr-materialized config. **Run untrusted work inside the
-[sandbox harness](sandbox-architecture.md).**
+[sandbox harness](sandbox-architecture.md)** — which Pattern C wires in
+directly (below).
+
+## Pattern C: per-session sandbox workspaces
+
+`bypassPermissions` is unsafe for untrusted prompts on the bare host. **Pattern
+C** contains it: each interactive session — and each headless run — gets its
+own isolated [microVM sandbox](sandbox-architecture.md) as a disposable
+workspace. It is **feature-gated** (`agent-sdk-harness/sandbox`) and off unless
+you enable `spec.workspace`.
+
+**The key constraint.** A `SandboxHandle` exposes **no host-visible mount**
+(file I/O is async `write_file`/`read_file` over tar/vsock; `/workspace` is
+container-local), so the host-resident `claude` CLI cannot `cd` into a session
+sandbox. Pattern C therefore does two things together:
+
+1. **Stages** the `.claude/` projection *into* the sandbox (via `write_file`)
+   instead of onto the host filesystem.
+2. **Routes** the agent's work into the sandbox: it injects an in-process
+   `run_in_sandbox` tool bound to the session's sandbox and **disables the host
+   `Bash`/`Write`/`Edit`** (appended to `disallowed_tools`,
+   `mcp__atomr__run_in_sandbox` added to `allowed_tools`). That tool is the
+   agent's only file/shell surface, so all model-authored work stays contained.
+
+On session close the workspace is **discarded** (destroyed) by default, or
+**snapshotted** to the warm pool (`on_close: snapshot`) for faster future
+starts. Warm starts fork from the [`SnapshotPool`](sandbox-architecture.md) when
+one is available, else cold-create. Two independent quotas apply: the harness
+session cap *and* the `SandboxHarness` concurrency cap.
+
+### The shared-registry seam
+
+No handle is serialized across the PyO3 boundary. You pass **one**
+`SandboxClient` to the harness; the Rust side holds the same
+`Arc<SandboxHarness>` it wraps, and the Python `run_in_sandbox` tool closes over
+the same client — so the per-session sandbox the harness creates is the exact
+one the tool execs into. The session's `SandboxId` rides the normal config
+round-trip (`config.sandbox_workspace_id`), which the wrapper reads to bind the
+tool.
+
+### Spec
+
+```yaml
+# harness.yaml
+default_permission_mode: bypassPermissions
+workspace:
+  enabled: true
+  profile: python_and_npm     # python_only | npm_only | rust_only | python_and_npm | full_stack
+  backend: { kind: auto }     # auto | mock | docker | firecracker | { kind: remote, endpoint: … }
+  on_close: discard           # discard (default) | snapshot
+  reuse_warm: true            # prefer a warm fork from the snapshot pool
+```
+
+### Python
+
+```python
+import atomr_agents.agent_sdk as asdk
+from atomr_agents.sandbox import SandboxClient
+
+# One client, shared by the harness and the run_in_sandbox tool.
+sbx = SandboxClient.local_default()          # or .create over docker / firecracker
+
+h = asdk.harness(
+    spec={"workspace": {"enabled": True, "profile": "full_stack", "on_close": "discard"}},
+    sandbox=sbx,
+)
+
+# The agent's Bash/Write/Edit are disabled; it works only inside its sandbox.
+sess = await h.session({})
+await sess.query("Write a script that computes the 5000th prime and run it.")
+async for ev in sess.events():
+    if ev["kind"] == "run_finished":
+        break
+await sess.close()                            # workspace discarded here
+```
+
+The real isolation strength tracks the sandbox backend tier — `mock` (tests),
+`docker` ("insecure dev mode", shared kernel), `firecracker` (the true
+boundary). Code containment is not network containment: the SDK still calls
+Anthropic, so set the sandbox networking policy accordingly. Running the whole
+`claude` CLI *inside* the VM (a `SandboxAgentSdkBackend`) and a host-side
+credential proxy are future work — see *Status & roadmap*.
 
 ## Python parity
 
@@ -293,9 +374,14 @@ Extend the neutral schema (add variants to `AgentSdkMessage` /
 ## Status & roadmap
 
 - **Now:** contract + Rust orchestration + web companion + Python bridge +
-  host loader. Driven via the official Python SDK.
+  host loader. Driven via the official Python SDK. **Pattern C** (per-session
+  sandbox workspaces) ships behind the `sandbox` feature — tool-routed
+  containment with discard/snapshot lifecycle.
 - **Next:** a pure-Rust backend that spawns the `claude` CLI directly
-  (bypassing Python), and surfacing the SDK `plugins` option.
+  (bypassing Python); surfacing the SDK `plugins` option; **Pattern B** — a
+  `SandboxAgentSdkBackend` that runs the whole `claude` CLI *inside* the VM
+  (full process containment) with a host-side credential proxy so the API key
+  never enters the guest.
 
 ## Related
 

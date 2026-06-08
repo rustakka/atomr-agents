@@ -341,6 +341,18 @@ impl PySandboxClient {
         })
     }
 
+    /// Build a `Sandbox` handle for an already-provisioned sandbox id (e.g. a
+    /// per-session workspace created by the agent-sdk harness over this same
+    /// client). Validates the id is live in this client's registry. Pure — no
+    /// provisioning, no await.
+    fn attach(&self, py: Python<'_>, sandbox_id: String) -> PyResult<Py<PySandbox>> {
+        let id = SandboxId::from(sandbox_id);
+        if self.inner.get(&id).is_none() {
+            return Err(PyRuntimeError::new_err(format!("no such sandbox: {id}")));
+        }
+        Py::new(py, PySandbox { harness: self.inner.clone(), id })
+    }
+
     /// Async: provision a persistent `Sandbox` with the given profile and
     /// optional backend config.
     #[pyo3(signature = (profile, config=None))]
@@ -369,6 +381,15 @@ impl PySandboxClient {
 
     fn __repr__(&self) -> String {
         format!("SandboxClient(backend={})", self.inner.backend_name())
+    }
+}
+
+impl PySandboxClient {
+    /// The underlying `Arc<SandboxHarness>`. Lets the agent-sdk harness share
+    /// this client's sandbox registry (Pattern C) so a per-session workspace it
+    /// creates is the same one the Python `run_in_sandbox` tool execs into.
+    pub(crate) fn harness_arc(&self) -> Arc<SandboxHarness> {
+        self.inner.clone()
     }
 }
 

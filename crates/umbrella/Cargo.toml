@@ -136,3 +136,6 @@ sandbox              = ["dep:atomr-agents-sandbox-core", "dep:atomr-agents-sandb
 
 # ----- Claude Agent SDK harness feature surface -----------------------------
 agent-sdk            = ["dep:atomr-agents-agent-sdk-core", "dep:atomr-agents-agent-sdk-harness"]
+# Per-session sandbox workspaces for the Agent SDK harness (Pattern C):
+# pulls in the sandbox crates and enables the harness `sandbox` feature.
+agent-sdk-sandbox    = ["agent-sdk", "sandbox", "atomr-agents-agent-sdk-harness/sandbox"]

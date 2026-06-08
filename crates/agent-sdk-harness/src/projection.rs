@@ -81,17 +81,16 @@ fn frontmatter_list(key: &str, items: &[String], out: &mut String) {
     }
 }
 
-/// Write the projection into `cwd`. Idempotent — overwrites existing files.
-pub fn materialize(cwd: &Path, p: &Projection) -> std::io::Result<()> {
-    if p.is_empty() {
-        return Ok(());
-    }
-    let claude = cwd.join(".claude");
+/// Render the projection to a list of `(relative-path, bytes)` files. Pure —
+/// no I/O. The relative paths use forward slashes (`Path::join` accepts them
+/// on Windows too, and the sandbox `write_file` contract clamps them to root).
+/// Empty when the projection is empty. This is the single source of truth for
+/// *what* gets written; the host-fs and sandbox sinks below only decide *where*.
+pub fn render_projection(p: &Projection) -> Vec<(String, Vec<u8>)> {
+    let mut files = Vec::new();
 
     // Skills → .claude/skills/<id>/SKILL.md
     for s in &p.skills {
-        let dir = claude.join("skills").join(&s.id);
-        std::fs::create_dir_all(&dir)?;
         let mut md = String::from("---\n");
         md.push_str(&format!("name: {}\n", s.name.clone().unwrap_or_else(|| s.id.clone())));
         if let Some(d) = &s.description {
@@ -103,36 +102,32 @@ pub fn materialize(cwd: &Path, p: &Projection) -> std::io::Result<()> {
         if !s.body.ends_with('\n') {
             md.push('\n');
         }
-        std::fs::write(dir.join("SKILL.md"), md)?;
+        files.push((format!(".claude/skills/{}/SKILL.md", s.id), md.into_bytes()));
     }
 
     // Slash commands → .claude/commands/<name>.md
-    if !p.commands.is_empty() {
-        let dir = claude.join("commands");
-        std::fs::create_dir_all(&dir)?;
-        for c in &p.commands {
-            let mut md = String::new();
-            let has_fm = c.description.is_some() || !c.allowed_tools.is_empty() || c.model.is_some();
-            if has_fm {
-                md.push_str("---\n");
-                if let Some(d) = &c.description {
-                    md.push_str(&format!("description: {d}\n"));
-                }
-                if let Some(m) = &c.model {
-                    md.push_str(&format!("model: {m}\n"));
-                }
-                frontmatter_list("allowed-tools", &c.allowed_tools, &mut md);
-                md.push_str("---\n\n");
+    for c in &p.commands {
+        let mut md = String::new();
+        let has_fm = c.description.is_some() || !c.allowed_tools.is_empty() || c.model.is_some();
+        if has_fm {
+            md.push_str("---\n");
+            if let Some(d) = &c.description {
+                md.push_str(&format!("description: {d}\n"));
             }
-            md.push_str(&c.body);
-            if !c.body.ends_with('\n') {
-                md.push('\n');
+            if let Some(m) = &c.model {
+                md.push_str(&format!("model: {m}\n"));
             }
-            std::fs::write(dir.join(format!("{}.md", c.name)), md)?;
+            frontmatter_list("allowed-tools", &c.allowed_tools, &mut md);
+            md.push_str("---\n\n");
         }
+        md.push_str(&c.body);
+        if !c.body.ends_with('\n') {
+            md.push('\n');
+        }
+        files.push((format!(".claude/commands/{}.md", c.name), md.into_bytes()));
     }
 
-    // External MCP servers → .mcp.json
+    // External MCP servers → .mcp.json (in-process markers skipped).
     let external: serde_json::Map<String, serde_json::Value> = p
         .mcp_servers
         .iter()
@@ -140,18 +135,44 @@ pub fn materialize(cwd: &Path, p: &Projection) -> std::io::Result<()> {
         .collect();
     if !external.is_empty() {
         let doc = serde_json::json!({ "mcpServers": external });
-        std::fs::write(cwd.join(".mcp.json"), serde_json::to_string_pretty(&doc)?)?;
+        files.push((".mcp.json".to_string(), serde_json::to_vec_pretty(&doc).unwrap_or_default()));
     }
 
     // Settings → .claude/settings.local.json
     if let Some(settings) = &p.settings {
-        std::fs::create_dir_all(&claude)?;
-        std::fs::write(
-            claude.join("settings.local.json"),
-            serde_json::to_string_pretty(settings)?,
-        )?;
+        files.push((
+            ".claude/settings.local.json".to_string(),
+            serde_json::to_vec_pretty(settings).unwrap_or_default(),
+        ));
     }
 
+    files
+}
+
+/// Write the projection into `cwd` (the host filesystem). Idempotent —
+/// overwrites existing files. An empty projection writes nothing.
+pub fn materialize(cwd: &Path, p: &Projection) -> std::io::Result<()> {
+    for (rel, bytes) in render_projection(p) {
+        let full = cwd.join(&rel);
+        if let Some(parent) = full.parent() {
+            std::fs::create_dir_all(parent)?;
+        }
+        std::fs::write(full, bytes)?;
+    }
+    Ok(())
+}
+
+/// Stage the projection into a sandbox filesystem (Pattern C) via the
+/// `SandboxHandle::write_file` contract — the same files as [`materialize`],
+/// only the sink differs.
+#[cfg(feature = "sandbox")]
+pub async fn stage_into_sandbox(
+    handle: &dyn atomr_agents_sandbox_core::SandboxHandle,
+    p: &Projection,
+) -> std::result::Result<(), atomr_agents_sandbox_core::SandboxError> {
+    for (rel, bytes) in render_projection(p) {
+        handle.write_file(&rel, &bytes).await?;
+    }
     Ok(())
 }
 
@@ -233,5 +254,20 @@ mod tests {
         let dir = tempfile::tempdir().unwrap();
         materialize(dir.path(), &Projection::default()).unwrap();
         assert!(!dir.path().join(".claude").exists());
+    }
+
+    #[test]
+    fn render_projection_emits_relative_forward_slash_paths() {
+        let p = Projection {
+            skills: vec![SkillDoc { id: "s".into(), ..Default::default() }],
+            commands: vec![CommandDoc { name: "c".into(), ..Default::default() }],
+            ..Default::default()
+        };
+        let files = render_projection(&p);
+        let paths: Vec<&str> = files.iter().map(|(p, _)| p.as_str()).collect();
+        assert!(paths.contains(&".claude/skills/s/SKILL.md"));
+        assert!(paths.contains(&".claude/commands/c.md"));
+        // Empty projection renders no files.
+        assert!(render_projection(&Projection::default()).is_empty());
     }
 }
