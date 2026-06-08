@@ -71,6 +71,13 @@ pub struct AgentSdkHarnessSpec {
     /// Credential selection.
     #[serde(default)]
     pub auth: AuthConfig,
+
+    /// Per-session sandbox workspace config (Pattern C). When
+    /// `workspace.enabled`, each session/run gets its own isolated, disposable
+    /// sandbox as its workspace, with the agent's exec/file routed into it.
+    #[cfg(feature = "sandbox")]
+    #[serde(default)]
+    pub workspace: crate::workspace::SandboxWorkspaceConfig,
 }
 
 impl Default for AgentSdkHarnessSpec {
@@ -87,6 +94,8 @@ impl Default for AgentSdkHarnessSpec {
             default_max_turns: None,
             default_max_cost_usd: None,
             auth: AuthConfig::default(),
+            #[cfg(feature = "sandbox")]
+            workspace: crate::workspace::SandboxWorkspaceConfig::default(),
         }
     }
 }

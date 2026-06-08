@@ -111,6 +111,13 @@ pub struct AgentSdkConfig {
     /// this into a live permission callback.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub permission_policy: Option<PermissionPolicy>,
+
+    /// Id of the per-session sandbox workspace (Pattern C), set by the harness
+    /// when sandbox containment is active. Plain data — callers never set this;
+    /// the Python wrapper reads it to bind the in-process `run_in_sandbox` tool
+    /// to the right sandbox. Not forwarded to `ClaudeAgentOptions`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub sandbox_workspace_id: Option<String>,
 }
 
 fn is_false(b: &bool) -> bool {

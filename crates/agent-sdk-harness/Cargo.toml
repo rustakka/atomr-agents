@@ -17,6 +17,9 @@ readme        = "README.md"
 default = []
 # The bidirectional interactive session as an `atomr_core::actor::Actor`.
 actor   = ["dep:atomr-core"]
+# Per-session isolated sandbox workspaces (Pattern C): each session/run gets
+# its own microVM/container as a disposable, contained workspace.
+sandbox = ["dep:atomr-agents-sandbox-core", "dep:atomr-agents-sandbox-harness"]
 
 [dependencies]
 atomr-agents-core          = { workspace = true }
@@ -26,6 +29,8 @@ atomr-agents-agent         = { workspace = true }
 atomr-agents-agent-sdk-core = { workspace = true }
 
 atomr-core   = { workspace = true, optional = true }
+atomr-agents-sandbox-core    = { workspace = true, optional = true }
+atomr-agents-sandbox-harness = { workspace = true, optional = true }
 
 async-trait  = { workspace = true }
 tokio        = { workspace = true, features = ["full"] }

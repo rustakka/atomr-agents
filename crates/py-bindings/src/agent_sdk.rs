@@ -174,19 +174,29 @@ pub struct PyAgentSdkHarness {
 #[pymethods]
 impl PyAgentSdkHarness {
     /// Build a harness driving the registered Python `agent_sdk` backend.
+    ///
+    /// When `sandbox` (a `SandboxClient`) is given and the spec enables
+    /// `workspace`, each session/run gets a per-session isolated sandbox
+    /// workspace (Pattern C). The same client must back the Python
+    /// `run_in_sandbox` tool so both share one sandbox registry.
     #[staticmethod]
-    #[pyo3(signature = (backend_key, spec=None))]
+    #[pyo3(signature = (backend_key, spec=None, sandbox=None))]
     fn from_python_backend(
         py: Python<'_>,
         backend_key: String,
         spec: Option<&Bound<'_, PyAny>>,
+        sandbox: Option<PyRef<'_, crate::sandbox::PySandboxClient>>,
     ) -> PyResult<Self> {
         let spec_val = py_to_value_or(py, spec, serde_json::json!({}))?;
         let spec: AgentSdkHarnessSpec =
             serde_json::from_value(spec_val).map_err(crate::errors::map)?;
         let backend = crate::guest::build_agent_sdk_backend(&backend_key)?;
+        let mut harness = AgentSdkHarness::new(backend, spec);
+        if let Some(client) = sandbox {
+            harness = harness.with_sandbox(client.harness_arc());
+        }
         Ok(Self {
-            inner: Arc::new(AgentSdkHarness::new(backend, spec)),
+            inner: Arc::new(harness),
         })
     }
 

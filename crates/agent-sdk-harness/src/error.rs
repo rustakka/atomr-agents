@@ -33,6 +33,14 @@ pub enum HarnessError {
 
     #[error("serialization error: {0}")]
     Serde(#[from] serde_json::Error),
+
+    #[cfg(feature = "sandbox")]
+    #[error("sandbox workspace requested but no SandboxHarness was configured")]
+    SandboxUnconfigured,
+
+    #[cfg(feature = "sandbox")]
+    #[error("sandbox workspace error: {0}")]
+    Sandbox(String),
 }
 
 pub type Result<T, E = HarnessError> = std::result::Result<T, E>;

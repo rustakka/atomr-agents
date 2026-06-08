@@ -32,11 +32,19 @@ mod spec;
 #[cfg(feature = "actor")]
 pub mod actor;
 
+#[cfg(feature = "sandbox")]
+pub mod workspace;
+
 pub use error::{HarnessError, Result};
 pub use harness::AgentSdkHarness;
-pub use projection::{CommandDoc, Projection, SkillDoc};
+pub use projection::{render_projection, CommandDoc, Projection, SkillDoc};
 pub use session::{InteractiveAgentSession, SessionRegistry};
 pub use spec::{AgentSdkHarnessSpec, AuthConfig, AuthProvider};
+
+#[cfg(feature = "sandbox")]
+pub use workspace::{
+    SandboxWorkspaceConfig, SessionWorkspace, WorkspaceDisposition, WorkspaceRegistry,
+};
 
 // Re-export the contract types so downstream crates have one import path.
 pub use atomr_agents_agent_sdk_core as core;
