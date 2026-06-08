@@ -268,6 +268,9 @@ overhead beyond what the actor crate already pays.
 | `atomr-agents-stt-diarize-sherpa` | `Diarizer` trait, `MockDiarizer`, sherpa-onnx-backed `SherpaDiarizer` (gated behind `sherpa-onnx`), `apply_to_transcript` stitching |
 | `atomr-agents-stt-voice` | `VoiceSession` (`Live` vs `TurnBased { silence_ms }`), `Vad` trait + `EnergyVad`/`SileroVad`, `pump_mic_to_stream` glue |
 | `atomr-agents-stt-tool` | `TranscribeTool` (a `Tool` the model can call) and `voice_input_skill(stt) -> (Skill, DynTool)` for declarative agent integration |
+| `atomr-agents-agent-sdk-core` | Provider-neutral **Claude Agent SDK** contract: `AgentSdkConfig` (mirrors `ClaudeAgentOptions`), normalized `AgentSdkMessage` / `ResultSummary` / `AgentSdkEvent`, the pluggable `AgentSdkBackend` / `AgentSdkSession` trait seam, and a deterministic `MockBackend` (network-free, no `claude` CLI) |
+| `atomr-agents-agent-sdk-harness` | Wraps Anthropic's programmable Claude Code agent (`claude-agent-sdk`) as a `Callable`: slash commands, subagents, hooks, MCP, permission modes, sessions, custom system prompts; session registry under a TOCTOU-safe quota, `SpendLedger` credit tracking, `.claude/` projection; behind `actor`, the interactive session is an `atomr_core::actor::Actor` |
+| `atomr-agents-agent-sdk-harness-web` | Axum REST + SSE companion over an `AgentSdkHarness` (`/run`, `/sessions…`, `/events`, `/healthz`) |
 | `atomr-agents-sandbox-core` | Backend-agnostic microVM **sandbox** contract: `SandboxBackend` / `SandboxHandle` traits, the 5 `SandboxProfile` toolchains, `ResourceBudget` (2 GB / 2 vCPU Rust floor), `SandboxEvent`, and a deterministic `MockBackend` so the whole surface is testable with no Docker / KVM |
 | `atomr-agents-sandbox-harness` | Sandbox orchestration: pluggable backend, live-sandbox registry, TOCTOU-safe concurrency quota, `BestFitScheduler` bin-packing, warm `SnapshotPool`, `SandboxEvent` broadcast; ephemeral one-shot + persistent registry paths; itself a `Callable` |
 | `atomr-agents-sandbox-tool` | The `execute_in_sandbox` `Tool` — runs untrusted Python / Bash / JS / Rust in an ephemeral sandbox, applying the Rust floor, returning `{ exec_id, exit_code, success, stdout, stderr, timed_out }` |
@@ -294,6 +297,24 @@ PID-1 guest agent, a REST/SSE web companion, and the
 strength — deterministic mock (CI) → Docker "insecure dev mode" →
 Firecracker microVM (the real boundary) → Tier-3 gRPC cluster. Full
 write-up in [`docs/sandbox-architecture.md`](docs/sandbox-architecture.md).
+
+**Programmable Claude Code — the Agent SDK harness.** Three `agent-sdk-*`
+crates wrap Anthropic's [`claude-agent-sdk`](https://pypi.org/project/claude-agent-sdk/)
+(the programmable form of Claude Code) as a `Callable`, exposing Claude
+Code's full harness — slash commands, subagents, hooks, MCP, permission
+modes, sessions, custom system prompts, and the built-in tool set — billed
+against your Anthropic API credits via the bundled `claude` CLI. A
+provider-neutral contract (`AgentSdkConfig` + `AgentSdkBackend` /
+`AgentSdkSession`, normalized message/event schema) sits under the
+orchestration harness (credit-tracking `SpendLedger`, `.claude/` projection,
+session registry), a REST/SSE web companion, and the `atomr_agents.agent_sdk`
+Python facade — whose interactive session is exposed into the atomr **actor
+model**. The contract is deliberately provider-neutral: because the harness
+only sees a normalized schema behind the backend trait, **other vendors that
+mirror Anthropic's Agent SDK structure (with small option/message
+differences) plug in by supplying a thin adapter — no harness changes.** Full
+write-up, including the generalization recipe, in
+[`docs/agent-sdk-harness.md`](docs/agent-sdk-harness.md).
 
 ## Quick start (Rust)
 
@@ -400,6 +421,7 @@ links everything from this README.
 
 - [`docs/sandbox-architecture.md`](docs/sandbox-architecture.md) — microVM sandbox: untrusted-code execution, backend tiers (mock → Docker → Firecracker → cluster), vsock protocol, guest agent
 - [`docs/coding-cli-harness.md`](docs/coding-cli-harness.md) — wraps local AI coding CLIs (Claude Code, Codex, Antigravity) as callables; headless + interactive (xterm.js) modes
+- [`docs/agent-sdk-harness.md`](docs/agent-sdk-harness.md) — wraps Anthropic's programmable Claude Code agent (`claude-agent-sdk`) as a `Callable` (slash commands, subagents, hooks, MCP, sessions); the Python interactive session is exposed into the atomr actor model; includes the recipe for generalizing to other Agent-SDK-shaped providers
 - [`docs/stt-harness.md`](docs/stt-harness.md) — agentic streaming speech-to-text, diarization, editable transcript review UI
 - [`docs/meetings-harness.md`](docs/meetings-harness.md) — attendees, notes, actions, tiered summaries over a diarized transcript
 - [`docs/avatar-harness.md`](docs/avatar-harness.md) — real-time embodied agent: perception → cognition → TTS → 60 Hz LiveLink sync to a UE5 MetaHuman

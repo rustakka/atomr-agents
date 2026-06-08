@@ -182,6 +182,114 @@ await sess.close()
 `AgentSdkHarness.mock()` builds the same surface over `MockBackend` for tests
 that must not touch the SDK or credits.
 
+## Generalizing to other providers
+
+This harness is named `agent-sdk`, not `claude-*`, on purpose. The Anthropic
+Agent SDK established a shape — *a programmable coding agent you configure with
+options, drive with prompts, and consume as a stream of typed messages
+(system → assistant → result), with built-in tools, subagents, hooks, MCP, and
+sessions*. As other vendors ship Agent-SDK-style products, they tend to
+**mirror that structure with small differences** (renamed options, slightly
+different message classes, different auth env vars, a different tool-naming
+convention). The harness is built so those differences are absorbed by a thin
+adapter — **the Rust orchestration, events, budget, web companion, and actor
+layers never change.**
+
+### What's provider-neutral vs. provider-specific
+
+Everything above the `AgentSdkBackend` trait only ever sees the **normalized
+schema** — `AgentSdkConfig`, `AgentSdkMessage`, `ResultSummary`,
+`AgentSdkEvent`. It has no Anthropic-specific knowledge. All provider specifics
+are concentrated in exactly two places:
+
+| Layer | Provider-neutral? | Where a new provider's deltas live |
+|---|---|---|
+| `AgentSdkHarness`, session registry, budget ledger, `.claude/` projection, events, web companion, `AgentSdkActor` | ✅ Neutral | — |
+| `AgentSdkBackend` / `AgentSdkSession` traits + `MessageStream` | ✅ Neutral | A new impl, but the *shape* is fixed |
+| `AgentSdkConfig` (the JSON dict) | Mostly neutral | Unknown fields are simply not emitted; provider-only knobs ride in `env` / opaque values |
+| **`_build_options(config)`** (Python) | ❌ Provider-specific | Map the neutral config → the provider's options object |
+| **`_normalize(msg)`** (Python) | ❌ Provider-specific | Map the provider's message classes → the normalized dict |
+
+### Two ways to add a provider
+
+**(A) A new Python wrapper** — for any provider whose SDK is *shaped like*
+`claude-agent-sdk` (an async-iterating agent with an options object and
+typed messages). Subclass `ClaudeAgentSDKBackend` and override only the two
+adapter methods. Everything else — the PyO3 bridge, the reverse
+async-iterator pump, the harness — is reused unchanged:
+
+```python
+import acme_agent_sdk as acme  # a hypothetical Anthropic-shaped SDK
+from atomr_agents.agent_sdk import ClaudeAgentSDKBackend, _filter_kwargs
+
+class AcmeAgentSDKBackend(ClaudeAgentSDKBackend):
+    # 1. Map the neutral config dict → Acme's options object.
+    def _build_options(self, config):
+        kw = {k: config[k] for k in (
+            "system_prompt", "allowed_tools", "model", "max_turns", "cwd",
+        ) if config.get(k) is not None}
+        # Small deltas: Acme calls it `tool_allowlist`, not `allowed_tools`.
+        if "allowed_tools" in kw:
+            kw["tool_allowlist"] = kw.pop("allowed_tools")
+        # `_filter_kwargs` already drops anything Acme's options don't accept,
+        # so version skew never 400s at construction.
+        return acme.AgentOptions(**_filter_kwargs(acme.AgentOptions, kw))
+
+    # 2. Map Acme's message objects → the normalized dict schema.
+    def _normalize(self, msg):
+        name = type(msg).__name__
+        if name == "AcmeInit":
+            return {"type": "system", "session_id": msg.conversation_id}
+        if name == "AcmeText":
+            return {"type": "assistant", "blocks": [{"kind": "text", "text": msg.text}]}
+        if name == "AcmeDone":
+            return {"type": "result", "subtype": "success", "result": msg.final,
+                    "session_id": msg.conversation_id, "cost_usd": msg.cost}
+        return {"type": "unknown", "repr": repr(msg)}
+
+    # 3. The async-generator entry points keep the same names the Rust
+    #    backend calls: `run(config, prompt)`, `open_session(config)`,
+    #    `session_send/stream/interrupt/...`. Override `run`/`session_stream`
+    #    only if Acme's iteration API differs from `query()` / a client.
+
+# Register it under its own key and point a harness at it — same plumbing as
+# the built-in `harness(...)` builder, just a different backend instance.
+from atomr_agents import _native
+
+_native.guest.register_agent_sdk_factory("acme", AcmeAgentSDKBackend())
+harness = _native.agent_sdk.AgentSdkHarness.from_python_backend("acme")
+```
+
+The two helpers that make this robust already exist: `_normalize` dispatches on
+`type(msg).__name__` with `getattr` defaults (so a renamed field degrades
+instead of crashing), and `_filter_kwargs` strips any option the target SDK
+doesn't accept (so an extra knob is ignored rather than fatal).
+
+**(B) A native Rust backend** — implement `AgentSdkBackend` /
+`AgentSdkSession` directly in Rust (e.g. spawn the provider's CLI and parse its
+stdio protocol into `AgentSdkMessage`). This is the same door left open for a
+pure-Rust `claude` driver. No Python required; the harness consumes it
+identically.
+
+### When an adapter is *not* enough
+
+The contract assumes the Agent-SDK shape: a configurable agent that streams
+`system → assistant(blocks) → result` and accepts prompts. A provider that
+diverges structurally — no streaming, no session concept, a fundamentally
+different tool/permission model — needs more than the two adapter methods.
+Extend the neutral schema (add variants to `AgentSdkMessage` /
+`AgentSdkConfig`) rather than bending an ill-fitting provider through it; the
+`#[serde(other)] Unknown` fallback keeps such additions backward-compatible.
+
+### Auth & tooling deltas
+
+- **Credentials** are env-var driven (`ANTHROPIC_API_KEY`, `CLAUDE_CODE_USE_*`);
+  a new provider sets its own vars at spawn via the spec's `auth` block / the
+  config `env` map — no code change in the neutral layers.
+- **In-process tools** are bridged through `create_sdk_mcp_server` /
+  `invoke_tool`; a provider with a different custom-tool API overrides the tool
+  composition helper (`tools_to_sdk_server`) in its wrapper subclass.
+
 ## Status & roadmap
 
 - **Now:** contract + Rust orchestration + web companion + Python bridge +
