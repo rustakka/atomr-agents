@@ -50,6 +50,15 @@ except ImportError as _e:  # pragma: no cover - native extension not built yet
 else:
     _import_err = None
 
+# The agent_sdk facade is a *substantive* submodule (the claude-agent-sdk
+# driver), not a thin native re-export — bind it unconditionally so it isn't
+# shadowed by a native attribute, and so it stays importable when the native
+# extension or the SDK is absent (it degrades gracefully on its own).
+from . import agent_sdk  # noqa: E402
+
+AgentSdkHarness = getattr(agent_sdk, "AgentSdkHarness", None)
+AgentSdkSession = getattr(agent_sdk, "AgentSdkSession", None)
+
 if _native is not None:
     # ----- subpackages re-exported as attributes ------------------------
     core = _native.core
@@ -220,6 +229,7 @@ __all__ = [
     "guest",
     "stt",
     "stt_harness",
+    "agent_sdk",
     "tts",
     "voice",
     "voice_extras",
@@ -272,6 +282,9 @@ __all__ = [
     "AgentSpec",
     "AgentBudgets",
     "TurnResult",
+    # agent-sdk
+    "AgentSdkHarness",
+    "AgentSdkSession",
     # workflow
     "StepKind",
     # harness

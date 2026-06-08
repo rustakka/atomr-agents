@@ -376,6 +376,13 @@ jobs:
             atomr-agents-coding-cli-vendor-antigravity
             atomr-agents-coding-cli-harness
             atomr-agents-coding-cli-harness-web
+            # --- Claude Agent SDK harness ----------------------------
+            # core → harness (needs agent) → harness-web (needs harness).
+            # All publish before host/py-bindings/umbrella, which depend
+            # on agent-sdk-harness.
+            atomr-agents-agent-sdk-core
+            atomr-agents-agent-sdk-harness
+            atomr-agents-agent-sdk-harness-web
             # --- deep-research capability ----------------------------
             atomr-agents-deep-research-core
             atomr-agents-deep-research-harness

@@ -1,0 +1,43 @@
+[package]
+name          = "atomr-agents-agent-sdk-harness"
+version       = { workspace = true }
+edition       = { workspace = true }
+rust-version  = { workspace = true }
+license       = { workspace = true }
+repository    = { workspace = true }
+homepage      = { workspace = true }
+authors       = { workspace = true }
+description   = "Harness wrapping Anthropic's Claude Agent SDK (the programmable Claude Code agent) as an atomr-agents Callable: headless runs, interactive sessions, an optional actor, event streaming, and Anthropic-credit budget tracking."
+
+keywords      = ["agents", "claude", "harness", "atomr"]
+categories    = ["asynchronous"]
+readme        = "README.md"
+
+[features]
+default = []
+# The bidirectional interactive session as an `atomr_core::actor::Actor`.
+actor   = ["dep:atomr-core"]
+
+[dependencies]
+atomr-agents-core          = { workspace = true }
+atomr-agents-callable      = { workspace = true }
+atomr-agents-observability = { workspace = true }
+atomr-agents-agent         = { workspace = true }
+atomr-agents-agent-sdk-core = { workspace = true }
+
+atomr-core   = { workspace = true, optional = true }
+
+async-trait  = { workspace = true }
+tokio        = { workspace = true, features = ["full"] }
+futures      = { workspace = true }
+serde        = { workspace = true }
+serde_json   = { workspace = true }
+thiserror    = { workspace = true }
+tracing      = { workspace = true }
+parking_lot  = { workspace = true }
+chrono       = { workspace = true }
+uuid         = { workspace = true }
+
+[dev-dependencies]
+tokio = { workspace = true, features = ["full", "test-util"] }
+tempfile = "3"
