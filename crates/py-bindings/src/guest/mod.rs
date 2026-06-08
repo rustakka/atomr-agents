@@ -23,6 +23,7 @@ use pyo3::prelude::*;
 
 use crate::tool::PyToolDescriptor;
 
+mod agent_sdk;
 mod conv_helpers;
 mod embedder;
 mod instruction;
@@ -57,6 +58,7 @@ pub use skill_strategy::PySkillStrategyHandle;
 // modules (notably `crate::agent::PyAgent::from_spec`) can construct
 // strategies from registered guest keys without re-implementing the
 // adapter wiring.
+pub(crate) use agent_sdk::{build_agent_sdk_backend, invoke_tool};
 pub(crate) use instruction::build_guest_instruction_strategy;
 pub(crate) use memory_strategy::build_guest_memory_strategy;
 pub(crate) use persona::build_guest_persona;
@@ -289,6 +291,11 @@ fn register_ann_index_factory(key: String, target: PyObject) -> PyGuestHandle {
     register_kind("ann_index", key, target)
 }
 
+#[pyfunction]
+fn register_agent_sdk_factory(key: String, target: PyObject) -> PyGuestHandle {
+    register_kind("agent_sdk", key, target)
+}
+
 pub fn register(py: Python<'_>, parent: &Bound<'_, PyModule>) -> PyResult<()> {
     let m = PyModule::new_bound(py, "guest")?;
     m.add_class::<PyGuestHandle>()?;
@@ -323,6 +330,7 @@ pub fn register(py: Python<'_>, parent: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(register_persona_reconciler_factory, &m)?)?;
     m.add_function(wrap_pyfunction!(register_inference_client_factory, &m)?)?;
     m.add_function(wrap_pyfunction!(register_ann_index_factory, &m)?)?;
+    m.add_function(wrap_pyfunction!(register_agent_sdk_factory, &m)?)?;
     m.add_function(wrap_pyfunction!(list_factories, &m)?)?;
     m.add_function(wrap_pyfunction!(clear_factories, &m)?)?;
 

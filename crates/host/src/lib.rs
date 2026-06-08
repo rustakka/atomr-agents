@@ -21,6 +21,7 @@
 #![allow(clippy::result_large_err)]
 
 pub mod actor;
+pub mod agent_sdk;
 pub mod branching;
 pub mod chat;
 pub mod config;
@@ -42,6 +43,7 @@ pub mod scheduler;
 pub mod skills_registry;
 pub mod triggers;
 
+pub use agent_sdk::{load_agent_sdk, LoadedAgentSdk};
 pub use config::{HostConfig, ProviderConfig};
 pub use error::HostError;
 pub use layout::{default_root, AgentPaths, HostPaths};

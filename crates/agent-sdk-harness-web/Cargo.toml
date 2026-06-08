@@ -1,0 +1,32 @@
+[package]
+name          = "atomr-agents-agent-sdk-harness-web"
+version       = { workspace = true }
+edition       = { workspace = true }
+rust-version  = { workspace = true }
+license       = { workspace = true }
+repository    = { workspace = true }
+homepage      = { workspace = true }
+authors       = { workspace = true }
+description   = "Axum REST + SSE web companion for the Claude Agent SDK harness: start runs/sessions, post messages, interrupt, and stream normalized agent events."
+
+keywords      = ["agents", "claude", "harness", "atomr"]
+categories    = ["asynchronous", "web-programming"]
+readme        = "README.md"
+
+[dependencies]
+atomr-agents-agent-sdk-core    = { workspace = true }
+atomr-agents-agent-sdk-harness = { workspace = true }
+
+axum         = { workspace = true }
+tower-http   = { workspace = true }
+tokio        = { workspace = true, features = ["full"] }
+futures      = { workspace = true }
+tokio-stream = { workspace = true, features = ["sync"] }
+serde        = { workspace = true }
+serde_json   = { workspace = true }
+tracing      = { workspace = true }
+tracing-subscriber = { workspace = true }
+
+[dev-dependencies]
+tokio = { workspace = true, features = ["full", "test-util"] }
+tower = { version = "0.5", features = ["util"] }

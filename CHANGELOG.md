@@ -6,6 +6,45 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+### Added — Claude Agent SDK harness
+
+Anthropic's **Claude Agent SDK** (`claude-agent-sdk` /
+`@anthropic-ai/claude-agent-sdk`) — the programmable form of Claude Code —
+wrapped as a first-class atomr-agents harness. It exposes Claude Code's full
+feature set (slash commands, subagents, hooks, MCP, permission modes,
+sessions, custom system prompts, built-in Read/Write/Edit/Bash/Grep/WebSearch
+tools) and bills against your Anthropic API credits by driving the bundled
+`claude` CLI. Distinct from the server-side "Managed Agents" API.
+
+- **`atomr-agents-agent-sdk-core`** — the contract: `AgentSdkConfig` mirroring
+  the SDK's `ClaudeAgentOptions` (round-trips to a JSON dict), a normalized
+  message/result/event schema, and the pluggable `AgentSdkBackend` /
+  `AgentSdkSession` trait seam with a deterministic in-memory `MockBackend` so
+  the whole surface is testable without the SDK, the `claude` CLI, or
+  network/credits.
+- **`atomr-agents-agent-sdk-harness`** — orchestrator with a pluggable backend,
+  an event broadcast, a session registry under an atomically-reserved
+  concurrency quota, Anthropic-credit spend tracking via the shared
+  `SpendLedger`, a `.claude/` projection (skills / slash commands / MCP /
+  settings), and a `Callable` impl. Behind the `actor` feature it exposes the
+  bidirectional interactive session as an `atomr_core::actor::Actor`. The
+  default `permission_mode` is `bypassPermissions` (max autonomy — overridable
+  per request/spec).
+- **`atomr-agents-agent-sdk-harness-web`** — axum REST + SSE companion (start
+  runs/sessions, post messages, interrupt, change mode/model, stream events).
+- **PyO3 bridge** — `from atomr_agents.agent_sdk import harness`. The Rust
+  `PythonAgentSdkBackend` drives the real `claude-agent-sdk` over a reverse
+  async-iterator bridge (Rust drives the Python `__anext__`); the interactive
+  session is exposed as `AgentSdkSession` (the actor surface). atomr `@tool`
+  guests and Rust tools are bridged into the agent as in-process SDK MCP tools
+  via `create_sdk_mcp_server`.
+- **Host loader** — `<root>/agent-sdk/<id>/` (`harness.yaml` + `commands/` +
+  `skills/` + `mcp/`) → `AgentSdkHarnessSpec` + `.claude` projection, reusing
+  the host's on-disk conventions.
+- **Umbrella** — new `agent-sdk` feature.
+- **Packaging** — `pip install atomr-agents[agent-sdk]` pulls the SDK (which
+  auto-bundles the `claude` CLI); the native extension imports it lazily.
+
 ### Added — MicroVM sandbox capability (local + dev tiers)
 
 Secure, instant-boot compute environments for executing untrusted agent

@@ -72,6 +72,12 @@ atomr-agents-sandbox-core          = { workspace = true, optional = true }
 atomr-agents-sandbox-harness       = { workspace = true, optional = true }
 atomr-agents-sandbox-tool          = { workspace = true, optional = true }
 
+# Claude Agent SDK harness — the programmable Claude Code agent wrapped as a
+# Callable. The real SDK is driven via the Python bridge (`py-bindings`); this
+# pulls the contract + Rust orchestration crates.
+atomr-agents-agent-sdk-core        = { workspace = true, optional = true }
+atomr-agents-agent-sdk-harness     = { workspace = true, optional = true }
+
 [features]
 default = ["agent", "tool", "skill", "memory", "persona", "instruction"]
 tool        = ["dep:atomr-agents-tool"]
@@ -93,7 +99,7 @@ testkit     = ["dep:atomr-agents-testkit", "agent", "harness"]
 provider-anthropic = ["agent", "atomr-agents-agent/provider-anthropic"]
 provider-openai    = ["agent", "atomr-agents-agent/provider-openai"]
 provider-gemini    = ["agent", "atomr-agents-agent/provider-gemini"]
-full        = ["agent", "workflow", "harness", "org", "registry", "eval", "embed", "security", "testkit", "stt-full"]
+full        = ["agent", "workflow", "harness", "org", "registry", "eval", "embed", "security", "testkit", "stt-full", "agent-sdk"]
 
 # ----- Speech-to-text feature surface ---------------------------------------
 stt              = ["dep:atomr-agents-stt-core", "dep:atomr-agents-stt-audio", "dep:atomr-agents-stt-tool", "tool"]
@@ -127,3 +133,6 @@ conversation         = ["stt-full", "tts-full", "tts-voice", "stt-voice"]
 
 # ----- MicroVM sandbox feature surface --------------------------------------
 sandbox              = ["dep:atomr-agents-sandbox-core", "dep:atomr-agents-sandbox-harness", "dep:atomr-agents-sandbox-tool", "tool"]
+
+# ----- Claude Agent SDK harness feature surface -----------------------------
+agent-sdk            = ["dep:atomr-agents-agent-sdk-core", "dep:atomr-agents-agent-sdk-harness"]

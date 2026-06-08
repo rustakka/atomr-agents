@@ -38,6 +38,7 @@ atomr-agents-memory        = { workspace = true }
 atomr-agents-tool          = { workspace = true }
 atomr-agents-channel-core    = { workspace = true }
 atomr-agents-channel-harness = { workspace = true }
+atomr-agents-agent-sdk-harness = { workspace = true }
 atomr-agents-observability = { workspace = true }
 atomr-agents-registry      = { workspace = true }
 atomr-agents-eval          = { workspace = true }

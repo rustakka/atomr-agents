@@ -42,6 +42,9 @@ members = [
     "crates/coding-cli-vendor-antigravity",
     "crates/coding-cli-harness",
     "crates/coding-cli-harness-web",
+    "crates/agent-sdk-core",
+    "crates/agent-sdk-harness",
+    "crates/agent-sdk-harness-web",
     "crates/sandbox-core",
     "crates/sandbox-harness",
     "crates/sandbox-tool",
@@ -124,6 +127,9 @@ dashmap     = "6"
 serde      = { version = "1", features = ["derive"] }
 serde_json = "1"
 bytes      = "1"
+
+# Streams (broadcast→SSE, mpsc→Stream bridges)
+tokio-stream = "0.1"
 
 # Error handling
 thiserror = "1"
@@ -237,6 +243,9 @@ atomr-agents-coding-cli-vendor-codex    = { path = "crates/coding-cli-vendor-cod
 atomr-agents-coding-cli-vendor-antigravity = { path = "crates/coding-cli-vendor-antigravity", version = "0.19.0" }
 atomr-agents-coding-cli-harness         = { path = "crates/coding-cli-harness", version = "0.19.0" }
 atomr-agents-coding-cli-harness-web     = { path = "crates/coding-cli-harness-web", version = "0.19.0" }
+atomr-agents-agent-sdk-core             = { path = "crates/agent-sdk-core", version = "0.19.0" }
+atomr-agents-agent-sdk-harness          = { path = "crates/agent-sdk-harness", version = "0.19.0" }
+atomr-agents-agent-sdk-harness-web      = { path = "crates/agent-sdk-harness-web", version = "0.19.0" }
 atomr-agents-sandbox-core               = { path = "crates/sandbox-core", version = "0.19.0" }
 atomr-agents-sandbox-harness            = { path = "crates/sandbox-harness", version = "0.19.0" }
 atomr-agents-sandbox-tool               = { path = "crates/sandbox-tool", version = "0.19.0" }

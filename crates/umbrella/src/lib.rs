@@ -110,3 +110,14 @@ pub mod sandbox {
     pub use atomr_agents_sandbox_harness as harness;
     pub use atomr_agents_sandbox_tool as tool;
 }
+
+/// Claude Agent SDK harness — Anthropic's programmable Claude Code agent
+/// (`claude-agent-sdk`) wrapped as a `Callable`. Pulls in the contract
+/// (`atomr_agents_agent_sdk_core`, glob-re-exported) and the orchestration
+/// harness (`atomr_agents_agent_sdk_harness`). The real SDK is driven via the
+/// Python bridge in `py-bindings`; a `MockBackend` keeps Rust use network-free.
+#[cfg(feature = "agent-sdk")]
+pub mod agent_sdk {
+    pub use atomr_agents_agent_sdk_core::*;
+    pub use atomr_agents_agent_sdk_harness as harness;
+}

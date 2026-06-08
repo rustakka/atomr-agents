@@ -93,6 +93,16 @@ impl HostPaths {
         self.root.join("mcp")
     }
 
+    /// Root for Claude Agent SDK harness definitions.
+    pub fn agent_sdk_dir(&self) -> PathBuf {
+        self.root.join("agent-sdk")
+    }
+
+    /// Directory for one agent-sdk harness: `<root>/agent-sdk/<id>/`.
+    pub fn agent_sdk(&self, id: &str) -> PathBuf {
+        self.agent_sdk_dir().join(id)
+    }
+
     pub fn agent(&self, agent_id: &str) -> AgentPaths {
         AgentPaths {
             root: self.root.clone(),

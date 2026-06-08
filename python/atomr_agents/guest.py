@@ -105,6 +105,7 @@ def _register(kind: str, key: str, target: Any) -> Any:
         "persona_reconciler": _guest.register_persona_reconciler_factory,
         "inference_client": _guest.register_inference_client_factory,
         "ann_index": _guest.register_ann_index_factory,
+        "agent_sdk": _guest.register_agent_sdk_factory,
     }
     if kind in handle_fn:
         handle = handle_fn[kind](key, target)
