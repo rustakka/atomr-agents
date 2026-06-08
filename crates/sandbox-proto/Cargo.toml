@@ -1,0 +1,23 @@
+[package]
+name          = "atomr-agents-sandbox-proto"
+version       = { workspace = true }
+edition       = { workspace = true }
+rust-version  = { workspace = true }
+license       = { workspace = true }
+repository    = { workspace = true }
+homepage      = { workspace = true }
+authors       = { workspace = true }
+description   = "Wire protocol shared between the sandbox host and the in-VM guest agent: length-prefixed postcard frames over AF_VSOCK, with the GuestRequest/GuestResponse command set."
+
+keywords      = ["agents", "sandbox", "vsock", "atomr"]
+categories    = ["asynchronous", "encoding"]
+readme        = "README.md"
+
+[dependencies]
+serde     = { workspace = true }
+postcard  = { version = "1.0", features = ["use-std"] }
+tokio     = { workspace = true, features = ["io-util"] }
+thiserror = { workspace = true }
+
+[dev-dependencies]
+tokio = { workspace = true, features = ["io-util", "macros", "rt"] }

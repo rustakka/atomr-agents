@@ -1,0 +1,32 @@
+[package]
+name          = "atomr-agents-sandbox-guest-agent"
+version       = { workspace = true }
+edition       = { workspace = true }
+rust-version  = { workspace = true }
+license       = { workspace = true }
+repository    = { workspace = true }
+homepage      = { workspace = true }
+authors       = { workspace = true }
+description   = "In-VM guest agent for the atomr-agents microVM sandbox: a static Rust daemon that runs as PID 1 inside a Firecracker guest, serving the sandbox-proto command set over AF_VSOCK."
+
+keywords      = ["agents", "sandbox", "firecracker", "vsock"]
+categories    = ["asynchronous"]
+readme        = "README.md"
+
+[lib]
+name = "atomr_agents_sandbox_guest_agent"
+path = "src/lib.rs"
+
+[[bin]]
+name = "sandbox-guest-agent"
+path = "src/main.rs"
+
+[dependencies]
+atomr-agents-sandbox-proto = { workspace = true }
+
+tokio  = { workspace = true, features = ["io-util", "process", "fs", "rt", "rt-multi-thread", "macros", "time"] }
+base64 = "0.22"
+
+[dev-dependencies]
+tokio     = { workspace = true, features = ["io-util", "process", "fs", "rt", "rt-multi-thread", "macros", "time"] }
+tempfile  = "3"
