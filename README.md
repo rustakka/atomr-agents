@@ -268,6 +268,13 @@ overhead beyond what the actor crate already pays.
 | `atomr-agents-stt-diarize-sherpa` | `Diarizer` trait, `MockDiarizer`, sherpa-onnx-backed `SherpaDiarizer` (gated behind `sherpa-onnx`), `apply_to_transcript` stitching |
 | `atomr-agents-stt-voice` | `VoiceSession` (`Live` vs `TurnBased { silence_ms }`), `Vad` trait + `EnergyVad`/`SileroVad`, `pump_mic_to_stream` glue |
 | `atomr-agents-stt-tool` | `TranscribeTool` (a `Tool` the model can call) and `voice_input_skill(stt) -> (Skill, DynTool)` for declarative agent integration |
+| `atomr-agents-sandbox-core` | Backend-agnostic microVM **sandbox** contract: `SandboxBackend` / `SandboxHandle` traits, the 5 `SandboxProfile` toolchains, `ResourceBudget` (2 GB / 2 vCPU Rust floor), `SandboxEvent`, and a deterministic `MockBackend` so the whole surface is testable with no Docker / KVM |
+| `atomr-agents-sandbox-harness` | Sandbox orchestration: pluggable backend, live-sandbox registry, TOCTOU-safe concurrency quota, `BestFitScheduler` bin-packing, warm `SnapshotPool`, `SandboxEvent` broadcast; ephemeral one-shot + persistent registry paths; itself a `Callable` |
+| `atomr-agents-sandbox-tool` | The `execute_in_sandbox` `Tool` — runs untrusted Python / Bash / JS / Rust in an ephemeral sandbox, applying the Rust floor, returning `{ exec_id, exit_code, success, stdout, stderr, timed_out }` |
+| `atomr-agents-sandbox-backend-docker` | Docker "insecure dev mode" backend (`bollard`): one long-lived container per sandbox, tar-based file I/O confined to `/workspace`, commit-based snapshot/fork. Not a security boundary — that's Firecracker's job |
+| `atomr-agents-sandbox-proto` | Host↔guest wire protocol: length-prefixed `postcard` frames (`u32` LE + body, 64 MiB cap) over `AF_VSOCK`; keeps the in-VM guest a tiny static binary |
+| `atomr-agents-sandbox-guest-agent` | In-VM **PID-1** daemon serving the protocol: per-language `exec`, `/workspace`-confined file I/O, best-effort init; lean static musl build |
+| `atomr-agents-sandbox-harness-web` | Axum REST + SSE companion over a `SandboxHarness` (`/run`, `/sandboxes…`, `/events`, `/healthz`) |
 | `atomr-agents-py-bindings` | `atomr_agents._native` PyO3 module — 28 hierarchical submodules exposing every framework capability to Python (callable composition, strategies, instruction templates, memory + retriever zoo + ingest, agent / workflow / harness runtimes via `BoxedAgent`, eval, tracers, voice + conversation, 24 guest-trait decorators) |
 | `atomr-agents-cli` | `atomr-agents` binary with `eval` / `registry` / `harness` / `serve` (Studio-style read+resume inspector) subcommands |
 | `atomr-agents-testkit` | Stub crate today. For tests, depend on `atomr-infer-testkit` (re-exports `MockRunner` / `MockScript`) directly — that's what `crates/agent` tests use. |
@@ -275,6 +282,18 @@ overhead beyond what the actor crate already pays.
 Plus a Python facade — `pip install atomr-agents` — that exposes the
 host-mode `Registry` / `EventBus` and the guest-mode `@tool` /
 `@strategy` / `@persona` decorators.
+
+**Untrusted code execution — the microVM sandbox.** Seven `sandbox-*`
+crates give an agent secure, instant-boot compute to run model-authored
+Python / Bash / JS / Rust. A backend-agnostic contract
+(`SandboxBackend` / `SandboxHandle`) sits under a quota'd orchestration
+harness (bin-packing scheduler + warm snapshot pool), the
+`execute_in_sandbox` tool, an `AF_VSOCK` host↔guest protocol, an in-VM
+PID-1 guest agent, a REST/SSE web companion, and the
+`atomr_agents.sandbox` Python facade. Backends escalate by isolation
+strength — deterministic mock (CI) → Docker "insecure dev mode" →
+Firecracker microVM (the real boundary) → Tier-3 gRPC cluster. Full
+write-up in [`docs/sandbox-architecture.md`](docs/sandbox-architecture.md).
 
 ## Quick start (Rust)
 
@@ -362,7 +381,11 @@ subinterpreter-pool dispatcher pattern inherited from atomr's pycore.
 
 ## Documentation map
 
-- [`docs/index.md`](docs/index.md) — documentation hub
+[`docs/index.md`](docs/index.md) is the full documentation hub. The map below
+links everything from this README.
+
+**Core framework**
+
 - [`docs/architecture.md`](docs/architecture.md) — runtime layout, crate stack, where each layer slots in
 - [`docs/state-and-checkpointing.md`](docs/state-and-checkpointing.md) — channels, reducers, `Checkpointer`, fork/replay
 - [`docs/agent-pipeline.md`](docs/agent-pipeline.md) — the per-turn pipeline + tool-call loop + middleware
@@ -372,8 +395,24 @@ subinterpreter-pool dispatcher pattern inherited from atomr's pycore.
 - [`docs/eval.md`](docs/eval.md) — eval suites, judge / pairwise / rubric scorers, regression gate
 - [`docs/multi-agent-patterns.md`](docs/multi-agent-patterns.md) — supervisor / swarm / network / hierarchical
 - [`docs/feature-matrix.md`](docs/feature-matrix.md) — every feature flag, what it pulls in
+
+**Subsystems & harnesses**
+
+- [`docs/sandbox-architecture.md`](docs/sandbox-architecture.md) — microVM sandbox: untrusted-code execution, backend tiers (mock → Docker → Firecracker → cluster), vsock protocol, guest agent
+- [`docs/coding-cli-harness.md`](docs/coding-cli-harness.md) — wraps local AI coding CLIs (Claude Code, Codex, Antigravity) as callables; headless + interactive (xterm.js) modes
+- [`docs/stt-harness.md`](docs/stt-harness.md) — agentic streaming speech-to-text, diarization, editable transcript review UI
+- [`docs/meetings-harness.md`](docs/meetings-harness.md) — attendees, notes, actions, tiered summaries over a diarized transcript
+- [`docs/avatar-harness.md`](docs/avatar-harness.md) — real-time embodied agent: perception → cognition → TTS → 60 Hz LiveLink sync to a UE5 MetaHuman
+- [`docs/deep-research-harness.md`](docs/deep-research-harness.md) — multi-step, multi-source, citation-bearing research with pluggable topologies
+- [`docs/agent-host/index.md`](docs/agent-host/index.md) — long-lived on-disk runtime (SOUL / RULES / MEMORY / USER / SKILL.md) giving an agent persistent identity, skills, hooks, schedules, channels
+
+**Python**
+
 - [`docs/python.md`](docs/python.md) — Python bindings + subinterpreter-pool guest mode
 - [`docs/python-api.md`](docs/python-api.md) — Python API reference: submodule map, async surfaces, 0.2 → 0.3 migration
+
+**Migration & AI-assisted coding**
+
 - [`docs/migrating-from-langgraph.md`](docs/migrating-from-langgraph.md) — concept-mapping table + concrete code translations
 - [`ai-skills/`](ai-skills/) — Claude Code / Agent SDK skills for AI-assisted coding against atomr-agents
 
