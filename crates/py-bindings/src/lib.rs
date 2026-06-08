@@ -63,6 +63,7 @@ mod persona;
 mod registry;
 mod retriever;
 mod runtime;
+mod sandbox;
 mod skill;
 mod state;
 mod strategy;
@@ -113,6 +114,7 @@ fn _native(py: Python<'_>, m: &Bound<'_, PyModule>) -> PyResult<()> {
     stt::register(py, m)?;
     stt_harness::register(py, m)?;
     coding_cli::register(py, m)?;
+    sandbox::register(py, m)?;
     channel::register(py, m)?;
     tts::register(py, m)?;
     voice::register(py, m)?;

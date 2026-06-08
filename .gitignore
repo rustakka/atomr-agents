@@ -22,4 +22,5 @@ build/
 # the wheel is built fresh in CI).
 python/atomr_agents/_native*.so
 python/atomr_agents/_native*.pyd
+python/atomr_agents/_native*.pdb
 *.so

@@ -65,6 +65,13 @@ atomr-agents-tts-runtime-xtts      = { workspace = true, optional = true }
 atomr-agents-tts-voice             = { workspace = true, optional = true }
 atomr-agents-tts-tool              = { workspace = true, optional = true }
 
+# MicroVM sandbox capability surface. The umbrella `sandbox` feature pulls in
+# the backend-agnostic core + harness + tool; real backends (Docker,
+# Firecracker, remote gRPC) live in their own crates.
+atomr-agents-sandbox-core          = { workspace = true, optional = true }
+atomr-agents-sandbox-harness       = { workspace = true, optional = true }
+atomr-agents-sandbox-tool          = { workspace = true, optional = true }
+
 [features]
 default = ["agent", "tool", "skill", "memory", "persona", "instruction"]
 tool        = ["dep:atomr-agents-tool"]
@@ -117,3 +124,6 @@ tts-voice            = ["tts", "dep:atomr-agents-tts-voice"]
 tts-full             = ["tts-openai", "tts-elevenlabs", "tts-openai-realtime", "tts-gemini-live", "tts-piper", "tts-kokoro", "tts-moss", "tts-xtts", "tts-voice"]
 # Combined STT + TTS for live voice-conversation use cases.
 conversation         = ["stt-full", "tts-full", "tts-voice", "stt-voice"]
+
+# ----- MicroVM sandbox feature surface --------------------------------------
+sandbox              = ["dep:atomr-agents-sandbox-core", "dep:atomr-agents-sandbox-harness", "dep:atomr-agents-sandbox-tool", "tool"]

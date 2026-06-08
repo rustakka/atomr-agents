@@ -45,6 +45,8 @@ atomr-agents-stt-tool              = { workspace = true }
 atomr-agents-stt-harness           = { workspace = true, features = ["decode"] }
 atomr-agents-coding-cli-core       = { workspace = true }
 atomr-agents-coding-cli-harness    = { workspace = true }
+atomr-agents-sandbox-core          = { workspace = true }
+atomr-agents-sandbox-harness       = { workspace = true }
 atomr-agents-channel-core          = { workspace = true }
 atomr-agents-channel-harness       = { workspace = true }
 atomr-agents-avatar-core           = { workspace = true, optional = true }

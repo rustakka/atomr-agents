@@ -79,6 +79,7 @@ if _native is not None:
     stt = _native.stt
     stt_harness = _native.stt_harness
     coding_cli = _native.coding_cli
+    sandbox = _native.sandbox
     channel = _native.channel
     tts = _native.tts
     voice = _native.voice

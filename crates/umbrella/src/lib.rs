@@ -97,3 +97,16 @@ pub mod tts {
     #[cfg(feature = "tts-voice")]
     pub use atomr_agents_tts_voice as voice;
 }
+
+/// MicroVM sandbox capability — secure, instant-boot compute for executing
+/// untrusted agent code. Pulls in the backend-agnostic core
+/// (`atomr_agents_sandbox_core`, glob-re-exported), the orchestration harness
+/// (`atomr_agents_sandbox_harness`), and the `execute_in_sandbox` tool
+/// (`atomr_agents_sandbox_tool`). Real backends (Docker, Firecracker, remote
+/// gRPC) live in their own crates and are wired by the harness.
+#[cfg(feature = "sandbox")]
+pub mod sandbox {
+    pub use atomr_agents_sandbox_core::*;
+    pub use atomr_agents_sandbox_harness as harness;
+    pub use atomr_agents_sandbox_tool as tool;
+}
