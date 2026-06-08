@@ -45,6 +45,7 @@ members = [
     "crates/sandbox-core",
     "crates/sandbox-harness",
     "crates/sandbox-tool",
+    "crates/sandbox-backend-docker",
     "crates/channel-core",
     "crates/channel-provider-whatsapp",
     "crates/channel-provider-signal",
@@ -236,6 +237,7 @@ atomr-agents-coding-cli-harness-web     = { path = "crates/coding-cli-harness-we
 atomr-agents-sandbox-core               = { path = "crates/sandbox-core", version = "0.18.0" }
 atomr-agents-sandbox-harness            = { path = "crates/sandbox-harness", version = "0.18.0" }
 atomr-agents-sandbox-tool               = { path = "crates/sandbox-tool", version = "0.18.0" }
+atomr-agents-sandbox-backend-docker     = { path = "crates/sandbox-backend-docker", version = "0.18.0" }
 atomr-agents-channel-core               = { path = "crates/channel-core", version = "0.18.0" }
 atomr-agents-channel-provider-whatsapp  = { path = "crates/channel-provider-whatsapp", version = "0.18.0" }
 atomr-agents-channel-provider-signal    = { path = "crates/channel-provider-signal", version = "0.18.0" }
